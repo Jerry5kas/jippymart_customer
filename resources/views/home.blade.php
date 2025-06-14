@@ -24,11 +24,11 @@
         </div>
     </div>
     <div class="ecommerce-content multi-vendore-content section-content">
-{{--        <section class="restaurant_stories">--}}
-{{--            <div class="container swiper-stories">--}}
-{{--                <div id="stories" class="storiesWrapper swiper-wrapper"></div>--}}
-{{--            </div>--}}
-{{--        </section>--}}
+        <section class="restaurant_stories">
+            <div class="container swiper-stories">
+                <div id="stories" class="storiesWrapper swiper-wrapper"></div>
+            </div>
+        </section>
         <section class="top-categories top-categories-section">
             <div class="container">
                 <div class="title d-flex align-items-center">
@@ -40,7 +40,7 @@
                 <div class="top_categories" id="top_categories"></div>
             </div>
         </section>
-        <section class="top-categories highlights-section d-none">
+        <section class="top-categories highlights-section d-none" style="display: none;">
             <div class="container">
                 <div class="highlights-section-inner">
                     <div class="title d-flex align-items-center border-0 mb-0">
@@ -54,7 +54,7 @@
                 </div>
             </div>
         </section>
-        <section class="most-popular-item-section">
+        <section class="most-popular-item-section" style="display: none;">
             <div class="container">
                 <div class="title d-flex align-items-center">
                     <h5>{{ trans('lang.popular') }} {{ trans('lang.item') }}</h5>
@@ -65,7 +65,7 @@
                 <div id="most_popular_item"></div>
             </div>
         </section>
-        <section class="most-popular-store-section">
+        <section class="most-popular-store-section" style="display: none;">
             <div class="container">
                 <div class="title d-flex align-items-center">
                     <h5>{{ trans('lang.popular') }} {{ trans('lang.restaurants') }}</h5>
@@ -76,7 +76,7 @@
                 <div id="most_popular_store"></div>
             </div>
         </section>
-        <section class="new-arrivals-section">
+        <section class="new-arrivals-section" style="display: none;">
             <div class="container">
                 <div class="title d-flex align-items-center">
                     <h5>{{ trans('lang.new_arrivals') }}</h5>
@@ -87,7 +87,7 @@
                 <div id="new_arrival"></div>
             </div>
         </section>
-        <section class="offers-coupons-section">
+        <section class="offers-coupons-section" style="display: none;">
             <div class="container">
                 <div class="title d-flex align-items-center">
                     <h5>{{ trans('lang.offers') }} {{ trans('lang.for_you') }}</h5>
@@ -113,9 +113,48 @@
             <div class="container">
                 <div class="title d-flex align-items-center">
                     <h5>{{ trans('lang.all_stores') }}</h5>
-                    <span class="see-all ml-auto">
-                        <a href="{{ url('restaurants') }}">{{ trans('lang.see_all') }}</a>
-                    </span>
+                    <div class="ml-auto d-flex align-items-center">
+
+                        <span class="see-all">
+                            <a href="{{ url('restaurants') }}">{{ trans('lang.see_all') }}</a>
+                        </span>
+                    </div>
+                </div>
+                <div class="" style="display:  flex; justify-content: flex-between; padding: 20px 0px; flex-wrap: wrap; gap: 10px;">
+                    <div class="max-width: max-content;">
+                        <select id="restaurant-sort" class="form-control mx-2">
+                            <option value="default">{{ trans('lang.sort_by') }}</option>
+                            <option value="asc">A-Z</option>
+                            <option value="desc">Z-A</option>
+                        </select>
+                    </div>
+                    <!-- Filter by restaurant status -->
+                    <div class="max-width: max-content;">
+                        <select id="restaurant-status" class="form-control mx-2">
+                            <option value="default">{{ trans('lang.restaurant_status') }}</option>
+                            <option value="open">Open</option>
+                            <option value="closed">Closed</option>
+                        </select>
+                    </div>
+                    <!-- Filter by price range -->
+                    <div class="max-width: max-content;">
+                        <select id="restaurant-price" class="form-control mx-2">
+                            <option value="default">{{ trans('lang.restaurant_price') }}</option>
+                            <option value="1">low to high</option>
+                            <option value="2">high to low</option>
+                        </select>
+                    </div>
+                    <!-- Filter by rating -->
+                    <div class="max-width: max-content;">
+                        <select id="restaurant-rating" class="form-control mx-2">
+                            <option value="default">{{ trans('lang.restaurant_rating') }}</option>
+                            <option value="5">5 star</option>
+                            <option value="4">4 star</option>
+                            <option value="3">3 star</option>
+                            <option value="2">2 star</option>
+                            <option value="1">1 star</option>
+                        </select>
+                    </div>
                 </div>
                 <div id="all_stores"></div>
                 <div class="row fu-loadmore-btn">
@@ -140,42 +179,104 @@
 <!-- lib styles -->
 <link rel="stylesheet" href="{{ asset('css/dist/zuck.min.css') }}">
 <link rel="stylesheet" href="{{ asset('css/dist/skins/snapssenger.css') }}">
+<style>
+    .top-categories-slider .slide-item {
+        padding: 10px;
+    }
+    .top-categories-slider .slick-prev,
+    .top-categories-slider .slick-next {
+        top: 45%;
+        transform: translateY(-50%);
+        z-index: 1;
+        width: 25px;
+        height: 25px;
+        background: #fff;
+        border-radius: 10%;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        opacity: 1;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+    }
+    .top-categories-slider .slick-prev {
+        left: -30px;
+    }
+    .top-categories-slider .slick-next {
+        right: -30px;
+    }
+    .top-categories-slider .slick-prev:before,
+    .top-categories-slider .slick-next:before {
+        font-family: "FontAwesome";
+        color: #484848;
+        font-size: 20px;
+        opacity: 1;
+        line-height: 1;
+        display: inline-block;
+    }
+    .top-categories-slider .slick-prev:before {
+        content: "\f104";
+    }
+    .top-categories-slider .slick-next:before {
+        content: "\f105";
+    }
+    .top-categories-slider .slick-prev:hover,
+    .top-categories-slider .slick-next:hover {
+        background: #fff;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
+    .top-categories-slider .top-cat-list {
+        margin: 0 5px;
+    }
+    .top-categories-slider .cat-img {
+        display: block;
+        margin-bottom: 10px;
+        padding: 0;
+        border: none;
+    }
+    .top-categories-slider .cat-img img {
+        width: 100%;
+        height: 160px;
+        object-fit: cover;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+        border: none;
+        /* box-shadow: 0 6px 20px rgba(0,0,0,0.15); */
+    }
+    .top-categories-slider .cat-link:hover .cat-img img {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 25px rgba(0,0,0,0.2);
+    }
+    .top-categories-slider h4 {
+        margin-top: 10px;
+        font-size: 14px;
+        color: #333;
+        font-weight: 600;
+    }
+    /* Add new styles for the filter dropdown */
+    #restaurant-sort {
+        padding: 5px 10px;
+        border-radius: 4px;
+        border: 1px solid #ddd;
+        background-color: white;
+        font-size: 14px;
+        min-width: 120px;
+    }
+    #restaurant-sort:focus {
+        outline: none;
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+    }
+    .ml-auto {
+        margin-left: auto;
+    }
+    .mr-2 {
+        margin-right: 0.5rem;
+    }
+</style>
 <script src="{{ asset('js/dist/zuck.min.js') }}"></script>
 <script src="{{ asset('js/geofirestore.js') }}"></script>
 <script src="https://cdn.firebase.com/libs/geofire/5.0.1/geofire.min.js"></script>
 <script type="text/javascript" src="{{ asset('vendor/swiper/swiper.min.js') }}"></script>
-
-<style type="text/css">
-    #top_banner .slick-dots {
-        bottom: 15px;
-    }
-
-    #top_banner .slick-dots li {
-        margin: 0 2px;
-    }
-
-    #top_banner .slick-dots li button {
-        padding: 0;
-    }
-
-    #top_banner .slick-dots li button:before {
-        color: #FFFFFF !important;
-        opacity: 0.8;
-        font-size: 8px;
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        content: '';
-        background-color: #FFFFFF;
-    }
-
-    #top_banner .slick-dots li.slick-active button:before {
-        opacity: 1;
-        background-color: #FFFFFF;
-        width: 8px;
-        height: 8px;
-    }
-</style>
 
 <script type="text/javascript">
     jQuery("#data-table_processing").show();
@@ -207,7 +308,7 @@
     var enableAdvertisement = false;
     var highlightsSetting = database.collection('settings').doc('globalSettings');
     var DriverNearByRef = database.collection('settings').doc('RestaurantNearBy');
-    var itemCategoriesref = database.collection('vendor_categories').where('publish', '==', true).limit(7);
+    var itemCategoriesref = database.collection('vendor_categories').where('publish', '==', true).limit(10);
     var vendorsref = geoFirestore.collection('vendors');
     var productref = database.collection('vendor_products').where('publish', '==', true);
     var bannerref = database.collection('menu_items').where("is_publish", "==", true).orderBy('set_order', 'asc');
@@ -370,9 +471,9 @@
 
     var myInterval = '';
     $(document).ready(async function() {
+        console.log("Initial user_zone_id:", user_zone_id);
 
         // Retrieve all invalid vendors
-
         await checkVendors().then(expiredStores => {
             inValidVendors = expiredStores;
         });
@@ -393,9 +494,9 @@
     }
 
     async function callStore() {
+        console.log("callStore - address_lat:", address_lat, "address_lng:", address_lng, "user_zone_id:", user_zone_id);
         if (address_lat == '' || address_lng == '' || address_lng == NaN || address_lat == NaN || address_lat ==
             null || address_lng == null) {
-            jQuery("#data-table_processing").hide(); // Add this line to hide loader
             return false;
         }
         DriverNearByRef.get().then(async function(DriverNearByRefSnapshots) {
@@ -412,26 +513,16 @@
                 jQuery(".section-content").remove();
                 jQuery(".zone-error").show();
                 jQuery("#data-table_processing").hide();
-                myStopTimer(); // Add this line to stop the timer
                 return false;
             }
-            try {
-                priceData = await fetchVendorPriceData();
-                myStopTimer();
-                getItemCategories();
-                getHomepageCategory();
-                getMostPopularStores();
-                getAllStore();
-            } catch (error) {
-                console.error("Error in callStore:", error);
-                jQuery("#data-table_processing").hide();
-                myStopTimer();
-            }
-        }).catch(error => {
-            console.error("Error fetching DriverNearBy:", error);
-            jQuery("#data-table_processing").hide();
+            priceData = await fetchVendorPriceData();
             myStopTimer();
-        });
+            getItemCategories();
+            getHomepageCategory();
+            getMostPopularStores();
+            getAllStore();
+
+        })
     }
 
     function slickcatCarousel() {
@@ -439,7 +530,7 @@
             $('#top_banner').slick({
                 slidesToShow: 1,
                 dots: true,
-                arrows: false, // Changed from true to false to hide next/previous buttons
+                arrows: true,
                 autoplay: true, // Optional: autoplay
                 autoplaySpeed: 3000, // Optional: 3 seconds autoplay delay
             });
@@ -477,76 +568,194 @@
     }
 
     async function getAllStore() {
-        try {
-            if (VendorNearBy) {
-                var nearestRestauantRefnew = geoFirestore.collection('vendors').near({
-                    center: new firebase.firestore.GeoPoint(address_lat, address_lng),
-                    radius: VendorNearBy
-                }).where('zoneId', '==', user_zone_id);
-            } else {
-                var nearestRestauantRefnew = geoFirestore.collection('vendors').where('zoneId', '==', user_zone_id);
-            }
-
-            nearestRestauantRefnew.get().then(async function(snapshots) {
-                if (snapshots.docs.length > 0) {
-                    var html = buildAllStoresHTML(snapshots);
-                    var all_stores = document.getElementById('all_stores');
-                    all_stores.innerHTML = html;
-                    start = snapshots.docs[snapshots.docs.length - 1];
-                    endarray.push(snapshots.docs[0]);
-                    $('#loadmore').hide();
-                    jQuery("#data-table_processing").hide(); // Add this line
-                } else {
-                    $(".all-stores-section").remove();
-                    $(".new-arrivals-section").remove();
-                    $(".section-content").remove();
-                    jQuery(".zone-error").show();
-                    jQuery(".zone-error").find('.title').text('{{ trans('lang.restaurant_error_title') }}');
-                    jQuery(".zone-error").find('.text').text('{{ trans('lang.restaurant_error_text') }}');
-                    jQuery("#data-table_processing").hide(); // Add this line
-                }
-            }).catch(error => {
-                console.error("Error fetching stores:", error);
-                jQuery("#data-table_processing").hide();
-                jQuery(".zone-error").show();
-            });
-        } catch (error) {
-            console.error("Error in getAllStore:", error);
-            jQuery("#data-table_processing").hide();
-            jQuery(".zone-error").show();
+        if (VendorNearBy) {
+            var nearestRestauantRefnew = geoFirestore.collection('vendors').near({
+                center: new firebase.firestore.GeoPoint(address_lat, address_lng),
+                radius: VendorNearBy
+            }).where('zoneId', '==', user_zone_id);
+        } else {
+            var nearestRestauantRefnew = geoFirestore.collection('vendors').where('zoneId', '==', user_zone_id);
         }
+        nearestRestauantRefnew.get().then(async function(snapshots) {
+            if (snapshots.docs.length > 0) {
+                window.vendorsData = snapshots; // Store the data globally for sorting
+
+                // Initialize vendors array for initial display
+                let vendors = [];
+                snapshots.docs.forEach((listval) => {
+                    var datas = listval.data();
+                    datas.id = listval.id;
+                    if (!inValidVendors.has(listval.id)) {
+                        datas.currentStatus = getVendorStatus(datas);
+                        datas.minPrice = 0; // Initialize with 0
+                        vendors.push(datas);
+                    }
+                });
+
+                // Show vendors immediately
+                var html = buildAllStoresHTMLFromArray(vendors);
+                var all_stores = document.getElementById('all_stores');
+                all_stores.innerHTML = html;
+
+                // Calculate prices in the background
+                vendors.forEach(async (vendor) => {
+                    vendor.minPrice = await getVendorMinPrice(vendor);
+                });
+
+                start = snapshots.docs[snapshots.docs.length - 1];
+                endarray.push(snapshots.docs[0]);
+                $('#loadmore').hide();
+            } else {
+                $(".all-stores-section").remove();
+                $(".new-arrivals-section").remove();
+                $(".section-content").remove();
+                jQuery(".zone-error").show();
+                jQuery(".zone-error").find('.title').text('{{ trans('lang.restaurant_error_title') }}');
+                jQuery(".zone-error").find('.text').text('{{ trans('lang.restaurant_error_text') }}');
+            }
+        });
     }
 
-    function buildAllStoresHTML(snapshots) {
-        var html = '';
-        var alldata = [];
-        if (snapshots.docs.length > 0) {
-            snapshots.docs.forEach((listval) => {
+    // Update the event listener to handle both immediate and price-based sorting
+    $(document).ready(function() {
+        $('#restaurant-sort, #restaurant-status, #restaurant-price, #restaurant-rating').on('change', function() {
+            if (!window.vendorsData) return;
+
+            const sortOrder = $('#restaurant-sort').val();
+            const statusFilter = $('#restaurant-status').val();
+            const priceFilter = $('#restaurant-price').val();
+            const ratingFilter = $('#restaurant-rating').val();
+
+            // First get the vendors data
+            let vendors = [];
+            window.vendorsData.docs.forEach((listval) => {
                 var datas = listval.data();
                 datas.id = listval.id;
                 if (!inValidVendors.has(listval.id)) {
+                    datas.currentStatus = getVendorStatus(datas);
+                    vendors.push(datas);
+                }
+            });
 
-                    alldata.push(datas);
-                    vendorIds.push(listval.id);
+            // Apply status filter only if not default
+            if (statusFilter !== 'default') {
+                vendors = vendors.filter(vendor => vendor.currentStatus.toLowerCase() === statusFilter.toLowerCase());
+            }
+
+            // Apply price filter if not default
+            if (priceFilter !== 'default') {
+                // Sort based on current price values (even if some are still calculating)
+                vendors.sort((a, b) => {
+                    const priceA = a.minPrice || 0;
+                    const priceB = b.minPrice || 0;
+                    return priceFilter === '1' ? priceA - priceB : priceB - priceA;
+                });
+            }
+
+            // Apply rating filter if not default
+            if (ratingFilter !== 'default') {
+                vendors = vendors.filter(vendor => {
+                    const rating = vendor.reviewsSum / vendor.reviewsCount;
+                    return rating >= parseInt(ratingFilter);
+                });
+            }
+
+            // Apply sorting only if not default
+            if (sortOrder !== 'default') {
+                vendors.sort((a, b) => {
+                    if (sortOrder === 'asc') {
+                        return a.title.localeCompare(b.title);
+                    } else {
+                        return b.title.localeCompare(a.title);
+                    }
+                });
+            }
+
+            var html = buildAllStoresHTMLFromArray(vendors);
+            $('#all_stores').html(html);
+        });
+    });
+
+    // Function to get minimum price from vendor's products
+    async function getVendorMinPrice(vendor) {
+        let minPrice = Infinity;
+        try {
+            const productsSnapshot = await database.collection('vendor_products')
+                .where('vendorID', '==', vendor.id)
+                .where('publish', '==', true)
+                .get();
+
+            productsSnapshot.docs.forEach((doc) => {
+                const product = doc.data();
+                let price = parseFloat(product.price);
+
+                // Check if there's a discount price
+                if (product.disPrice && parseFloat(product.disPrice) > 0) {
+                    price = parseFloat(product.disPrice);
+                }
+
+                // If product has variants, get the minimum variant price
+                if (product.item_attribute && product.item_attribute.variants) {
+                    const variantPrices = product.item_attribute.variants.map(v =>
+                        parseFloat(v.variant_price || 0)
+                    ).filter(p => p > 0);
+
+                    if (variantPrices.length > 0) {
+                        price = Math.min(...variantPrices);
+                    }
+                }
+
+                if (price < minPrice && price > 0) {
+                    minPrice = price;
                 }
             });
-            alldata = alldata.slice(0, pagesize);
-            //New arrivals products
-            var newProductRef = database.collection('vendor_products').where('publish', '==', true);
-            newProductRef.get().then(async function(newProductSnapshot) {
-                if (newProductSnapshot.docs.length > 0) {
-                    new_arrival = document.getElementById('new_arrival');
-                    new_arrival.innerHTML = '';
-                    var newproducthtml = await buildHTMLNewProducts(newProductSnapshot);
-                    new_arrival.innerHTML = newproducthtml;
-                } else {
-                    $(".new-arrivals-section").remove();
+        } catch (error) {
+            console.error('Error getting vendor minimum price:', error);
+        }
+        return minPrice === Infinity ? 0 : minPrice;
+    }
+
+    // Function to get vendor's current status
+    function getVendorStatus(vendorData) {
+        var status = 'Closed';
+        var days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        var currentdate = new Date();
+        var currentDay = days[currentdate.getDay()];
+        var hour = currentdate.getHours();
+        var minute = currentdate.getMinutes();
+
+        if (hour < 10) hour = '0' + hour;
+        if (minute < 10) minute = '0' + minute;
+
+        var currentHours = hour + ':' + minute;
+
+        if (vendorData.hasOwnProperty('workingHours')) {
+            for (var i = 0; i < vendorData.workingHours.length; i++) {
+                if (vendorData.workingHours[i]['day'] == currentDay) {
+                    if (vendorData.workingHours[i]['timeslot'].length != 0) {
+                        for (var j = 0; j < vendorData.workingHours[i]['timeslot'].length; j++) {
+                            var timeslot = vendorData.workingHours[i]['timeslot'][j];
+                            var from = timeslot['from'];
+                            var to = timeslot['to'];
+                            if (currentHours >= from && currentHours <= to) {
+                                status = 'Open';
+                                break;
+                            }
+                        }
+                    }
+                    break;
                 }
-            });
-            var count = 0;
+            }
+        }
+        return status;
+    }
+
+    // Update buildAllStoresHTMLFromArray to use the stored status
+    function buildAllStoresHTMLFromArray(alldata) {
+        var html = '';
+        if (alldata.length > 0) {
             html = html + '<div class="row">';
-            alldata.forEach((listval) => {
-                var val = listval;
+            alldata.forEach((val) => {
                 var rating = 0;
                 var reviewsCount = 0;
                 if (val.hasOwnProperty('reviewsSum') && val.reviewsSum != 0 && val.reviewsSum != null && val
@@ -557,50 +766,24 @@
                     rating = Math.round(rating * 10) / 10;
                     reviewsCount = val.reviewsCount;
                 }
-                var status = 'Closed';
-                var statusclass = "closed";
-                var days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-                var currentdate = new Date();
-                var currentDay = days[currentdate.getDay()];
-                hour = currentdate.getHours();
-                minute = currentdate.getMinutes();
-                if (hour < 10) {
-                    hour = '0' + hour
-                }
-                if (minute < 10) {
-                    minute = '0' + minute
-                }
-                var currentHours = hour + ':' + minute;
-                if (val.hasOwnProperty('workingHours')) {
-                    for (i = 0; i < val.workingHours.length; i++) {
-                        var day = val.workingHours[i]['day'];
-                        if (val.workingHours[i]['day'] == currentDay) {
-                            if (val.workingHours[i]['timeslot'].length != 0) {
-                                for (j = 0; j < val.workingHours[i]['timeslot'].length; j++) {
-                                    var timeslot = val.workingHours[i]['timeslot'][j];
-                                    var from = timeslot[`from`];
-                                    var to = timeslot[`to`];
-                                    if (currentHours >= from && currentHours <= to) {
-                                        status = '{{ trans('lang.open') }}';
-                                        statusclass = "open";
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+
+                var status = val.currentStatus;
+                var statusclass = status.toLowerCase() === 'open' ? 'open' : 'closed';
+
                 var vendor_id_single = val.id;
                 var view_vendor_details = "{{ route('restaurant', ':id') }}";
                 view_vendor_details = view_vendor_details.replace(':id', 'id=' + vendor_id_single);
-                count++;
+
                 getMinDiscount(val.id);
                 html = html +
                     '<div class="col-md-3 product-list"><div class="list-card position-relative"><div class="list-card-image">';
+
                 if (val.photo != "" && val.photo != null) {
                     photo = val.photo;
                 } else {
                     photo = placeholderImageSrc;
                 }
+
                 html = html + '<div class="member-plan position-absolute"><span class="badge badge-dark ' +
                     statusclass + '">' + status + '</span></div><div class="offer-icon position-absolute free-delivery-' + val.id + '"></div><a href="' + view_vendor_details +
                     '"><img onerror="this.onerror=null;this.src=\'' + placeholderImage + '\'" alt="#" src="' +
@@ -619,22 +802,20 @@
             });
             html = html + '</div>';
         } else {
-            $('#noMoreCoupons').show();
-            $('#loadmore').hide();
-            setTimeout(function() {
-                $("#noMoreCoupons").hide();
-            }, 4000);
+            html = '<div class="text-center mt-5"><p>No restaurants found matching the selected filters.</p></div>';
         }
         return html;
     }
 
-
     async function getItemCategories() {
+        console.log("Fetching categories...");
         itemCategoriesref.get().then(async function(foodCategories) {
+            console.log("Categories fetched:", foodCategories.docs.length);
             top_categories = document.getElementById('top_categories');
             top_categories.innerHTML = '';
             foodCategorieshtml = await buildHTMLItemCategory(foodCategories);
             top_categories.innerHTML = foodCategorieshtml;
+            initTopCategoriesSlider(); // Initialize the slider
             jQuery("#data-table_processing").hide();
         })
     }
@@ -687,8 +868,11 @@
     }
 
     async function catHaveStores(categoryId) {
+        console.log("Checking stores for category:", categoryId);
+        console.log("Current user zone:", user_zone_id);
         var snapshots = await database.collection('vendors').where("categoryID", "array-contains", categoryId).where('zoneId',
             '==', user_zone_id).get();
+        console.log("Found stores:", snapshots.docs.length);
         if (snapshots.docs.length > 0) {
             return true;
         } else {
@@ -794,17 +978,21 @@
     }
 
     async function buildHTMLItemCategory(foodCategories) {
+        console.log("Building HTML for categories:", foodCategories.docs.length);
         var html = '';
         var alldata = [];
         for (const listval of foodCategories.docs) {
             var datas = listval.data();
             datas.id = listval.id;
-            var haveStores = await catHaveStores(datas.id);
-            if (haveStores === true) {
-                alldata.push(datas);
-            }
+            // Temporarily show all categories for testing
+            alldata.push(datas);
+            // Log category data for debugging
+            console.log("Category:", datas.id, datas.title);
         }
-        html += '<div class="row">';
+        console.log("Total categories:", alldata.length);
+
+        // Create slider container
+        html += '<div class="top-categories-slider">';
         alldata.forEach((listval) => {
             var val = listval;
             var category_id = val.id;
@@ -815,13 +1003,60 @@
             } else {
                 photo = placeholderImageSrc;
             }
-            html = html + '<div class="col-md-2 top-cat-list"><a class="d-block text-center cat-link" href="' +
-                trending_route + '"><span class="cat-img"><img  onerror="this.onerror=null;this.src=\'' +
-                placeholderImage + '\'" alt="#" src="' + photo +
-                '" class="img-fluid mb-2"></span><h4 class="m-0">' + val.title + '</h4></a></div>';
+            html += '<div class="slide-item">';
+            html += '<div class="top-cat-list">';
+            html += '<a class="d-block text-center cat-link" href="' + trending_route + '">';
+            html += '<span class="cat-img"><img onerror="this.onerror=null;this.src=\'' + placeholderImage + '\'" alt="#" src="' + photo + '" class="img-fluid mb-2"></span>';
+            html += '<h4 class="m-0">' + val.title + '</h4>';
+            html += '</a>';
+            html += '</div>';
+            html += '</div>';
         });
         html += '</div>';
         return html;
+    }
+
+    // Add this function to initialize the slider
+    function initTopCategoriesSlider() {
+        if($('.top-categories-slider').length > 0) {
+            $('.top-categories-slider').slick({
+                dots: false,
+                infinite: true,
+                speed: 300,
+                slidesToShow: 6,
+                slidesToScroll: 1,
+                arrows: true,
+                autoplay: true,
+                autoplaySpeed: 3000,
+                cssEase: 'linear',
+                responsive: [
+                    {
+                        breakpoint: 1024,
+                        settings: {
+                            slidesToShow: 4,
+                            slidesToScroll: 1,
+                            infinite: true
+                        }
+                    },
+                    {
+                        breakpoint: 768,
+                        settings: {
+                            slidesToShow: 3,
+                            slidesToScroll: 1,
+                            infinite: true
+                        }
+                    },
+                    {
+                        breakpoint: 480,
+                        settings: {
+                            slidesToShow: 2,
+                            slidesToScroll: 1,
+                            infinite: true
+                        }
+                    }
+                ]
+            });
+        }
     }
 
     async function getPopularItem() {
@@ -1037,7 +1272,7 @@
             if (val.disPrice && val.disPrice !== '0' && !val.item_attribute) {
                 let or_price = getProductFormattedPrice(parseFloat(final_price.price));
                 let dis_price = getProductFormattedPrice(parseFloat(final_price.dis_price));
-                html += `<h6 class="text-gray mb-1 pro-price">${dis_price} <s>${or_price}</s></h6>`;
+                html += `<h6 class="text-gray mb-1 pro-price">${dis_price}  ${or_price}  </h6>`;
             } else if (val.item_attribute && val.item_attribute.variants?.length > 0) {
                 let variantPrices = val.item_attribute.variants.map(v => v.variant_price);
                 let minPrice = Math.min(...variantPrices);
@@ -1219,8 +1454,8 @@
 
                 alldata.push(datas);
             }
-
         });
+
         if (subscriptionModel == true || subscriptionModel == "true") {
             await Promise.all(Object.keys(groupedData).map(async (vendorID) => {
                 let products = groupedData[vendorID];
@@ -1291,7 +1526,7 @@
             if (val.disPrice && val.disPrice !== '0' && !val.item_attribute) {
                 let or_price = getProductFormattedPrice(parseFloat(final_price.price));
                 let dis_price = getProductFormattedPrice(parseFloat(final_price.dis_price));
-                html += `<h6 class="text-gray mb-1 pro-price">${dis_price} <s>${or_price}</s></h6>`;
+                html += `<h6 class="text-gray mb-1 pro-price">${dis_price}  ${or_price}  </h6>`;
             } else if (val.item_attribute && val.item_attribute.variants?.length > 0) {
                 let variantPrices = val.item_attribute.variants.map(v => v.variant_price);
                 let minPrice = Math.min(...variantPrices);
@@ -1801,5 +2036,133 @@
             })
         }, 3000);
     }
+
+    // Add these filter functions without modifying existing code
+
+    function filterByPrice(vendors, order = 'asc') {
+        return vendors.sort((a, b) => {
+            const priceA = getPriceRangeValue(a);
+            const priceB = getPriceRangeValue(b);
+            return order === 'asc' ? priceA - priceB : priceB - priceA;
+        });
+    }
+
+    function filterByRating(vendors, minRating = 0) {
+        return vendors.filter(vendor => {
+            if(vendor.reviewsSum && vendor.reviewsCount) {
+                const rating = vendor.reviewsSum / vendor.reviewsCount;
+                return rating >= minRating;
+            }
+            return false;
+        });
+    }
+
+    function filterByCategory(vendors, categoryId) {
+        return vendors.filter(vendor =>
+            vendor.categoryID && vendor.categoryID.includes(categoryId)
+        );
+    }
+
+    function filterByDeliveryOption(vendors, freeDeliveryOnly = false) {
+        return vendors.filter(vendor =>
+            !freeDeliveryOnly || (vendor.isSelfDelivery && isSelfDeliveryGlobally)
+        );
+    }
+
+    function filterByStatus(vendors, openOnly = true) {
+        return vendors.filter(vendor => {
+            const isOpen = checkIfOpen(vendor.workingHours);
+            return openOnly ? isOpen : !isOpen;
+        });
+    }
+
+    function filterByOffers(vendors, hasOffersOnly = true) {
+        return vendors.filter(vendor => {
+            const hasOffers = vendor.discount || vendor.coupons?.length;
+            return hasOffersOnly ? hasOffers : !hasOffers;
+        });
+    }
+
+    function filterByDistance(vendors, maxDistance) {
+        return vendors.filter(vendor => {
+            const distance = calculateDistance(
+                address_lat,
+                address_lng,
+                vendor.latitude,
+                vendor.longitude
+            );
+            return distance <= maxDistance;
+        });
+    }
+
+    $(document).ready(function() {
+        $('#restaurant-sort, #restaurant-status, #restaurant-price, #restaurant-rating').on('change', function() {
+            if (!window.vendorsData) return;
+
+            const sortOrder = $('#restaurant-sort').val();
+            const statusFilter = $('#restaurant-status').val();
+            const priceFilter = $('#restaurant-price').val();
+            const ratingFilter = $('#restaurant-rating').val();
+
+            // First get the vendors data
+            let vendors = [];
+            window.vendorsData.docs.forEach((listval) => {
+                var datas = listval.data();
+                datas.id = listval.id;
+                if (!inValidVendors.has(listval.id)) {
+                    // Add current status to vendor data
+                    datas.currentStatus = getVendorStatus(datas);
+
+                    // Calculate average rating
+                    let avgRating = 0;
+                    let reviewCount = 0;
+                    if (datas.reviewsCount && datas.reviewsCount > 0) {
+                        avgRating = datas.reviewsSum / datas.reviewsCount;
+                        reviewCount = datas.reviewsCount;
+                    }
+                    datas.avgRating = avgRating;
+                    datas.reviewCount = reviewCount;
+
+                    // Apply filters
+                    let includeVendor = true;
+
+                    // Status filter
+                    if (statusFilter !== 'default') {
+                        if (statusFilter === 'open' && datas.currentStatus !== 'Open') {
+                            includeVendor = false;
+                        } else if (statusFilter === 'closed' && datas.currentStatus !== 'Closed') {
+                            includeVendor = false;
+                        }
+                    }
+
+                    // Rating filter
+                    if (ratingFilter !== 'default') {
+                        const minRating = parseFloat(ratingFilter);
+                        if (avgRating < minRating) {
+                            includeVendor = false;
+                        }
+                    }
+
+                    if (includeVendor) {
+                        vendors.push(datas);
+                    }
+                }
+            });
+
+            // Apply sorting
+            if (sortOrder === 'asc') {
+                vendors.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+            } else if (sortOrder === 'desc') {
+                vendors.sort((a, b) => (b.title || '').localeCompare(a.title || ''));
+            } else if (priceFilter === '1') {
+                vendors.sort((a, b) => (a.minPrice || 0) - (b.minPrice || 0));
+            } else if (priceFilter === '2') {
+                vendors.sort((a, b) => (b.minPrice || 0) - (a.minPrice || 0));
+            }
+
+            buildAllStoresHTMLFromArray(vendors);
+        });
+    });
 </script>
 @include('layouts.nav')
+
