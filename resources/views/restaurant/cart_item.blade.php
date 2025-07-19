@@ -422,15 +422,25 @@ if (@$cart['item']){ ?>
     <p class="text-success mt-2">You can use <strong>SAVE30</strong> or <strong>SAVE50</strong>.</p>
 @endif
 </div>
-        <button class="btn btn-block mt-3" style="background-color: #ff9800; color: #fff; border: none;" type="button"
+        <!-- <button class="btn btn-block mt-3" style="background-color: #ff9800; color: #fff; border: none;" type="button"
                 onclick="finalCheckout()">
             <input type="hidden" id="total_pay"
                    value="<?php echo round(floatval($total) + floatval(@$cart['tip_amount']), 2); ?>">
             Pay ₹<span
                 id="pay-total"><?php echo number_format(floatval($total) + floatval(@$cart['tip_amount']), $digit_decimal)  + floatval(@$cart['five_percent_charge'])?></span>
             &rarr;
-        </button>
+        </button> -->
 
+        <a href="{{route('qrcode')}}">
+        <button class="btn btn-block mt-3" style="background-color: #ff9800; color: #fff; border: none;" type="button"
+                onclick="">
+            <input type="hidden" id="total_pay"
+                   value="<?php echo round(floatval($total) + floatval(@$cart['tip_amount']), 2); ?>">
+            Pay ₹<span
+                id="pay-total"><?php echo number_format(floatval($total) + floatval(@$cart['tip_amount']), $digit_decimal)  + floatval(@$cart['five_percent_charge'])?></span>
+            &rarr;
+        </button>
+        </a>
             <?php
             $total_with_tip = floatval($total) + floatval(@$cart['tip_amount']);
         if ($total_with_tip > 599) { ?>

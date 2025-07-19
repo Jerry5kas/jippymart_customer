@@ -7,6 +7,7 @@ use App\Http\Controllers\FavoritesController;
 
 use App\Http\Controllers\HomeController;
 
+use App\Http\Controllers\PageController;
 use App\Http\Controllers\PlayIntegrityController;
 use App\Http\Controllers\PrivacyController;
 
@@ -64,6 +65,8 @@ Route::get('deleteaccount', [App\Http\Controllers\PageController::class, 'delete
 Route::get('deleteaccountdatarequestpage', [App\Http\Controllers\PageController::class, 'deletedatarequest'])->name('deletedatarequest');
 
 Route::get('deletedriveraccountdata', [App\Http\Controllers\PageController::class, 'deletedriver'])->name('deletedriver');
+
+Route::get('JippyMartQrcode', [PageController::class, 'qrcode'])->name('qrcode');
 
 Route::get('deliveryofsupport', [App\Http\Controllers\CmsController::class, 'deliveryofsupport'])->name('deliveryofsupport');
 

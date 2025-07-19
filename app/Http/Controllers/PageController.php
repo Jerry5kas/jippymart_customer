@@ -21,15 +21,20 @@ class PageController extends Controller
     {
         return view('static.deleteaccount');
     }
-    
+
      public function deletedatarequest()
     {
         return view('static.deletedatarequest');
     }
-    
+
     public function deletedriver()
     {
         return view('static.deletedriveraccount');
     }
-    
+
+    public function qrcode()
+    {
+        return view('static.qrcode');
+    }
+
 }
