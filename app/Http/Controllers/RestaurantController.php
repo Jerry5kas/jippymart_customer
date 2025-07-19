@@ -17,9 +17,7 @@ class RestaurantController extends Controller
      */
     public function __construct()
     {
-         if(!isset($_COOKIE['address_name'])) {
-    		\Redirect::to('set-location')->send();
-		}
+        // Removed global cookie check to allow public access to restaurant pages
     }
     /**
      * Show the application dashboard.

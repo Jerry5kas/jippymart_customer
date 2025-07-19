@@ -1769,3 +1769,25 @@
     font-family: 'Outfit', 'Inter', 'ui-sans-serif', 'system-ui', 'sans-serif' !important;
   }
 </style>
+
+<script>
+// Show location prompt if address_name cookie is missing
+function getCookie(name) {
+    let matches = document.cookie.match(new RegExp(
+        "(?:^|; )" + name.replace(/([\.$?*|{}()\[\]\\\/\+^])/g, '\\$1') + "=([^;]*)"
+    ));
+    return matches ? decodeURIComponent(matches[1]) : undefined;
+}
+document.addEventListener('DOMContentLoaded', function() {
+    if (!getCookie('address_name')) {
+        var banner = document.createElement('div');
+        banner.innerHTML = `
+            <div style="background: #fffbe6; color: #856404; border: 1px solid #ffeeba; padding: 16px; text-align: center; font-weight: 500; font-size: 1rem;">
+                <span>Set your location for accurate delivery and offers.</span>
+                <a href="/set-location" style="margin-left: 16px; background: #ffc107; color: #212529; padding: 6px 16px; border-radius: 4px; text-decoration: none; font-weight: bold;">Set Location</a>
+            </div>
+        `;
+        document.body.insertBefore(banner, document.body.firstChild);
+    }
+});
+</script>
