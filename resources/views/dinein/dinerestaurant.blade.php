@@ -352,7 +352,7 @@
 
                         <div class="float-right add-btn ml-auto">
 
-                                <span class="menu-itemimg"><a href="<?php echo route('restaurant').'?id='.$_GET['id']; ?>">
+                                <span class="menu-itemimg"><a href="<?php echo '/restaurant/' . $restaurant_id . '/' . $restaurant_slug . '/' . $zone_slug; ?>">
 
                                     <img onerror="this.onerror=null;this.src=\'' + placeholderImageSrc + '\'" src="img/next.png"></a></span>
 
@@ -2733,11 +2733,7 @@
 
 
 
-            var view_vendor_details = "{{ route('restaurant',':id')}}";
-
-
-
-            view_vendor_details = view_vendor_details.replace(':id', 'id=' + vendor_id_single);
+            var view_vendor_details = "/restaurant/" + val.id + "/" + val.restaurant_slug + "/" + val.zone_slug;
 
 
 

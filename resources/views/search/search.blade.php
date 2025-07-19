@@ -681,8 +681,7 @@
                 }
                 productStoreImage = val.photo;
                 productStoreTitle = val.title;
-                var view_vendor_details = "{{ route('restaurant', ':id') }}";
-                view_vendor_details = view_vendor_details.replace(':id', 'id=' + val.id);
+                var view_vendor_details = "/restaurant/" + val.id + "/" + val.restaurant_slug + "/" + val.zone_slug;
                 var rating = 0;
                 var reviewsCount = 0;
                 var status = 'Closed';

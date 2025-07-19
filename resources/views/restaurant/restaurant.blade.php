@@ -266,10 +266,9 @@
 <script src="https://unpkg.com/geofirestore/dist/geofirestore.js"></script>
 <script src="https://cdn.firebase.com/libs/geofire/5.0.1/geofire.min.js"></script>
 <script type="text/javascript">
-    var vendorOpen = false;
-    var vendorId = "<?php echo isset($_GET['id']) ? $_GET['id'] : ''; ?>";
-    var restaurantNameUrl = "<?php echo isset($restaurantName) ? $restaurantName : ''; ?>";
-    var zoneNameUrl = "<?php echo isset($zoneName) ? $zoneName : ''; ?>";
+    var vendorId = "{{ $restaurantId }}";
+    var restaurantSlug = "{{ $restaurantSlug }}";
+    var zoneSlug = "{{ $zoneSlug }}";
     var takeaway = "<?php echo Session::get('takeawayOption'); ?>";
     var currentCurrency = '';
     var currencyAtRight = false;

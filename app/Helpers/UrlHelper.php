@@ -7,16 +7,14 @@ class UrlHelper
     /**
      * Generate SEO-friendly restaurant URL
      *
-     * @param string $restaurantName
-     * @param string $zoneName
+     * @param string $id
+     * @param string $restaurantSlug
+     * @param string $zoneSlug
      * @return string
      */
-    public static function generateRestaurantUrl($restaurantName, $zoneName)
+    public static function generateRestaurantUrl($id, $restaurantSlug, $zoneSlug)
     {
-        $cleanRestaurantName = self::slugify($restaurantName);
-        $cleanZoneName = self::slugify($zoneName);
-        
-        return route('restaurant.show', [$cleanRestaurantName, $cleanZoneName]);
+        return route('restaurant.show', [$id, $restaurantSlug, $zoneSlug]);
     }
     
     /**

@@ -505,9 +505,7 @@
                 var order_restaurant = '<tr>';
                 var restaurantImage = orderDetails.vendor.photo;
                 if (!inValidVendors.has(orderDetails.vendorID)) {
-                    var view_vendor_details = "{{ route('restaurant', ':id') }}";
-                    view_vendor_details = view_vendor_details.replace(':id', 'id=' + orderDetails
-                        .vendorID);
+                    var view_vendor_details = "/restaurant/" + orderDetails.vendor.id + "/" + orderDetails.vendor.restaurant_slug + "/" + orderDetails.vendor.zone_slug;
                 } else {
                     view_vendor_details = "javascript:void(0)";
                 }

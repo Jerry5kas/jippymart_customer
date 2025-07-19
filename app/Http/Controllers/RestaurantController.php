@@ -32,18 +32,14 @@ class RestaurantController extends Controller
         return view('restaurant.restaurant',['cart'=>$cart]);
     }
 
-    public function show($restaurantName, $zoneName)
+    public function show($id, $restaurantSlug, $zoneSlug)
     {
-        $cart = session()->get('cart', []);
-        
-        // Convert URL slugs back to readable names for display
-        $displayRestaurantName = str_replace('-', ' ', $restaurantName);
-        $displayZoneName = str_replace('-', ' ', $zoneName);
-        
+        // In a real app, fetch restaurant from DB/Firestore using $id
+        // Optionally, check if slugs match and redirect to canonical URL if not
         return view('restaurant.restaurant', [
-            'cart' => $cart,
-            'restaurantName' => $displayRestaurantName,
-            'zoneName' => $displayZoneName
+            'restaurantId' => $id,
+            'restaurantSlug' => $restaurantSlug,
+            'zoneSlug' => $zoneSlug,
         ]);
     }
     public function categoryList()

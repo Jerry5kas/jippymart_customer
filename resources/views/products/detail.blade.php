@@ -601,8 +601,7 @@
                 $("#vendor_latitude").val(vendorDetails.latitude);
                 $("#vendor_longitude").val(vendorDetails.longitude);
                 $("#vendor_image").val(vendorDetails.photo);
-                var view_vendor_details = "{{ route('restaurant', ':id') }}";
-                view_vendor_details = view_vendor_details.replace(':id', 'id=' + vendorID);
+                var view_vendor_details = "/restaurant/" + vendorDetails.id + "/" + vendorDetails.restaurant_slug + "/" + vendorDetails.zone_slug;
                 if (vendorDetails.photo != null && vendorDetails.photo != "") {
                     photo = vendorDetails.photo;
                 } else {

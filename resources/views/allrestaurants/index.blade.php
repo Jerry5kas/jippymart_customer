@@ -239,7 +239,7 @@
                     <?php if (isset($_GET['dinein']) && @$_GET['dinein'] == 1) { ?>
                     var view_vendor_details="{{ route('dyiningrestaurant', ':id')}}";
                     <?php } else { ?>
-                    var view_vendor_details="{{ route('restaurant', ':id')}}";
+                    var view_vendor_details = "/restaurant/" + val.id + "/" + val.restaurant_slug + "/" + val.zone_slug;
                     <?php } ?>
                     view_vendor_details=view_vendor_details.replace(':id','id='+vendor_id_single);
                     count++;

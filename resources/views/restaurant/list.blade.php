@@ -127,8 +127,7 @@
                             }
                         }
                         var vendor_id_single = val.id;
-                        var view_vendor_details = "{{ route('restaurant', ':id') }}";
-                        view_vendor_details = view_vendor_details.replace(':id', 'id=' + vendor_id_single);
+                        var view_vendor_details = "/restaurant/" + val.id + "/" + val.restaurant_slug + "/" + val.zone_slug;
                         count++;
                         html = html + '<div class="col-md-3 pb-3"><div class="list-card bg-white h-100 rounded overflow-hidden position-relative shadow-sm"><div class="list-card-image">';
                         if (val.photo != "" && val.photo != null) {

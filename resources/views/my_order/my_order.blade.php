@@ -350,8 +350,7 @@
                 var view_contact = "{{ route('contact_us') }}";
                 var view_checkout = "{{ route('checkout') }}";
                 if (!inValidVendors.has(val.vendorID)) {
-                    var view_restaurant_details = "{{ route('restaurant', ':id') }}";
-                    view_restaurant_details = view_restaurant_details.replace(':id', 'id=' + val.vendorID);
+                    var view_restaurant_details = "/restaurant/" + val.vendor.id + "/" + val.vendor.restaurant_slug + "/" + val.vendor.zone_slug;
                 } else {
                     view_restaurant_details = "javascript:void(0)";
                 }
@@ -546,8 +545,7 @@
             var view_checkout = "{{ route('checkout') }}";
             var view_contact = "{{ route('contact_us') }}";
             if (!inValidVendors.has(val.vendorID)) {
-                var view_restaurant_details = "{{ route('restaurant', ':id') }}";
-                view_restaurant_details = view_restaurant_details.replace(':id', 'id=' + val.vendorID);
+                var view_restaurant_details = "/restaurant/" + val.vendor.id + "/" + val.vendor.restaurant_slug + "/" + val.vendor.zone_slug;
             } else {
                 view_restaurant_details = "javascript:void(0)";
             }
@@ -749,8 +747,7 @@
             var view_contact = "{{ route('contact_us') }}";
             var view_checkout = "{{ route('checkout') }}";
             if (!inValidVendors.has(val.vendorID)) {
-                var view_restaurant_details = "{{ route('restaurant', ':id') }}";
-                view_restaurant_details = view_restaurant_details.replace(':id', 'id=' + val.vendorID);
+                var view_restaurant_details = "/restaurant/" + val.vendor.id + "/" + val.vendor.restaurant_slug + "/" + val.vendor.zone_slug;
             } else {
                 view_restaurant_details = "javascript:void(0)";
             }
@@ -946,8 +943,7 @@
             var view_contact = "{{ route('contact_us') }}";
             var view_checkout = "{{ route('checkout') }}";
             if (!inValidVendors.has(val.vendorID)) {
-                var view_restaurant_details = "{{ route('restaurant', ':id') }}";
-                view_restaurant_details = view_restaurant_details.replace(':id', 'id=' + val.vendorID);
+                var view_restaurant_details = "/restaurant/" + val.vendor.id + "/" + val.vendor.restaurant_slug + "/" + val.vendor.zone_slug;
             } else {
                 view_restaurant_details = "javascript:void(0)";
             }

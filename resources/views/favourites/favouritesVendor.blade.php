@@ -153,8 +153,7 @@
                     vendor_photo = place_image;
                 }
                 vendor_location = vendor.location;
-                vendor_url = "{{ route('restaurant', ':id') }}";
-                vendor_url = vendor_url.replace(':id', 'id=' + vendor.id);
+                vendor_url = "/restaurant/" + vendor.id + "/" + vendor.restaurant_slug + "/" + vendor.zone_slug;
                 if (vendor.hasOwnProperty('reviewsSum') && vendor.reviewsSum != 0 && vendor.reviewsSum != null && vendor.reviewsSum != '' && vendor
                     .hasOwnProperty('reviewsCount') && vendor.reviewsCount != 0 && vendor.reviewsCount != null && vendor.reviewsCount != '') {
                     rating = (vendor.reviewsSum / vendor.reviewsCount);

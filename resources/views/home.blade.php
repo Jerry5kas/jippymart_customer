@@ -1063,11 +1063,9 @@
                             if (jQuery.inArray(banner.redirect_id, available_stores) === -1) {
                                 redirect_id = '#';
                             }
-                            redirect_id = "{{ route('restaurant', ':id') }}";
-                            redirect_id = redirect_id.replace(':id', 'id=' + banner.redirect_id);
+                            redirect_id = "/restaurant/" + banner.redirect_id + "/" + banner.restaurant_slug + "/" + banner.zone_slug;
                         } else if (banner.redirect_type == "product") {
-                            redirect_id = "{{ route('productDetail', ':id') }}";
-                            redirect_id = redirect_id.replace(':id', banner.redirect_id);
+                            redirect_id = "/productDetail/" + banner.redirect_id;
                         } else if (banner.redirect_type == "external_link") {
                             redirect_id = banner.redirect_id;
                         }
@@ -1092,11 +1090,9 @@
                             if (jQuery.inArray(banner.redirect_id, available_stores) === -1) {
                                 redirect_id = '#';
                             }
-                            redirect_id = "{{ route('restaurant', ':id') }}";
-                            redirect_id = redirect_id.replace(':id', 'id=' + banner.redirect_id);
+                            redirect_id = "/restaurant/" + banner.redirect_id + "/" + banner.restaurant_slug + "/" + banner.zone_slug;
                         } else if (banner.redirect_type == "product") {
-                            redirect_id = "{{ route('productDetail', ':id') }}";
-                            redirect_id = redirect_id.replace(':id', banner.redirect_id);
+                            redirect_id = "/productDetail/" + banner.redirect_id;
                         } else if (banner.redirect_type == "external_link") {
                             redirect_id = banner.redirect_id;
                         }
@@ -1524,8 +1520,7 @@
                 var statusclass = status.toLowerCase() === 'open' ? 'open' : 'closed';
 
                 var vendor_id_single = val.id;
-                var view_vendor_details = "{{ route('restaurant', ':id') }}";
-                view_vendor_details = view_vendor_details.replace(':id', 'id=' + vendor_id_single);
+                var view_vendor_details = "/restaurant/" + val.id + "/" + val.restaurant_slug + "/" + val.zone_slug;
 
                 getMinDiscount(val.id);
                 html = html +
@@ -1603,8 +1598,7 @@
             for (listval of alldata) {
                 var val = listval;
                 var category_id = val.id;
-                var category_route = "{{ route('RestaurantsbyCategory', [':id']) }}";
-                category_route = category_route.replace(':id', category_id);
+                var category_route = "/RestaurantsbyCategory/" + category_id;
                 if (val.photo != "" && val.photo != null) {
                     photo = val.photo;
                 } else {
@@ -1712,8 +1706,7 @@
                     }
                 }
                 var vendor_id_single = val.id;
-                var view_vendor_details = "{{ route('restaurant', ':id') }}";
-                view_vendor_details = view_vendor_details.replace(':id', 'id=' + vendor_id_single);
+                var view_vendor_details = "/restaurant/" + vendor_id_single + "/" + val.restaurant_slug + "/" + val.zone_slug;
                 count++;
                 getMinDiscount(val.id);
                 html = html +
@@ -1763,8 +1756,7 @@
         alldata.forEach((listval) => {
             var val = listval;
             var category_id = val.id;
-            var trending_route = "{{ route('RestaurantsbyCategory', [':id']) }}";
-            trending_route = trending_route.replace(':id', category_id);
+            var trending_route = "/RestaurantsbyCategory/" + category_id;
             if (val.photo != "" && val.photo != null) {
                 photo = val.photo;
             } else {
@@ -1910,11 +1902,7 @@
         alldata.forEach((listval) => {
             var val = listval;
             var vendor_id_single = val.id;
-            var view_vendor_details = "";
-            if (vendor_id_single) {
-                view_vendor_details = "{{ route('restaurant', ':id') }}";
-                view_vendor_details = view_vendor_details.replace(':id', 'id=' + vendor_id_single);
-            }
+            var view_vendor_details = "/restaurant/" + val.id + "/" + val.restaurant_slug + "/" + val.zone_slug;
             var rating = 0;
             var reviewsCount = 0;
             if (val.hasOwnProperty('reviewsSum') && val.reviewsSum != 0 && val.reviewsSum != null && val
@@ -2013,8 +2001,7 @@
         await Promise.all(alldata.map(async (listval) => {
             var val = listval;
             var vendor_id_single = val.id;
-            var view_vendor_details = "{{ route('productDetail', ':id') }}";
-            view_vendor_details = view_vendor_details.replace(':id', vendor_id_single);
+            var view_vendor_details = "/productDetail/" + vendor_id_single;
             // Compute rating and reviews
             let rating = val.reviewsSum && val.reviewsCount ? (val.reviewsSum / val.reviewsCount)
                 .toFixed(1) : 0;
@@ -2188,8 +2175,7 @@
                     }
                 }
                 var vendor_id_single = val.id;
-                var view_vendor_details = "{{ route('restaurant', ':id') }}";
-                view_vendor_details = view_vendor_details.replace(':id', 'id=' + vendor_id_single);
+                var view_vendor_details = "/restaurant/" + vendor_id_single + "/" + val.restaurant_slug + "/" + val.zone_slug;
                 count++;
                 getMinDiscount(val.id);
                 html = html +
@@ -2287,8 +2273,7 @@
 
 
             let vendor_id_single = val.id;
-            let view_vendor_details = "{{ route('productDetail', ':id') }}".replace(':id',
-                vendor_id_single);
+            let view_vendor_details = "/productDetail/" + vendor_id_single;
             // Compute rating and reviews
             let rating = val.reviewsSum && val.reviewsCount ? (val.reviewsSum / val.reviewsCount)
                 .toFixed(1) : 0;
@@ -2421,11 +2406,7 @@
                     statusclass = "open";
                 }
                 var vendor_id_single = val.resturant_id;
-                var view_vendor_details = "";
-                if (vendor_id_single) {
-                    view_vendor_details = "{{ route('restaurant', ':id') }}";
-                    view_vendor_details = view_vendor_details.replace(':id', 'id=' + vendor_id_single);
-                }
+                var view_vendor_details = "/restaurant/" + vendor_id_single + "/" + val.restaurant_slug + "/" + val.zone_slug;
                 html = html +
                     '<div class="col-md-3 pro-list"><div class="list-card position-relative"><div class="list-card-image">';
                 if (val.image != "" && val.image != null) {
@@ -2498,8 +2479,7 @@
                         rating + ' (' + reviewsCount + ')</span></div>';
                 }
 
-                var vendorLink = "{{ route('restaurant', ':id') }}";
-                vendorLink = vendorLink.replace(':id', 'id=' + vendorData.id);
+                var vendorLink = "/restaurant/" + vendorData.id + "/" + vendorData.restaurant_slug + "/" + vendorData.zone_slug;
 
                 var itemsObject = [];
 
@@ -2635,7 +2615,7 @@
                 });
                 advlength = filteredAds.length;
                 for (const data of filteredAds) {
-                    const view_vendor_details = `{{ route('restaurant', ':id') }}`.replace(':id', 'id=' + data.vendorId);
+                    const view_vendor_details = "/restaurant/" + data.vendorId + "/" + data.restaurant_slug + "/" + data.zone_slug;
 
                     if (data.type === 'restaurant_promotion') {
                         html += `<div id="profile-preview-box" class="cat-item profile-preview-box pt-4"><div class=" profile-preview-box-inner">
@@ -2864,8 +2844,7 @@
                 var statusclass = status.toLowerCase() === 'open' ? 'open' : 'closed';
 
                 var vendor_id_single = val.id;
-                var view_vendor_details = "{{ route('restaurant', ':id') }}";
-                view_vendor_details = view_vendor_details.replace(':id', 'id=' + vendor_id_single);
+                var view_vendor_details = "/restaurant/" + vendor_id_single + "/" + val.restaurant_slug + "/" + val.zone_slug;
 
                 getMinDiscount(val.id);
                 html = html +

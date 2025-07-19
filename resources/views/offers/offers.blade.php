@@ -133,8 +133,7 @@
                 html = html + '<div class="media-body"><h6 class="date">Expires At: '+date+' '+time+'</h6><span class="offercoupan"><p class="mb-0 badge">'+val.code+'</p><a href="javascript:void(0)" onclick="copyToClipboard(`'+val.code+'`)"><i class="fa fa-copy"></i></a></span><p class="text-dark offer-des mt-2">'+val.description+'</p>';
                	if(val.hasOwnProperty('resturant_id') && val.resturant_id != ''){
                		var restaurantName = offerRestaurant(val.resturant_id);
-	              	var view_vendor_route = "{{ route('restaurant',':id')}}";
-	              	view_vendor_route = view_vendor_route.replace(':id', 'id='+val.resturant_id);
+	              	var view_vendor_route = "/restaurant/" + val.resturant_id + "/" + val.restaurant_slug + "/" + val.zone_slug;
 	              	html = html +"<p class='text-dark mb-0 offer-address'></span><a class='restaurant_"+val.resturant_id+"' href='"+view_vendor_route+"'></a></p>";
 	            }else{
 	            html = html +"<p class='text-light mb-0 app-off-btn'><a sttyle='pointer-events: none;cursor: default;'>App Offer</a></p>";

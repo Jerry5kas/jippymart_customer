@@ -313,8 +313,7 @@
                 } else {
                     photo = placeholderImageSrc;
                 }
-                var view_vendor_details = "{{ route('restaurant', ':id') }}";
-                view_vendor_details = view_vendor_details.replace(':id', 'id=' + val.id);
+                var view_vendor_details = "/restaurant/" + val.id + "/" + val.restaurant_slug + "/" + val.zone_slug;
                 html = html + '<div class="member-plan position-absolute"><span class="badge badge-dark ' +
                     statusclass + '">' + status + '</span></div><div class="offer-icon position-absolute free-delivery-'+val.id+'"></div><a href="' + view_vendor_details +
                     '"><img onerror="this.onerror=null;this.src=\'' + placeholderImage + '\'" alt="#" src="' +

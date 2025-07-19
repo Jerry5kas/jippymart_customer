@@ -99,7 +99,7 @@ Route::get('categories', [App\Http\Controllers\RestaurantController::class, 'cat
 Route::get('category/{id}', [App\Http\Controllers\RestaurantController::class, 'categoryDetail'])->name('category_detail');
 
 Route::get('restaurant', [App\Http\Controllers\RestaurantController::class, 'index'])->name('restaurant');
-Route::get('restaurant/{restaurantName}/{zoneName}', [App\Http\Controllers\RestaurantController::class, 'show'])->name('restaurant.show');
+Route::get('restaurant/{id}/{restaurant_slug}/{zone_slug}', [App\Http\Controllers\RestaurantController::class, 'show'])->name('restaurant.show');
 
 Route::get('cart', [App\Http\Controllers\ProductController::class, 'cart'])->name('cart');
 
