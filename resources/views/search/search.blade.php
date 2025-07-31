@@ -63,7 +63,7 @@
                 </li>
             </ul>
 
-            <!-- No Results Message -->
+            <!-- No Results Message-->
             <div class="text-center py-5 not_found_div" style="display:none">
                 <p class="h4 mb-4"><i class="feather-search bg-primary rounded p-2"></i></p>
                 <p class="font-weight-bold text-dark h5">{{ trans('lang.nothing_found') }}</p>
@@ -76,13 +76,37 @@
                         <span class="popular-tag" data-search="pasta">Pasta</span>
                     </div>
                 </div>
-            </div>
+            </div> 
 
             <!-- Search Results Content -->
             <div class="tab-content" id="myTabContent">
                 <div class="tab-pane fade show active" id="home" role="tabpanel" aria-labelledby="home-tab">
                     <div class="container mt-4 mb-4 p-0">
                         <div id="append_list1" class="res-search-list-1"></div>
+                        
+                        <!-- Pagination Controls -->
+                        <div class="pagination-wrapper mt-4" id="pagination-wrapper" style="display: none;">
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="pagination-info">
+                                            <span id="pagination-info">Showing 0 of 0 restaurants</span>
+                                        </div>
+                                        <div class="pagination-controls">
+                                            <button type="button" id="prev-page" class="btn btn-outline-dark btn-sm" disabled>
+                                                <i class="feather-chevron-left"></i> Previous
+                                            </button>
+                                            <span class="mx-3">
+                                                Page <span id="current-page">1</span> of <span id="total-pages">1</span>
+                                            </span>
+                                            <button type="button" id="next-page" class="btn btn-outline-dark btn-sm">
+                                                Next <i class="feather-chevron-right"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -99,6 +123,30 @@
                 <div class="tab-pane fade show active" id="products" role="tabpanel" aria-labelledby="products-tab">
                     <div class="container mt-4 mb-4 p-0">
                         <div id="append_list2" class="res-search-list-1"></div>
+                        
+                        <!-- Products Pagination Controls -->
+                        <div class="pagination-wrapper mt-4" id="products-pagination-wrapper" style="display: none;">
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="pagination-info">
+                                            <span id="products-pagination-info">Showing 0 of 0 products</span>
+                                        </div>
+                                        <div class="pagination-controls">
+                                            <button type="button" id="products-prev-page" class="btn btn-outline-dark btn-sm" disabled>
+                                                <i class="feather-chevron-left"></i> Previous
+                                            </button>
+                                            <span class="mx-3">
+                                                Page <span id="products-current-page">1</span> of <span id="products-total-pages">1</span>
+                                            </span>
+                                            <button type="button" id="products-next-page" class="btn btn-outline-dark btn-sm">
+                                                Next <i class="feather-chevron-right"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -282,6 +330,100 @@
      width: 3rem;
      height: 3rem;
  }
+
+ /* Pagination Styles - Updated for white background and black text */
+ .pagination-wrapper {
+     background: #ffffff;
+     padding: 20px;
+     border-radius: 8px;
+     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+     margin-top: 30px;
+     border: 1px solid #e9ecef;
+ }
+
+ .pagination-controls {
+     display: flex;
+     align-items: center;
+     gap: 10px;
+ }
+
+ .pagination-controls button {
+     min-width: 100px;
+     padding: 8px 16px;
+     border-radius: 6px;
+     font-weight: 500;
+     transition: all 0.3s ease;
+     background: #ffffff;
+     color: #000000;
+     border: 2px solid #000000;
+ }
+
+ .pagination-controls button:hover:not(:disabled) {
+     background: #000000;
+     color: #ffffff;
+     transform: translateY(-1px);
+     box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+ }
+
+ .pagination-controls button:disabled {
+     opacity: 0.5;
+     cursor: not-allowed;
+     background: #f8f9fa;
+     color: #6c757d;
+     border-color: #dee2e6;
+ }
+
+ .pagination-info {
+     font-size: 14px;
+     color: #000000;
+     font-weight: 500;
+ }
+
+ /* Mobile Responsive Pagination */
+ @media (max-width: 768px) {
+     .pagination-wrapper {
+         padding: 15px;
+     }
+
+     .pagination-controls {
+         flex-direction: column;
+         gap: 15px;
+     }
+
+     .pagination-controls button {
+         width: 100%;
+         min-width: unset;
+     }
+
+     .pagination-info {
+         text-align: center;
+         margin-bottom: 10px;
+     }
+ }
+
+ /* Dark Mode Support for Pagination */
+ @media (prefers-color-scheme: dark) {
+     .pagination-wrapper {
+         background: #ffffff;
+         box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+         border-color: #e9ecef;
+     }
+
+     .pagination-info {
+         color: #000000;
+     }
+
+     .pagination-controls button {
+         background: #ffffff;
+         color: #000000;
+         border-color: #000000;
+     }
+
+     .pagination-controls button:hover:not(:disabled) {
+         background: #000000;
+         color: #ffffff;
+     }
+ }
 </style>
 
 @include('layouts.footer')
@@ -327,6 +469,20 @@
     var append_list2 = document.getElementById('append_list2');
     var priceData = {};
     var subscriptionModel = localStorage.getItem('subscriptionModel');
+    
+    // Pagination variables
+    var pagesize = 20; // Number of restaurants/products per page
+    var currentPage = 1;
+    var totalPages = 1;
+    var totalRestaurants = 0;
+    var filteredVendorsData = []; // Store filtered vendors data
+    var paginationEnabled = true; // Toggle for pagination
+    
+    // Products pagination variables
+    var productsCurrentPage = 1;
+    var productsTotalPages = 1;
+    var totalProducts = 0;
+    var filteredProductsData = []; // Store filtered products data
 
     async function getProductList() {
         var vendorIds = [];
@@ -624,26 +780,51 @@
             });
             $('#myTab2').hide();
         }
-        var html_keypress = '';
-        html_keypress = buildHTML(vendors);
-        product_keypress = buildProductHTML(filter_product);
+        // Initialize pagination with filtered data
+        filteredVendorsData = vendors;
+        totalRestaurants = vendors.length;
+        totalPages = Math.ceil(totalRestaurants / pagesize);
+        currentPage = 1;
+
+        // Initialize products pagination
+        filteredProductsData = filter_product;
+        totalProducts = filter_product.length;
+        productsTotalPages = Math.ceil(totalProducts / pagesize);
+        productsCurrentPage = 1;
         
         // Hide loading state
         $('#search-loading').hide();
         
-        if (html_keypress == '' && product_keypress == '') {
+        if (vendors.length === 0 && filter_product.length === 0) {
             $(".not_found_div").show();
             append_list.innerHTML = '';
             append_list2.innerHTML = '';
             $(".restaurant_counts").text('{{ trans('lang.stores') }} (0)');
             $(".products_counts").text('{{ trans('lang.products') }} (0)');
             $("#data-table_processing").hide();
-        } else if (html_keypress != '' || product_keypress != '') {
+            
+            // Hide pagination controls
+            $('#pagination-wrapper').hide();
+            $('#products-pagination-wrapper').hide();
+        } else {
             $(".not_found_div").hide();
-            append_list.innerHTML = '';
-            append_list.innerHTML = html_keypress;
-            append_list2.innerHTML = '';
-            append_list2.innerHTML = product_keypress;
+            
+            // Initialize and display pagination for restaurants
+            if (vendors.length > 0) {
+                initializePagination();
+                displayCurrentPage();
+            } else {
+                $('#pagination-wrapper').hide();
+            }
+            
+            // Initialize and display pagination for products
+            if (filter_product.length > 0) {
+                initializeProductsPagination();
+                displayCurrentProductsPage();
+            } else {
+                $('#products-pagination-wrapper').hide();
+            }
+            
             $("#data-table_processing").hide();
             
             // Show/hide popular searches based on search results
@@ -652,7 +833,7 @@
             } else {
                 $('#popular-searches').show();
             }
-        } else {}
+        }
         
         // Update URL with search query
         updateSearchURL(foodsearch);
@@ -888,4 +1069,327 @@
             })
         }, 3000);
     }
+
+    // ==================== PAGINATION FUNCTIONS ====================
+
+    // Function to initialize pagination for restaurants
+    function initializePagination() {
+        if (!paginationEnabled) {
+            $('#pagination-wrapper').hide();
+            return;
+        }
+
+        $('#pagination-wrapper').show();
+        
+        // Reset pagination state
+        currentPage = 1;
+        updatePaginationControls();
+    }
+
+    // Function to initialize pagination for products
+    function initializeProductsPagination() {
+        if (!paginationEnabled) {
+            $('#products-pagination-wrapper').hide();
+            return;
+        }
+
+        $('#products-pagination-wrapper').show();
+        
+        // Reset pagination state
+        productsCurrentPage = 1;
+        updateProductsPaginationControls();
+    }
+
+    // Function to update pagination controls for restaurants
+    function updatePaginationControls() {
+        const startIndex = (currentPage - 1) * pagesize + 1;
+        const endIndex = Math.min(currentPage * pagesize, totalRestaurants);
+        
+        $('#pagination-info').text(`Showing ${startIndex}-${endIndex} of ${totalRestaurants} restaurants`);
+        $('#current-page').text(currentPage);
+        $('#total-pages').text(totalPages);
+        
+        // Update button states
+        $('#prev-page').prop('disabled', currentPage === 1);
+        $('#next-page').prop('disabled', currentPage === totalPages);
+    }
+
+    // Function to update pagination controls for products
+    function updateProductsPaginationControls() {
+        const startIndex = (productsCurrentPage - 1) * pagesize + 1;
+        const endIndex = Math.min(productsCurrentPage * pagesize, totalProducts);
+        
+        $('#products-pagination-info').text(`Showing ${startIndex}-${endIndex} of ${totalProducts} products`);
+        $('#products-current-page').text(productsCurrentPage);
+        $('#products-total-pages').text(productsTotalPages);
+        
+        // Update button states
+        $('#products-prev-page').prop('disabled', productsCurrentPage === 1);
+        $('#products-next-page').prop('disabled', productsCurrentPage === productsTotalPages);
+    }
+
+    // Function to go to specific page for restaurants
+    function goToPage(page) {
+        if (page < 1 || page > totalPages) return;
+        
+        currentPage = page;
+        displayCurrentPage();
+        updatePaginationControls();
+    }
+
+    // Function to go to specific page for products
+    function goToProductsPage(page) {
+        if (page < 1 || page > productsTotalPages) return;
+        
+        productsCurrentPage = page;
+        displayCurrentProductsPage();
+        updateProductsPaginationControls();
+    }
+
+    // Function to display current page for restaurants
+    function displayCurrentPage() {
+        const startIndex = (currentPage - 1) * pagesize;
+        const endIndex = startIndex + pagesize;
+        const pageData = filteredVendorsData.slice(startIndex, endIndex);
+        
+        const html = buildHTMLFromArray(pageData);
+        append_list.innerHTML = html;
+        
+        // Update delivery badges
+        pageData.forEach(vendor => {
+            checkSelfDeliveryForVendor(vendor.id);
+        });
+    }
+
+    // Function to display current page for products
+    function displayCurrentProductsPage() {
+        const startIndex = (productsCurrentPage - 1) * pagesize;
+        const endIndex = startIndex + pagesize;
+        const pageData = filteredProductsData.slice(startIndex, endIndex);
+        
+        const html = buildProductHTMLFromArray(pageData);
+        append_list2.innerHTML = html;
+    }
+
+    // Function to build HTML from array for restaurants (for pagination)
+    function buildHTMLFromArray(alldata) {
+        var html = '';
+        var count = 0;
+        $(".restaurant_counts").text('{{ trans('lang.stores') }} (' + alldata.length + ')');
+        alldata.forEach((listval) => {
+            var val = listval;
+            if (val.vendorID != '' && val.title != '') {
+                count++;
+                if (count == 1) {
+                    html = html + '<div class="row">';
+                }
+                productStoreImage = val.photo;
+                productStoreTitle = val.title;
+                var view_vendor_details = "/restaurant/" + val.id + "/" + val.restaurant_slug + "/" + val.zone_slug;
+                var rating = 0;
+                var reviewsCount = 0;
+                var status = 'Closed';
+                var statusclass = "closed";
+                var days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                var currentdate = new Date();
+                var currentDay = days[currentdate.getDay()];
+                hour = currentdate.getHours();
+                minute = currentdate.getMinutes();
+                if (hour < 10) {
+                    hour = '0' + hour
+                }
+                if (minute < 10) {
+                    minute = '0' + minute
+                }
+                var currentHours = hour + ':' + minute;
+                if (val.hasOwnProperty('workingHours')) {
+                    for (i = 0; i < val.workingHours.length; i++) {
+                        var day = val.workingHours[i]['day'];
+                        if (val.workingHours[i]['day'] == currentDay) {
+                            if (val.workingHours[i]['timeslot'].length != 0) {
+                                for (j = 0; j < val.workingHours[i]['timeslot'].length; j++) {
+                                    var timeslot = val.workingHours[i]['timeslot'][j];
+                                    var from = timeslot[`from`];
+                                    var to = timeslot[`to`];
+                                    if (currentHours >= from && currentHours <= to) {
+                                        status = 'Open';
+                                        statusclass = "open";
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                if (val.hasOwnProperty('reviewsSum') && val.reviewsSum != 0 && val.reviewsSum != '' && val.reviewsSum != null && val.hasOwnProperty(
+                        'reviewsCount') && val.reviewsCount != 0 && val.reviewsCount != '' && val.reviewsCount != null) {
+                    rating = (val.reviewsSum / val.reviewsCount);
+                    reviewsCount = val.reviewsCount;
+                    rating = Math.round(rating * 10) / 10;
+                    rating = parseInt(rating);
+                }
+                if (productStoreImage == '' && productStoreImage == null) {
+                    productStoreImage = placeholderImage;
+                }
+                var ratinghtml = '<ul class="rating-stars list-unstyled"><li>';
+                if (rating >= 1) {
+                    ratinghtml = ratinghtml + '<i class="feather-star star_active"></i>';
+                } else {
+                    ratinghtml = ratinghtml + '<i class="feather-star"></i>';
+                }
+                if (rating >= 2) {
+                    ratinghtml = ratinghtml + '<i class="feather-star star_active"></i>';
+                } else {
+                    ratinghtml = ratinghtml + '<i class="feather-star"></i>';
+                }
+                if (rating >= 3) {
+                    ratinghtml = ratinghtml + '<i class="feather-star star_active"></i>';
+                } else {
+                    ratinghtml = ratinghtml + '<i class="feather-star"></i>';
+                }
+                if (rating >= 4) {
+                    ratinghtml = ratinghtml + '<i class="feather-star star_active"></i>';
+                } else {
+                    ratinghtml = ratinghtml + '<i class="feather-star"></i>';
+                }
+                if (rating == 5) {
+                    ratinghtml = ratinghtml + '<i class="feather-star star_active"></i>';
+                } else {
+                    ratinghtml = ratinghtml + '<i class="feather-star"></i>';
+                }
+                ratinghtml = ratinghtml + '</li></ul>';
+                html = html +
+                    '<div class="col-md-3 pb-3"><div class="list-card bg-white h-100 rounded overflow-hidden position-relative shadow-sm"><div class="list-card-image">';
+                html = html +
+                    '<div class="star position-absolute"><span class="badge badge-success"><i class="feather-star"></i>' +
+                    rating + ' (' + reviewsCount + '+)</span></div>';
+                html = html + '<div class="member-plan position-absolute"><span class="badge badge-dark ' +
+                    statusclass + '">' + status + '</span></div><div class=""><div class="offer-icon position-absolute free-delivery-' + val.id + '"></div><a href="' + view_vendor_details +
+                    '"><img onerror="this.onerror=null;this.src=\'' + placeholderImage + '\'" alt="#" src="' +
+                    productStoreImage + '" class="img-fluid item-img w-100"></a></div>';
+                html = html + '</div>';
+                html = html + '<div class="p-3 position-relative">';
+                html = html + '<div class="list-card-body" ><h6 class="mb-1"><a href="' + view_vendor_details +
+                    '" class="text-black">' + productStoreTitle +
+                    '</a></h6><p class="text-gray mb-3"><span class="fa fa-map-marker"></span> ' + val
+                    .location + '</p>' + ratinghtml + '</div>';
+                html = html + '</div></div></div>';
+                if (count == 4) {
+                    html = html + '</div>';
+                    count = 0;
+                }
+            }
+        });
+        return html;
+    }
+
+    // Function to build HTML from array for products (for pagination)
+    function buildProductHTMLFromArray(allProductdata) {
+        var html = '';
+        var count = 0;
+        $(".products_counts").text('{{ trans('lang.products') }} (' + allProductdata.length + ')');
+        if (allProductdata != undefined && allProductdata != '') {
+            $('#myTab2').show();
+            
+            // Add header for products section
+            html += '<div class="row mb-4"><div class="col-12"><h5 class="text-dark font-weight-bold"><i class="feather-shopping-bag mr-2 text-primary"></i>Food Items (' + allProductdata.length + ')</h5></div></div>';
+            
+            allProductdata.forEach((listval) => {
+                count++;
+                var val = listval;
+                if (count == 1) {
+                    html = html + '<div class="row">';
+                }
+                var product_id_single = val.id;
+                var view_product_details = "{{ route('productDetail', ':id') }}";
+                view_product_details = view_product_details.replace(':id', product_id_single);
+                var rating = 0;
+                var reviewsCount = 0;
+                if (val.hasOwnProperty('reviewsSum') && val.reviewsSum != 0 && val.reviewsSum != null && val.reviewsSum != '' && val.hasOwnProperty(
+                        'reviewsCount') && val.reviewsCount != 0 && val.reviewsCount != null && val.reviewsCount != '') {
+                    rating = (val.reviewsSum / val.reviewsCount);
+                    rating = Math.round(rating * 10) / 10;
+                    reviewsCount = val.reviewsCount;
+                }
+                html = html +
+                    '<div class="col-md-3 product-list"><div class="list-card position-relative"><div class="list-card-image">';
+                if (val.photo != "" && val.photo != null) {
+                    photo = val.photo;
+                } else {
+                    photo = placeholderImage;
+                }
+                html = html + '<a href="' + view_product_details +
+                    '"><img onerror="this.onerror=null;this.src=\'' + placeholderImage + '\'" alt="#" src="' +
+                    photo +
+                    '" class="img-fluid item-img w-100"></a></div><div class="py-2 position-relative"><div class="list-card-body position-relative"><h6 class="mb-1"><a href="' +
+                    view_product_details + '" class="arv-title">' + val.name + '</a></h6>';
+                
+                // Add restaurant information
+                if (val.vendorID) {
+                    const vendor = vendordata.find(v => v.id === val.vendorID);
+                    if (vendor) {
+                        html += '<p class="text-muted small mb-1"><i class="feather-map-pin mr-1"></i>' + vendor.title + '</p>';
+                    }
+                }
+                let final_price = priceData[val.id];
+
+                if (val.disPrice && val.disPrice !== '0' && !val.item_attribute) {
+                    let or_price = getProductFormattedPrice(parseFloat(final_price.price));
+                    let dis_price = getProductFormattedPrice(parseFloat(final_price.dis_price));
+                    html = html + '<span class="text-gray mb-0 pro-price ">' + dis_price + '  <s>' + or_price +
+                        '</s></span>';
+                } else if (val.item_attribute && val.item_attribute.variants?.length > 0) {
+                    let variantPrices = val.item_attribute.variants.map(v => v.variant_price);
+                    let minPrice = Math.min(...variantPrices);
+                    let maxPrice = Math.max(...variantPrices);
+                    let or_price = minPrice !== maxPrice ?
+                        `${getProductFormattedPrice(final_price.min)} - ${getProductFormattedPrice(final_price.max)}` :
+                        getProductFormattedPrice(final_price.max);
+                    html = html + '<span class="text-gray mb-0 pro-price ">' + or_price + '</span>';
+                } else {
+                    let or_price = getProductFormattedPrice(final_price.price);
+                    html = html + '<span class="text-gray mb-0 pro-price ">' + or_price + '</span>';
+                }
+                html = html +
+                    '<div class="star position-relative"><span class="badge badge-success "><i class="feather-star"></i>' +
+                    rating + ' (' + reviewsCount + ')</span></div>';
+                html = html + '</div>';
+                html = html + '</div></div></div>';
+                if (count == 4) {
+                    html = html + '</div>';
+                    count = 0;
+                }
+            });
+            html = html + '</div>';
+        }
+        return html;
+    }
+
+    // Event handlers for pagination
+    $(document).ready(function() {
+        // Restaurant pagination
+        $('#prev-page').on('click', function() {
+            if (currentPage > 1) {
+                goToPage(currentPage - 1);
+            }
+        });
+
+        $('#next-page').on('click', function() {
+            if (currentPage < totalPages) {
+                goToPage(currentPage + 1);
+            }
+        });
+
+        // Products pagination
+        $('#products-prev-page').on('click', function() {
+            if (productsCurrentPage > 1) {
+                goToProductsPage(productsCurrentPage - 1);
+            }
+        });
+
+        $('#products-next-page').on('click', function() {
+            if (productsCurrentPage < productsTotalPages) {
+                goToProductsPage(productsCurrentPage + 1);
+            }
+        });
+    });
 </script>

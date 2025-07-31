@@ -191,8 +191,33 @@
                     </div>
                 </div>
                 <div id="all_stores"></div>
-                <div class="row fu-loadmore-btn">
-                    <a class="page-link loadmore-btn" href="javascript:void(0);" onclick="moreload()" data-dt-idx="0" tabindex="0" id="loadmore" style="display:none">{{ trans('lang.see') }} {{ trans('lang.more') }}</a>
+                <!-- Pagination Controls -->
+                <div class="pagination-wrapper mt-4" id="pagination-wrapper" style="display: none;">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="pagination-info">
+                                    <span id="pagination-info">Showing 0 of 0 restaurants</span>
+                                </div>
+                                <div class="pagination-controls">
+                                    <button type="button" id="prev-page" class="btn btn-outline-none btn-sm" disabled>
+                                        <i class="feather-chevron-left"></i> Previous
+                                    </button>
+                                    <span class="mx-3">
+                                        Page <span id="current-page">1</span> of <span id="total-pages">1</span>
+                                    </span>
+                                    <button type="button" id="next-page" class="btn btn-outline-primary btn-sm">
+                                        Next <i class="feather-chevron-right"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Load More Button (for backward compatibility) -->
+                <div class="row fu-loadmore-btn" id="loadmore-wrapper" style="display: none;">
+                    <a class="page-link loadmore-btn" href="javascript:void(0);" onclick="loadMoreRestaurants()" data-dt-idx="0" tabindex="0" id="loadmore">{{ trans('lang.see') }} {{ trans('lang.more') }}</a>
                     <p class="text-danger" style="display:none;" id="noMoreCoupons">{{ trans('lang.no_results') }}</p>
                 </div>
             </div>
@@ -655,6 +680,100 @@
         box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         opacity: 0.85;
     }
+
+   /* Pagination Styles - Updated for white background and black text */
+ .pagination-wrapper {
+     background: #ffffff;
+     padding: 20px;
+     border-radius: 8px;
+     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+     margin-top: 30px;
+     border: 1px solid #e9ecef;
+ }
+
+ .pagination-controls {
+     display: flex;
+     align-items: center;
+     gap: 10px;
+ }
+
+ .pagination-controls button {
+     min-width: 100px;
+     padding: 8px 16px;
+     border-radius: 6px;
+     font-weight: 500;
+     transition: all 0.3s ease;
+     background: #ffffff;
+     color: #000000;
+     border: 2px solid #000000;
+ }
+
+ .pagination-controls button:hover:not(:disabled) {
+     background: #ffffff;
+     color: #000000;
+     transform: translateY(-1px);
+     box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+ }
+
+ .pagination-controls button:disabled {
+     opacity: 0.5;
+     cursor: not-allowed;
+     background: #f8f9fa;
+     color: #000000;
+     border-color: #dee2e6;
+ }
+
+ .pagination-info {
+     font-size: 14px;
+     color: #000000;
+     font-weight: 500;
+ }
+
+ /* Mobile Responsive Pagination */
+ @media (max-width: 768px) {
+     .pagination-wrapper {
+         padding: 15px;
+     }
+
+     .pagination-controls {
+         flex-direction: column;
+         gap: 15px;
+     }
+
+     .pagination-controls button {
+         width: 100%;
+         min-width: unset;
+     }
+
+     .pagination-info {
+         text-align: center;
+         margin-bottom: 10px;
+     }
+ }
+
+ /* Dark Mode Support for Pagination */
+ @media (prefers-color-scheme: dark) {
+     .pagination-wrapper {
+         background: #ffffff;
+         box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+         border-color: #e9ecef;
+     }
+
+     .pagination-info {
+         color: #000000;
+     }
+
+     .pagination-controls button {
+         background: #ffffff;
+         color: #000000;
+         border-color: #000000;
+     }
+
+     .pagination-controls button:hover:not(:disabled) {
+         background: #000000;
+         color: #ffffff;
+     }
+ }
 </style>
 <script src="{{ asset('js/dist/zuck.min.js') }}"></script>
 <script src="{{ asset('js/geofirestore.js') }}"></script>
@@ -680,11 +799,18 @@
     var currencyAtRight = false;
     var storyEnabled = false;
     var VendorNearBy = '';
-    var pagesize = 12;
+    var pagesize = 20;
     var offest = 1;
     var end = null;
     var endarray = [];
     var start = null;
+    // Pagination variables
+    var currentPage = 1;
+    var totalPages = 1;
+    var totalRestaurants = 0;
+    var allVendorsData = []; // Store all vendors data
+    var filteredVendorsData = []; // Store filtered vendors data
+    var paginationEnabled = true; // Toggle for pagination vs load more
     var nearByVendorsForStory = [];
     var vendorIds = [];
     var priceData = {};
@@ -1258,19 +1384,25 @@
                     }
                 });
 
-                // Show vendors immediately
-                var html = buildAllStoresHTMLFromArray(vendors);
-                var all_stores = document.getElementById('all_stores');
-                all_stores.innerHTML = html;
-
                 // Calculate prices in the background
                 vendors.forEach(async (vendor) => {
                     vendor.minPrice = await getVendorMinPrice(vendor);
                 });
 
+                // Initialize pagination with all vendors
+                filteredVendorsData = vendors;
+                totalRestaurants = vendors.length;
+                totalPages = Math.ceil(totalRestaurants / pagesize);
+                currentPage = 1;
+
+                // Initialize pagination system
+                initializePagination();
+                
+                // Display first page
+                displayCurrentPage();
+
                 start = snapshots.docs[snapshots.docs.length - 1];
                 endarray.push(snapshots.docs[0]);
-                $('#loadmore').hide();
             } else {
                 $(".all-stores-section").remove();
                 $(".new-arrivals-section").remove();
@@ -3260,5 +3392,247 @@
     });
 
     window.randomizedRatings = {};
+
+    // ==================== PAGINATION FUNCTIONS ====================
+
+    // Function to initialize pagination
+    function initializePagination() {
+        if (!paginationEnabled) {
+            $('#pagination-wrapper').hide();
+            $('#loadmore-wrapper').show();
+            return;
+        }
+
+        $('#pagination-wrapper').show();
+        $('#loadmore-wrapper').hide();
+        
+        // Reset pagination state
+        currentPage = 1;
+        updatePaginationControls();
+    }
+
+    // Function to update pagination controls
+    function updatePaginationControls() {
+        const startIndex = (currentPage - 1) * pagesize + 1;
+        const endIndex = Math.min(currentPage * pagesize, totalRestaurants);
+        
+        $('#pagination-info').text(`Showing ${startIndex}-${endIndex} of ${totalRestaurants} restaurants`);
+        $('#current-page').text(currentPage);
+        $('#total-pages').text(totalPages);
+        
+        // Update button states
+        $('#prev-page').prop('disabled', currentPage === 1);
+        $('#next-page').prop('disabled', currentPage === totalPages);
+    }
+
+    // Function to go to specific page
+    function goToPage(page) {
+        if (page < 1 || page > totalPages) return;
+        
+        currentPage = page;
+        displayCurrentPage();
+        updatePaginationControls();
+    }
+
+    // Function to display current page
+    function displayCurrentPage() {
+        const startIndex = (currentPage - 1) * pagesize;
+        const endIndex = startIndex + pagesize;
+        const pageData = filteredVendorsData.slice(startIndex, endIndex);
+        
+        const html = buildAllStoresHTMLFromArray(pageData);
+        $('#all_stores').html(html);
+        
+        // Update delivery badges and distance information
+        pageData.forEach(vendor => {
+            const deliveryStatus = vendorDeliveryCache.get(vendor.id);
+            if (deliveryStatus?.hasFreeSelfDelivery) {
+                $('.free-delivery-' + vendor.id).html('<span><img src="{{ asset('img/free_delivery.png') }}" width="100px"> {{trans("lang.free_delivery")}}</span>');
+            }
+
+            if (vendor.hasOwnProperty('distance')) {
+                const distanceText = radiusUnit === 'miles'
+                    ? (vendor.distance / 1.60934).toFixed(1) + ' mi'
+                    : vendor.distance.toFixed(1) + ' km';
+                $('.vendor-distance-' + vendor.id).text(distanceText);
+            }
+        });
+    }
+
+    // Function to handle pagination with filtering
+    function updateVendorsListWithPagination() {
+        if (!window.vendorsData) return;
+
+        const sortOrder = $('#restaurant-sort').val();
+        const statusFilter = $('#restaurant-status').val();
+        const priceFilter = $('#restaurant-price').val();
+        const ratingFilter = $('#restaurant-rating').val();
+        const categoryFilter = $('#restaurant-category').val();
+        const deliveryFilter = $('#restaurant-delivery').val();
+        const offersFilter = $('#restaurant-offers').val();
+        let distanceFilter = $('#restaurant-distance').val();
+
+        // Show loading indicator
+        $('#all_stores').html('<div class="text-center"><div class="spinner-border" role="status"><span class="sr-only">Loading...</span></div></div>');
+
+        setTimeout(async () => {
+            let vendors = [];
+
+            for (const listval of window.vendorsData.docs) {
+                const datas = listval.data();
+                datas.id = listval.id;
+
+                if (!inValidVendors.has(listval.id)) {
+                    let includeVendor = true;
+
+                    // Get vendor delivery details
+                    const deliveryDetails = await getVendorDeliveryDetails(datas.id);
+
+                    // Apply filters
+                    if (statusFilter !== 'default') {
+                        const currentStatus = getVendorStatus(datas);
+                        if (statusFilter === 'open' && currentStatus !== 'Open') {
+                            includeVendor = false;
+                        } else if (statusFilter === 'closed' && currentStatus !== 'Closed') {
+                            includeVendor = false;
+                        }
+                    }
+
+                    if (includeVendor && ratingFilter !== 'default') {
+                        const avgRating = datas.reviewsCount ? (datas.reviewsSum / datas.reviewsCount) : 0;
+                        if (avgRating < parseFloat(ratingFilter)) {
+                            includeVendor = false;
+                        }
+                    }
+
+                    if (includeVendor && categoryFilter !== 'default') {
+                        if (!datas.categoryID || !datas.categoryID.includes(categoryFilter)) {
+                            includeVendor = false;
+                        }
+                    }
+
+                    if (includeVendor && deliveryFilter !== 'default') {
+                        if (!vendorMatchesDeliveryFilter(deliveryDetails, deliveryFilter)) {
+                            includeVendor = false;
+                        }
+                    }
+
+                    if (includeVendor && offersFilter !== 'default') {
+                        if (offersFilter === 'active_discounts' && (!datas.hasOwnProperty('discount') || !datas.discount)) {
+                            includeVendor = false;
+                        } else if (offersFilter === 'active_coupons' && (!datas.hasOwnProperty('coupons') || !datas.coupons.length)) {
+                            includeVendor = false;
+                        } else if (offersFilter === 'special_offers' && (!datas.hasOwnProperty('specialOffers') || !datas.specialOffers)) {
+                            includeVendor = false;
+                        }
+                    }
+
+                    if (includeVendor && distanceFilter !== 'default') {
+                        const distance = calculateDistance(
+                            address_lat,
+                            address_lng,
+                            datas.latitude,
+                            datas.longitude
+                        );
+
+                        if (distance > distanceFilter) {
+                            includeVendor = false;
+                        }
+
+                        // Add distance and delivery charge to vendor data
+                        datas.distance = distance;
+                        datas.deliveryCharge = calculateDeliveryCharge(deliveryDetails, distance);
+                    }
+
+                    if (includeVendor) {
+                        vendors.push(datas);
+                    }
+                }
+            }
+
+            // Apply sorting
+            if (sortOrder !== 'default' || priceFilter !== 'default') {
+                vendors.sort((a, b) => {
+                    if (sortOrder === 'asc') return (a.title || '').localeCompare(b.title || '');
+                    if (sortOrder === 'desc') return (b.title || '').localeCompare(a.title || '');
+                    if (priceFilter === '1') return (a.minPrice || 0) - (b.minPrice || 0);
+                    if (priceFilter === '2') return (b.minPrice || 0) - (a.minPrice || 0);
+                    return 0;
+                });
+            }
+
+            // Update filtered data and pagination
+            filteredVendorsData = vendors;
+            totalRestaurants = vendors.length;
+            totalPages = Math.ceil(totalRestaurants / pagesize);
+            currentPage = 1;
+
+            // Initialize pagination
+            initializePagination();
+            
+            // Display first page
+            displayCurrentPage();
+        }, 0);
+    }
+
+    // Event handlers for pagination
+    $(document).ready(function() {
+        $('#prev-page').on('click', function() {
+            if (currentPage > 1) {
+                goToPage(currentPage - 1);
+            }
+        });
+
+        $('#next-page').on('click', function() {
+            if (currentPage < totalPages) {
+                goToPage(currentPage + 1);
+            }
+        });
+
+        // Update filter handlers to use pagination
+        $('#restaurant-sort, #restaurant-status, #restaurant-price, #restaurant-rating, #restaurant-category, #restaurant-delivery, #restaurant-offers, #restaurant-distance').off('change').on('change', function() {
+            updateVendorsListWithPagination();
+        });
+
+        // Clear filters with pagination
+        $('#clear-filters').off('click').on('click', function() {
+            $('#restaurant-sort').val('default');
+            $('#restaurant-status').val('default');
+            $('#restaurant-price').val('default');
+            $('#restaurant-rating').val('default');
+            $('#restaurant-category').val('default');
+            $('#restaurant-delivery').val('default');
+            $('#restaurant-offers').val('default');
+            $('#restaurant-distance').val('default');
+            $('#custom-distance').val('');
+            $('#custom-distance-container').hide();
+            updateVendorsListWithPagination();
+        });
+    });
+
+    // Function to calculate distance between two points
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371; // Radius of the Earth in kilometers
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        return R * c;
+    }
+
+    // Backward compatibility function for load more
+    function loadMoreRestaurants() {
+        if (paginationEnabled) {
+            if (currentPage < totalPages) {
+                goToPage(currentPage + 1);
+            }
+        } else {
+            // Original load more logic would go here
+            console.log('Load more functionality not implemented');
+        }
+    }
+
 </script>
 @include('layouts.nav')
