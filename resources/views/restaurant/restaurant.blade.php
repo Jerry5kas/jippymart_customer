@@ -7,7 +7,7 @@
 
 <!-- Main Content Container (do NOT wrap header) -->
 <div class="max-w-4xl mx-auto bg-white text-gray-800 font-sans px-4 md:px-8 lg:px-16 py-6">
-    <!-- Bread crumbs -->
+    <!-- Bread crumbs -->pooooooo
     <nav class="flex items-center space-x-2 text-sm font-medium text-gray-500 mb-6 bg-gray-50 rounded-lg px-4 py-3 shadow-sm border border-gray-100" id="breadcrumb-nav" aria-label="Breadcrumb">
         <a href="/" class="hover:text-green-600 transition-colors flex items-center gap-1">
             <svg class="w-4 h-4 mr-1 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0h6"/></svg>
@@ -1127,7 +1127,12 @@
                                     <span>${product.name}</span>
                                 </h4>
                                 <div class="flex items-center gap-2 mb-2">
-                                    <span class="text-xl font-bold text-gray-900">${price}</span>
+                                    ${
+                                        product.disPrice && product.disPrice !== '0'
+                                          ? `<span class="text-xl font-bold text-gray-900">₹${parseFloat(product.disPrice).toFixed(2)}</span>
+                                             <span class="text-gray-500 text-sm line-through ml-2">₹${parseFloat(product.price).toFixed(2)}</span>`
+                                          : `<span class="text-xl font-bold text-gray-900">₹${parseFloat(product.price).toFixed(2)}</span>`
+                                    }
                                     ${couponText ? `<span class="bg-orange-50 text-orange-600 text-xs font-semibold px-2 py-1 rounded-full ml-2">${couponText}</span>` : ''}
                                 </div>
                                 <p class="text-gray-600 text-sm mb-3 line-clamp-2">${desc}</p>
@@ -1149,6 +1154,7 @@
                                 data-vendor-id="${vendorId}"
                                 data-category-id="${product.categoryID}"
                                 data-product-name="${product.name}"
+                                data-product-disPrice="${product.disPrice}"
                                 data-product-price="${product.price}"
                                 data-product-photo="${imgSrc}"
                             >
@@ -1332,7 +1338,12 @@
                                     <span>${product.name}</span>
                                 </h4>
                                 <div class="flex items-center gap-2 mb-2">
-                                    <span class="text-xl font-bold text-gray-900">${price}</span>
+                                    ${
+                                        product.disPrice && product.disPrice !== '0'
+                                          ? `<span class="text-xl font-bold text-gray-900">₹${parseFloat(product.disPrice).toFixed(2)}</span>
+                                             <span class="text-gray-500 text-sm line-through ml-2">₹${parseFloat(product.price).toFixed(2)}</span>`
+                                          : `<span class="text-xl font-bold text-gray-900">₹${parseFloat(product.price).toFixed(2)}</span>`
+                                    }
                                     ${couponText ? `<span class="bg-orange-50 text-orange-600 text-xs font-semibold px-2 py-1 rounded-full ml-2">${couponText}</span>` : ''}
                                 </div>
                                 <p class="text-gray-600 text-sm mb-3 line-clamp-2">${desc}</p>
