@@ -5180,3 +5180,32 @@ width: auto;z-index: 1;}
     bottom: 0;
     margin: auto;color: #fff;font-weight: 700; font-size: 28px;letter-spacing: 1px}
 .page-overlay .overlay-text img{max-width: 40px;margin-right: 15px}
+
+/* Header toggle button alignment fix */
+.header-right .toggle {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    position: absolute !important;
+    top: 10px !important;
+    right: 15px !important;
+    width: 22px !important;
+    height: 22px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    z-index: 1000 !important;
+}
+
+.header-right .toggle span {
+    display: block !important;
+    width: 100% !important;
+    height: 2px !important;
+    background: #222 !important;
+    border-radius: 2px !important;
+    margin: 0 !important;
+}
+
+/* Ensure parent container has relative positioning */
+.header-right {
+    position: relative !important;
+}

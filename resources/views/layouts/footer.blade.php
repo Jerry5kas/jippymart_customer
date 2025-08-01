@@ -3,7 +3,6 @@
         <img src="{{ asset('img/spinner.gif') }}">
     </div>
 </div>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
 <button type="button" id="locationModal" data-toggle="modal" data-target="#locationModalAddress" hidden>submit</button>
 <div class="modal fade" id="locationModalAddress" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered location_modal">

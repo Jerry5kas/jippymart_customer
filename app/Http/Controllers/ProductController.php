@@ -6,18 +6,25 @@ use Illuminate\Support\Facades\Auth;
 use Session;
 use Illuminate\Support\Facades\Storage;
 use Google\Client as Google_Client;
+use Kreait\Firebase\Factory;
+use App\Services\RestaurantService;
+
 class ProductController extends Controller
 {
+    protected $restaurantService;
+    
     /**
      * Create a new controller instance.
      *
      * @return void
      */
-    public function __construct()
+    public function __construct(RestaurantService $restaurantService)
     {
         if (!isset($_COOKIE['address_name'])) {
             \Redirect::to('set-location')->send();
         }
+        
+        $this->restaurantService = $restaurantService;
     }
     /**
      * Write code on Method
@@ -926,5 +933,14 @@ class ProductController extends Controller
         Session::save();
         $res = array('status' => true, 'html' => view('restaurant.cart_item', ['cart' => $cart])->render());
         return response()->json($res);
+    }
+    
+    /**
+     * Get restaurant information for a product
+     */
+    public function getRestaurantInfo($productId, Request $request)
+    {
+        $vendorId = $request->query('vendor_id');
+        return response()->json($this->restaurantService->getRestaurantInfo($productId, $vendorId));
     }
 }

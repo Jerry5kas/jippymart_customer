@@ -238,7 +238,7 @@
 {{--                                </select>--}}
 {{--                            </div>--}}
 {{--                        </div>--}}
-                        <a class="toggle" href="#" style="width:22px; height:22px; display:inline-flex; align-items:center; justify-content:center;">
+                        <a class="toggle" href="#" style="width:22px; height:22px; display:flex; align-items:center; justify-content:center; position:relative; top:0;">
                             <span style="display:block; width:100%; height:2px; background:#222; border-radius:2px;"></span>
                         </a>
                     </div>

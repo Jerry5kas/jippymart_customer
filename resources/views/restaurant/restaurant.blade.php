@@ -379,6 +379,9 @@
         if (!vendorId && restaurantNameUrl && zoneNameUrl) {
             await resolveVendorIdFromName();
         }
+        
+        // Sync restaurant cart from product detail page
+        syncRestaurantCart();
 
         var subscriptionModel = localStorage.getItem('subscriptionModel');
 
@@ -1471,6 +1474,48 @@
     function setCart(cart) {
         localStorage.setItem('cart', JSON.stringify(cart));
         console.log('setCart:', cart);
+    }
+    
+    // Sync restaurant cart from product detail page
+    function syncRestaurantCart() {
+        let restaurantCart = localStorage.getItem('restaurant_cart');
+        if (restaurantCart) {
+            try {
+                let cart = JSON.parse(restaurantCart);
+                if (Array.isArray(cart) && cart.length > 0) {
+                    // Check if items are from the same restaurant
+                    const firstItem = cart[0];
+                    if (firstItem.vendor_id === vendorId) {
+                        // Merge with existing cart
+                        let existingCart = getCart();
+                        cart.forEach(item => {
+                            const idx = existingCart.findIndex(i => i.product_id === item.product_id);
+                            if (idx > -1) {
+                                existingCart[idx].quantity += item.quantity;
+                            } else {
+                                existingCart.push(item);
+                            }
+                        });
+                        setCart(existingCart);
+                        console.log('Synced restaurant cart items:', cart);
+                        
+                        // Clear the restaurant cart after syncing
+                        localStorage.removeItem('restaurant_cart');
+                        
+                        // Show success message
+                        Swal.fire({
+                            title: 'Cart Synced!',
+                            text: 'Items from product page have been added to your cart.',
+                            icon: 'success',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('Error syncing restaurant cart:', error);
+            }
+        }
     }
     function addToCart(item) {
         let cart = getCart();

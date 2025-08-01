@@ -12,7 +12,7 @@ foreach ($countries as $keycountry => $valuecountry) {
 }
 ?>
 <link href="{{ asset('vendor/select2/dist/css/select2.min.css')}}" rel="stylesheet">
-<link href="{{ asset('/css/font-awesome.min.css')}}" rel="stylesheet">
+<!-- Font Awesome loaded globally in app.blade.php -->
 <div class="login-page vh-100">
     <div class="d-flex align-items-center justify-content-center vh-100">
         <div class="col-md-6">

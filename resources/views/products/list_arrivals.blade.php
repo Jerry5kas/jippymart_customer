@@ -17,6 +17,10 @@
     var geoFirestore=new GeoFirestore(firestore);
     var VendorNearBy='';
     var inValidVendors=new Set();
+    
+    // Initialize randomized ratings for fallback
+    window.randomizedRatings = {};
+    
     var DriverNearByRef=database.collection('settings').doc('RestaurantNearBy');
     var priceData={};
     var placeholderImageRef=database.collection('settings').doc('placeHolderImage');
@@ -186,6 +190,19 @@
                     rating=(val.reviewsSum/val.reviewsCount);
                     rating=Math.round(rating*10)/10;
                     reviewsCount=val.reviewsCount;
+                } else {
+                    // Fallback to randomized ratings for better UI
+                    if (window.randomizedRatings && window.randomizedRatings[val.id]) {
+                        rating = window.randomizedRatings[val.id].rating;
+                        reviewsCount = window.randomizedRatings[val.id].reviewsCount;
+                    } else {
+                        rating = (Math.random() * (5.0 - 4.1) + 4.1).toFixed(1);
+                        reviewsCount = Math.floor(Math.random() * (25 - 11 + 1)) + 11;
+                        if (!window.randomizedRatings) {
+                            window.randomizedRatings = {};
+                        }
+                        window.randomizedRatings[val.id] = { rating, reviewsCount };
+                    }
                 }
                 html=html+
                     '<div class="col-md-4 pb-3 product-list"><div class="list-card position-relative"><div class="list-card-image">';

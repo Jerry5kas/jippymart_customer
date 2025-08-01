@@ -1384,9 +1384,10 @@
                     }
                 });
 
-                // Calculate prices in the background
-                vendors.forEach(async (vendor) => {
-                    vendor.minPrice = await getVendorMinPrice(vendor);
+                // Calculate prices for all vendors in batch (much faster)
+                const minPrices = await getAllVendorMinPrices(vendors);
+                vendors.forEach(vendor => {
+                    vendor.minPrice = minPrices.get(vendor.id) || 0;
                 });
 
                 // Initialize pagination with all vendors
@@ -1548,7 +1549,66 @@
         }, 100);
     });
 
-    // Function to get minimum price from vendor's products
+    // Optimized function to get minimum prices for all vendors at once
+    async function getAllVendorMinPrices(vendors) {
+        const vendorIds = vendors.map(v => v.id);
+        const minPrices = new Map();
+        
+        try {
+            // Batch query all products for all vendors
+            const productsSnapshot = await database.collection('vendor_products')
+                .where('vendorID', 'in', vendorIds)
+                .where('publish', '==', true)
+                .get();
+
+            // Group products by vendor
+            const vendorProducts = new Map();
+            productsSnapshot.docs.forEach((doc) => {
+                const product = doc.data();
+                if (!vendorProducts.has(product.vendorID)) {
+                    vendorProducts.set(product.vendorID, []);
+                }
+                vendorProducts.get(product.vendorID).push(product);
+            });
+
+            // Calculate min price for each vendor
+            vendors.forEach(vendor => {
+                let minPrice = Infinity;
+                const products = vendorProducts.get(vendor.id) || [];
+                
+                products.forEach(product => {
+                    let price = parseFloat(product.price);
+
+                    // Check if there's a discount price
+                    if (product.disPrice && parseFloat(product.disPrice) > 0) {
+                        price = parseFloat(product.disPrice);
+                    }
+
+                    // If product has variants, get the minimum variant price
+                    if (product.item_attribute && product.item_attribute.variants) {
+                        const variantPrices = product.item_attribute.variants.map(v =>
+                            parseFloat(v.variant_price || 0)
+                        ).filter(p => p > 0);
+
+                        if (variantPrices.length > 0) {
+                            price = Math.min(...variantPrices);
+                        }
+                    }
+
+                    if (price < minPrice && price > 0) {
+                        minPrice = price;
+                    }
+                });
+                
+                minPrices.set(vendor.id, minPrice === Infinity ? 0 : minPrice);
+            });
+        } catch (error) {
+            console.error('Error getting vendor minimum prices:', error);
+        }
+        return minPrices;
+    }
+
+    // Function to get minimum price from vendor's products (legacy - kept for compatibility)
     async function getVendorMinPrice(vendor) {
         let minPrice = Infinity;
         try {
@@ -1648,55 +1708,45 @@
                     }
                 }
 
-                var status = val.currentStatus;
-                var statusclass = status.toLowerCase() === 'open' ? 'open' : 'closed';
-
-                var vendor_id_single = val.id;
-                var view_vendor_details = "/restaurant/" + val.id + "/" + val.restaurant_slug + "/" + val.zone_slug;
-
-                getMinDiscount(val.id);
-                html = html +
-                    '<div class="col-md-3 product-list"><div class="list-card position-relative"><div class="list-card-image">';
-
-                if (val.photo != "" && val.photo != null) {
+                var photo = placeholderImage;
+                if (val.hasOwnProperty('photo') && val.photo != '' && val.photo != null) {
                     photo = val.photo;
-                } else {
-                    photo = placeholderImageSrc;
                 }
 
-                html = html + '<div class="member-plan position-absolute"><span class="badge badge-dark ' +
-                    statusclass + '">' + status + '</span></div><div class="offer-icon position-absolute free-delivery-' + val.id + '"></div><a href="' + view_vendor_details +
-                    '"><img onerror="this.onerror=null;this.src=\'' + placeholderImage + '\'" alt="#" src="' +
-                    photo +
-                    '" class="img-fluid item-img w-100"></a></div><div class="py-2 position-relative"><div class="list-card-body"><h6 class="mb-1 popul-title"><a href="' +
-                    view_vendor_details + '" class="text-black">' + val.title +
-                    '</a></h6><p class="text-gray mb-1 small address"><span class="fa fa-map-marker"></span>' +
-                    val.location + '</p>';
+                var view_vendor_details = "{{ url('restaurant') }}/" + val.id;
+                var currentStatus = val.currentStatus || getVendorStatus(val);
+                var statusClass = currentStatus === 'Open' ? 'text-success' : 'text-danger';
+                var statusText = currentStatus === 'Open' ? '{{ trans("lang.open") }}' : '{{ trans("lang.closed") }}';
 
-                // Add distance information if available
-                if (val.hasOwnProperty('distance')) {
-                    const distanceText = radiusUnit === 'miles'
-                        ? (val.distance / 1.60934).toFixed(1) + ' mi'
-                        : val.distance.toFixed(1) + ' km';
-                    html = html + '<p class="text-gray mb-1 small vendor-distance-' + val.id + '"><span class="fa fa-road"></span> ' + distanceText + '</p>';
-                }
-
-                // Add delivery information
-                html = html + '<div class="delivery-info-' + val.id + ' text-gray mb-1 small"></div>';
-
-                html = html + '<span class="pro-price vendor_dis_' + val.id + ' " ></span>';
-                html = html +
-                    '<div class="star position-relative mt-3"><span class="badge badge-success "><i class="feather-star"></i>' +
-                    rating + ' (' + reviewsCount + ')</span></div>';
+                html = html + '<div class="col-md-3 product-list">';
+                html = html + '<div class="list-card position-relative">';
+                html = html + '<div class="list-card-image">';
+                html = html + '<a href="' + view_vendor_details + '">';
+                html = html + '<img onerror="this.onerror=null;this.src=\'' + placeholderImage + '\'" alt="#" src="' + photo + '" class="img-fluid item-img w-100" loading="lazy">';
+                html = html + '</a>';
                 html = html + '</div>';
-                html = html + '</div></div></div>';
-
-                // Keep the existing checkSelfDeliveryForVendor call
-                checkSelfDeliveryForVendor(val.id);
+                html = html + '<div class="py-2 position-relative">';
+                html = html + '<div class="list-card-body position-relative">';
+                html = html + '<h6 class="product-title mb-1">';
+                html = html + '<a href="' + view_vendor_details + '" class="text-black">' + val.name + '</a>';
+                html = html + '</h6>';
+                html = html + '<h6 class="mb-1 popular_food_category_ pro-cat" id="popular_food_category_' + val.categoryID + '_' + val.id + '"></h6>';
+                
+                // Add minimum price display
+                if (val.minPrice && val.minPrice > 0) {
+                    html = html + '<div class="mb-1"><small class="text-muted">Starting from ' + currentCurrency + ' ' + val.minPrice.toFixed(decimal_degits) + '</small></div>';
+                }
+                
+                html = html + '<div class="star position-relative mt-3">';
+                html = html + '<span class="badge badge-success"><i class="feather-star"></i>' + rating + ' (' + reviewsCount + ')</span>';
+                html = html + '<span class="badge badge-light ml-2 ' + statusClass + '">' + statusText + '</span>';
+                html = html + '</div>';
+                html = html + '</div>';
+                html = html + '</div>';
+                html = html + '</div>';
+                html = html + '</div>';
             });
             html = html + '</div>';
-        } else {
-            html = '<div class="text-center mt-5"><p>No restaurants found matching the selected filters.</p></div>';
         }
         return html;
     }
@@ -3633,6 +3683,53 @@
             console.log('Load more functionality not implemented');
         }
     }
+
+    // Performance optimization: Image preloading and caching
+    const imageCache = new Map();
+    const imageObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const img = entry.target;
+                const src = img.dataset.src;
+                if (src && !img.src) {
+                    img.src = src;
+                    img.removeAttribute('data-src');
+                    imageObserver.unobserve(img);
+                }
+            }
+        });
+    }, {
+        rootMargin: '50px 0px',
+        threshold: 0.1
+    });
+
+    // Function to preload critical images
+    function preloadCriticalImages() {
+        const criticalImages = [
+            placeholderImage,
+            // Add other critical images here
+        ];
+        
+        criticalImages.forEach(src => {
+            if (src && !imageCache.has(src)) {
+                const img = new Image();
+                img.onload = () => imageCache.set(src, true);
+                img.src = src;
+            }
+        });
+    }
+
+    // Enhanced lazy loading for images
+    function setupLazyLoading() {
+        const images = document.querySelectorAll('img[data-src]');
+        images.forEach(img => imageObserver.observe(img));
+    }
+
+    // Call preload function when page loads
+    document.addEventListener('DOMContentLoaded', () => {
+        preloadCriticalImages();
+        setupLazyLoading();
+    });
 
 </script>
 @include('layouts.nav')

@@ -99,6 +99,11 @@ Route::get('trending', [App\Http\Controllers\TrendingController::class, 'index']
 
 Route::get('categories', [App\Http\Controllers\RestaurantController::class, 'categoryList'])->name('categorylist');
 
+// Test route for icon debugging
+Route::get('icon-test', function () {
+    return view('icon-test');
+})->name('icon-test');
+
 Route::get('category/{id}', [App\Http\Controllers\RestaurantController::class, 'categoryDetail'])->name('category_detail');
 
 Route::get('restaurant', [App\Http\Controllers\RestaurantController::class, 'index'])->name('restaurant');
@@ -115,6 +120,9 @@ Route::post('reorder-add-to-cart', [App\Http\Controllers\ProductController::clas
 Route::get('products', [App\Http\Controllers\ProductController::class, 'productListAll'])->name('productlist.all');
 
 Route::get('product/{id}', [App\Http\Controllers\ProductController::class, 'productDetail'])->name('productDetail');
+Route::get('product/{id}/restaurant-info', [App\Http\Controllers\ProductController::class, 'getRestaurantInfo'])
+    ->name('product.restaurant-info')
+    ->middleware('cache.headers:public;max_age=3600;etag');
 
 Route::get('products/{type}/{id}', [App\Http\Controllers\ProductController::class, 'productList'])->name('productList');
 
