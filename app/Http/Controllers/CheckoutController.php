@@ -493,7 +493,7 @@ class CheckoutController extends Controller
                 $address_state = $input['address_state'];
                 $address_country = $input['address_country'];
                 $address_zipcode = $input['address_zipcode'];
-                $description = env('APP_NAME', 'Foodie') . ' Order';
+                $description = env('APP_NAME', 'JippyMart') . ' Order';
                 try {
                     $charge = $stripe->paymentIntents->create([
                         'amount' => $cart['cart_order']['total_pay'] * 1000,
@@ -607,21 +607,21 @@ class CheckoutController extends Controller
         $order_json = [];
         $email = Auth::user()->email;
         $user = VendorUsers::where('email', $email)->first();
-        
+
         // Clear COD order session data after success page loads
         if (isset($cart['cod_order'])) {
             unset($cart['cod_order']);
             Session::put('cart', $cart);
             Session::save();
         }
-        
+
         // Clear COD order session data after success page loads
         if (isset($cart['cod_order'])) {
             unset($cart['cod_order']);
             Session::put('cart', $cart);
             Session::save();
         }
-        
+
         // Clear COD order session data after success page loads
         if (isset($cart['cod_order'])) {
             unset($cart['cod_order']);
@@ -745,12 +745,12 @@ class CheckoutController extends Controller
         echo json_encode($res);
         exit();
     }
-    
+
     public function storeOrderSession(Request $request)
     {
         $order_id = $request->order_id;
         $payment_method = $request->payment_method;
-        
+
         // Store order info in session for success page
         $cart = Session::get('cart', []);
         $cart['cod_order'] = [
@@ -760,7 +760,7 @@ class CheckoutController extends Controller
         ];
         Session::put('cart', $cart);
         Session::save();
-        
+
         return response()->json(['status' => true]);
     }
     public function proccesspaystack(Request $request)

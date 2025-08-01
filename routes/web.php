@@ -169,9 +169,9 @@ Route::get('favorite-products', [FavoritesController::class, 'favProduct'])->nam
 
 Route::get('/faq', [App\Http\Controllers\FaqController::class, 'index'])->name('faq');
 
-Route::get('/restaurants', [App\Http\Controllers\AllRestaurantsController::class, 'index'])->name('restaurants');
-
 Route::get('restaurants/category/{id}', [App\Http\Controllers\AllRestaurantsController::class, 'RestaurantsbyCategory'])->name('RestaurantsbyCategory');
+
+Route::get('/restaurants', [App\Http\Controllers\AllRestaurantsController::class, 'index'])->name('restaurants');
 
 Route::get('/dineinRestaurants', [App\Http\Controllers\DiveinRestaurantController::class, 'index'])->name('dineinRestaurants');
 

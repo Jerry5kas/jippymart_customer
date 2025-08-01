@@ -1730,7 +1730,7 @@
             for (listval of alldata) {
                 var val = listval;
                 var category_id = val.id;
-                var category_route = "/RestaurantsbyCategory/" + category_id;
+                var category_route = "/restaurants/category/" + category_id;
                 if (val.photo != "" && val.photo != null) {
                     photo = val.photo;
                 } else {
@@ -1888,7 +1888,7 @@
         alldata.forEach((listval) => {
             var val = listval;
             var category_id = val.id;
-            var trending_route = "/RestaurantsbyCategory/" + category_id;
+            var trending_route = "/restaurants/category/" + category_id;
             if (val.photo != "" && val.photo != null) {
                 photo = val.photo;
             } else {

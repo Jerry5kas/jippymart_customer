@@ -7,7 +7,7 @@
 
 <!-- Main Content Container (do NOT wrap header) -->
 <div class="max-w-4xl mx-auto bg-white text-gray-800 font-sans px-4 md:px-8 lg:px-16 py-6">
-    <!-- Bread crumbs -->pooooooo
+    <!-- Bread crumbs -->
     <nav class="flex items-center space-x-2 text-sm font-medium text-gray-500 mb-6 bg-gray-50 rounded-lg px-4 py-3 shadow-sm border border-gray-100" id="breadcrumb-nav" aria-label="Breadcrumb">
         <a href="/" class="hover:text-green-600 transition-colors flex items-center gap-1">
             <svg class="w-4 h-4 mr-1 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0h6"/></svg>
@@ -761,9 +761,8 @@
                     document.getElementById('restaurant-rating').textContent = randomRating;
                     document.getElementById('restaurant-ratings-count').textContent = '(New)';
                 }
-                // Set price for two dynamically between 380 and 600
-                var priceForTwo = Math.floor(Math.random() * (600 - 380 + 1)) + 380;
-                document.getElementById('restaurant-price-for-two').textContent = '₹' + priceForTwo + ' for two';
+                // Calculate dynamic price for two based on actual product prices
+                calculatePriceForTwo();
                 // Set cuisine and category dynamically (array or string)
                 var cuisine = '';
                 var category = '';
@@ -812,6 +811,82 @@
                 restaurantWorkingHours = vendorDetails.workingHours || [];
             }
         })
+    }
+
+    // Function to calculate dynamic price for two based on actual product prices
+    async function calculatePriceForTwo() {
+        try {
+            // Fetch products for this vendor
+            const productsSnapshot = await vendorProductsRef.get();
+            const products = [];
+            
+            productsSnapshot.docs.forEach(function(doc) {
+                let data = doc.data();
+                data.id = doc.id;
+                products.push(data);
+            });
+
+            if (products.length === 0) {
+                // Fallback to random price if no products
+                var priceForTwo = Math.floor(Math.random() * (600 - 380 + 1)) + 380;
+                document.getElementById('restaurant-price-for-two').textContent = '₹' + priceForTwo + ' for two';
+                return;
+            }
+
+            // Filter products with discount price below 500
+            const affordableProducts = products.filter(product => {
+                const price = parseFloat(product.price) || 0;
+                const disPrice = parseFloat(product.disPrice) || 0;
+                const finalPrice = disPrice > 0 ? disPrice : price;
+                return finalPrice > 0 && finalPrice < 500;
+            });
+
+            if (affordableProducts.length < 2) {
+                // If not enough affordable products, use any products
+                const validProducts = products.filter(product => {
+                    const price = parseFloat(product.price) || 0;
+                    const disPrice = parseFloat(product.disPrice) || 0;
+                    return (disPrice > 0 ? disPrice : price) > 0;
+                });
+                
+                if (validProducts.length >= 2) {
+                    // Take 2 random products
+                    const shuffled = validProducts.sort(() => 0.5 - Math.random());
+                    const selectedProducts = shuffled.slice(0, 2);
+                    
+                    let totalPrice = 0;
+                    selectedProducts.forEach(product => {
+                        const price = parseFloat(product.price) || 0;
+                        const disPrice = parseFloat(product.disPrice) || 0;
+                        totalPrice += disPrice > 0 ? disPrice : price;
+                    });
+                    
+                    document.getElementById('restaurant-price-for-two').textContent = '₹' + Math.round(totalPrice) + ' for two';
+                } else {
+                    // Fallback to random price
+                    var priceForTwo = Math.floor(Math.random() * (600 - 380 + 1)) + 380;
+                    document.getElementById('restaurant-price-for-two').textContent = '₹' + priceForTwo + ' for two';
+                }
+            } else {
+                // Take 2 random affordable products
+                const shuffled = affordableProducts.sort(() => 0.5 - Math.random());
+                const selectedProducts = shuffled.slice(0, 2);
+                
+                let totalPrice = 0;
+                selectedProducts.forEach(product => {
+                    const price = parseFloat(product.price) || 0;
+                    const disPrice = parseFloat(product.disPrice) || 0;
+                    totalPrice += disPrice > 0 ? disPrice : price;
+                });
+                
+                document.getElementById('restaurant-price-for-two').textContent = '₹' + Math.round(totalPrice) + ' for two';
+            }
+        } catch (error) {
+            console.error('Error calculating price for two:', error);
+            // Fallback to random price
+            var priceForTwo = Math.floor(Math.random() * (600 - 380 + 1)) + 380;
+            document.getElementById('restaurant-price-for-two').textContent = '₹' + priceForTwo + ' for two';
+        }
     }
 
     async function getCategories() {
