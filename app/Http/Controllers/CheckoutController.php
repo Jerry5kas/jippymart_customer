@@ -85,6 +85,12 @@ class CheckoutController extends Controller
         $user = VendorUsers::where('email', $email)->first();
         $cart = Session::get('cart', []);
         if (@$cart['cart_order']) {
+            // For COD payments, place order directly and redirect to success
+            // if ($cart['cart_order']['payment_method'] == 'cod') {
+            //     // Place order directly
+            //     $this->placeOrderDirectly($cart);
+            //     return redirect()->route('success');
+            // }
             if ($cart['cart_order']['payment_method'] == 'razorpay') {
                 $razorpaySecret = $cart['cart_order']['razorpaySecret'];
                 $razorpayKey = $cart['cart_order']['razorpayKey'];
@@ -802,4 +808,26 @@ class CheckoutController extends Controller
             return $miles;
         }
     }
+
+    // /**
+    //  * Place order directly for COD payments
+    //  */
+    // private function placeOrderDirectly($cart)
+    // {
+    //     try {
+    //         // Set payment status as successful for COD
+    //         $cart['payment_status'] = true;
+    //         Session::put('cart', $cart);
+    //         Session::put('success', 'Order placed successfully! Please pay on delivery.');
+    //         Session::save();
+
+    //         // Here you can add any additional order processing logic
+    //         // For example, creating order in database, sending notifications, etc.
+            
+    //         return true;
+    //     } catch (\Exception $e) {
+    //         Log::error('Error placing COD order: ' . $e->getMessage());
+    //         return false;
+    //     }
+    // }
 }

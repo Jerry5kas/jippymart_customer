@@ -191,30 +191,30 @@
                     </div>
                 </div>
                 <div id="all_stores"></div>
-                <!-- Pagination Controls -->
-                <div class="pagination-wrapper mt-4" id="pagination-wrapper" style="display: none;">
-                    <div class="row">
-                        <div class="col-12">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div class="pagination-info">
-                                    <span id="pagination-info">Showing 0 of 0 restaurants</span>
-                                </div>
-                                <div class="pagination-controls">
-                                    <button type="button" id="prev-page" class="btn btn-outline-none btn-sm" disabled>
-                                        <i class="feather-chevron-left"></i> Previous
-                                    </button>
-                                    <span class="mx-3">
-                                        Page <span id="current-page">1</span> of <span id="total-pages">1</span>
-                                    </span>
-                                    <button type="button" id="next-page" class="btn btn-outline-primary btn-sm">
-                                        Next <i class="feather-chevron-right"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+{{--                <!-- Pagination Controls -->--}}
+{{--                <div class="pagination-wrapper mt-4" id="pagination-wrapper" style="display: none;">--}}
+{{--                    <div class="row">--}}
+{{--                        <div class="col-12">--}}
+{{--                            <div class="d-flex justify-content-between align-items-center">--}}
+{{--                                <div class="pagination-info">--}}
+{{--                                    <span id="pagination-info">Showing 0 of 0 restaurants</span>--}}
+{{--                                </div>--}}
+{{--                                <div class="pagination-controls">--}}
+{{--                                    <button type="button" id="prev-page" class="btn btn-outline-none btn-sm" disabled>--}}
+{{--                                        <i class="feather-chevron-left"></i> Previous--}}
+{{--                                    </button>--}}
+{{--                                    <span class="mx-3">--}}
+{{--                                        Page <span id="current-page">1</span> of <span id="total-pages">1</span>--}}
+{{--                                    </span>--}}
+{{--                                    <button type="button" id="next-page" class="btn btn-outline-primary btn-sm">--}}
+{{--                                        Next <i class="feather-chevron-right"></i>--}}
+{{--                                    </button>--}}
+{{--                                </div>--}}
+{{--                            </div>--}}
+{{--                        </div>--}}
+{{--                    </div>--}}
                 </div>
-                
+
                 <!-- Load More Button (for backward compatibility) -->
                 <div class="row fu-loadmore-btn" id="loadmore-wrapper" style="display: none;">
                     <a class="page-link loadmore-btn" href="javascript:void(0);" onclick="loadMoreRestaurants()" data-dt-idx="0" tabindex="0" id="loadmore">{{ trans('lang.see') }} {{ trans('lang.more') }}</a>
@@ -681,99 +681,99 @@
         opacity: 0.85;
     }
 
-   /* Pagination Styles - Updated for white background and black text */
- .pagination-wrapper {
-     background: #ffffff;
-     padding: 20px;
-     border-radius: 8px;
-     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-     margin-top: 30px;
-     border: 1px solid #e9ecef;
- }
+ /*  !* Pagination Styles - Updated for white background and black text *!*/
+ /*.pagination-wrapper {*/
+ /*    background: #ffffff;*/
+ /*    padding: 20px;*/
+ /*    border-radius: 8px;*/
+ /*    box-shadow: 0 2px 8px rgba(0,0,0,0.1);*/
+ /*    margin-top: 30px;*/
+ /*    border: 1px solid #e9ecef;*/
+ /*}*/
 
- .pagination-controls {
-     display: flex;
-     align-items: center;
-     gap: 10px;
- }
+ /*.pagination-controls {*/
+ /*    display: flex;*/
+ /*    align-items: center;*/
+ /*    gap: 10px;*/
+ /*}*/
 
- .pagination-controls button {
-     min-width: 100px;
-     padding: 8px 16px;
-     border-radius: 6px;
-     font-weight: 500;
-     transition: all 0.3s ease;
-     background: #ffffff;
-     color: #000000;
-     border: 2px solid #000000;
- }
+ /*.pagination-controls button {*/
+ /*    min-width: 100px;*/
+ /*    padding: 8px 16px;*/
+ /*    border-radius: 6px;*/
+ /*    font-weight: 500;*/
+ /*    transition: all 0.3s ease;*/
+ /*    background: #ffffff;*/
+ /*    color: #000000;*/
+ /*    border: 2px solid #000000;*/
+ /*}*/
 
- .pagination-controls button:hover:not(:disabled) {
-     background: #ffffff;
-     color: #000000;
-     transform: translateY(-1px);
-     box-shadow: 0 4px 8px rgba(0,0,0,0.15);
- }
+ /*.pagination-controls button:hover:not(:disabled) {*/
+ /*    background: #ffffff;*/
+ /*    color: #000000;*/
+ /*    transform: translateY(-1px);*/
+ /*    box-shadow: 0 4px 8px rgba(0,0,0,0.15);*/
+ /*}*/
 
- .pagination-controls button:disabled {
-     opacity: 0.5;
-     cursor: not-allowed;
-     background: #f8f9fa;
-     color: #000000;
-     border-color: #dee2e6;
- }
+ /*.pagination-controls button:disabled {*/
+ /*    opacity: 0.5;*/
+ /*    cursor: not-allowed;*/
+ /*    background: #f8f9fa;*/
+ /*    color: #000000;*/
+ /*    border-color: #dee2e6;*/
+ /*}*/
 
- .pagination-info {
-     font-size: 14px;
-     color: #000000;
-     font-weight: 500;
- }
+ /*.pagination-info {*/
+ /*    font-size: 14px;*/
+ /*    color: #000000;*/
+ /*    font-weight: 500;*/
+ /*}*/
 
- /* Mobile Responsive Pagination */
- @media (max-width: 768px) {
-     .pagination-wrapper {
-         padding: 15px;
-     }
+ /*!* Mobile Responsive Pagination *!*/
+ /*@media (max-width: 768px) {*/
+ /*    .pagination-wrapper {*/
+ /*        padding: 15px;*/
+ /*    }*/
 
-     .pagination-controls {
-         flex-direction: column;
-         gap: 15px;
-     }
+ /*    .pagination-controls {*/
+ /*        flex-direction: column;*/
+ /*        gap: 15px;*/
+ /*    }*/
 
-     .pagination-controls button {
-         width: 100%;
-         min-width: unset;
-     }
+ /*    .pagination-controls button {*/
+ /*        width: 100%;*/
+ /*        min-width: unset;*/
+ /*    }*/
 
-     .pagination-info {
-         text-align: center;
-         margin-bottom: 10px;
-     }
- }
+ /*    .pagination-info {*/
+ /*        text-align: center;*/
+ /*        margin-bottom: 10px;*/
+ /*    }*/
+ /*}*/
 
- /* Dark Mode Support for Pagination */
- @media (prefers-color-scheme: dark) {
-     .pagination-wrapper {
-         background: #ffffff;
-         box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-         border-color: #e9ecef;
-     }
+ /*!* Dark Mode Support for Pagination *!*/
+ /*@media (prefers-color-scheme: dark) {*/
+ /*    .pagination-wrapper {*/
+ /*        background: #ffffff;*/
+ /*        box-shadow: 0 2px 8px rgba(0,0,0,0.2);*/
+ /*        border-color: #e9ecef;*/
+ /*    }*/
 
-     .pagination-info {
-         color: #000000;
-     }
+ /*    .pagination-info {*/
+ /*        color: #000000;*/
+ /*    }*/
 
-     .pagination-controls button {
-         background: #ffffff;
-         color: #000000;
-         border-color: #000000;
-     }
+ /*    .pagination-controls button {*/
+ /*        background: #ffffff;*/
+ /*        color: #000000;*/
+ /*        border-color: #000000;*/
+ /*    }*/
 
-     .pagination-controls button:hover:not(:disabled) {
-         background: #000000;
-         color: #ffffff;
-     }
- }
+ /*    .pagination-controls button:hover:not(:disabled) {*/
+ /*        background: #000000;*/
+ /*        color: #ffffff;*/
+ /*    }*/
+ /*}*/
 </style>
 <script src="{{ asset('js/dist/zuck.min.js') }}"></script>
 <script src="{{ asset('js/geofirestore.js') }}"></script>
@@ -799,7 +799,7 @@
     var currencyAtRight = false;
     var storyEnabled = false;
     var VendorNearBy = '';
-    var pagesize = 20;
+    var pagesize = 20000;
     var offest = 1;
     var end = null;
     var endarray = [];
@@ -1398,7 +1398,7 @@
 
                 // Initialize pagination system
                 initializePagination();
-                
+
                 // Display first page
                 displayCurrentPage();
 
@@ -1553,7 +1553,7 @@
     async function getAllVendorMinPrices(vendors) {
         const vendorIds = vendors.map(v => v.id);
         const minPrices = new Map();
-        
+
         try {
             // Batch query all products for all vendors
             const productsSnapshot = await database.collection('vendor_products')
@@ -1575,7 +1575,7 @@
             vendors.forEach(vendor => {
                 let minPrice = Infinity;
                 const products = vendorProducts.get(vendor.id) || [];
-                
+
                 products.forEach(product => {
                     let price = parseFloat(product.price);
 
@@ -1599,7 +1599,7 @@
                         minPrice = price;
                     }
                 });
-                
+
                 minPrices.set(vendor.id, minPrice === Infinity ? 0 : minPrice);
             });
         } catch (error) {
@@ -1731,12 +1731,12 @@
                 html = html + '<a href="' + view_vendor_details + '" class="text-black">' + val.name + '</a>';
                 html = html + '</h6>';
                 html = html + '<h6 class="mb-1 popular_food_category_ pro-cat" id="popular_food_category_' + val.categoryID + '_' + val.id + '"></h6>';
-                
+
                 // Add minimum price display
                 if (val.minPrice && val.minPrice > 0) {
                     html = html + '<div class="mb-1"><small class="text-muted">Starting from ' + currentCurrency + ' ' + val.minPrice.toFixed(decimal_degits) + '</small></div>';
                 }
-                
+
                 html = html + '<div class="star position-relative mt-3">';
                 html = html + '<span class="badge badge-success"><i class="feather-star"></i>' + rating + ' (' + reviewsCount + ')</span>';
                 html = html + '<span class="badge badge-light ml-2 ' + statusClass + '">' + statusText + '</span>';
@@ -3455,7 +3455,7 @@
 
         $('#pagination-wrapper').show();
         $('#loadmore-wrapper').hide();
-        
+
         // Reset pagination state
         currentPage = 1;
         updatePaginationControls();
@@ -3465,11 +3465,11 @@
     function updatePaginationControls() {
         const startIndex = (currentPage - 1) * pagesize + 1;
         const endIndex = Math.min(currentPage * pagesize, totalRestaurants);
-        
+
         $('#pagination-info').text(`Showing ${startIndex}-${endIndex} of ${totalRestaurants} restaurants`);
         $('#current-page').text(currentPage);
         $('#total-pages').text(totalPages);
-        
+
         // Update button states
         $('#prev-page').prop('disabled', currentPage === 1);
         $('#next-page').prop('disabled', currentPage === totalPages);
@@ -3478,7 +3478,7 @@
     // Function to go to specific page
     function goToPage(page) {
         if (page < 1 || page > totalPages) return;
-        
+
         currentPage = page;
         displayCurrentPage();
         updatePaginationControls();
@@ -3489,10 +3489,10 @@
         const startIndex = (currentPage - 1) * pagesize;
         const endIndex = startIndex + pagesize;
         const pageData = filteredVendorsData.slice(startIndex, endIndex);
-        
+
         const html = buildAllStoresHTMLFromArray(pageData);
         $('#all_stores').html(html);
-        
+
         // Update delivery badges and distance information
         pageData.forEach(vendor => {
             const deliveryStatus = vendorDeliveryCache.get(vendor.id);
@@ -3619,7 +3619,7 @@
 
             // Initialize pagination
             initializePagination();
-            
+
             // Display first page
             displayCurrentPage();
         }, 0);
@@ -3709,7 +3709,7 @@
             placeholderImage,
             // Add other critical images here
         ];
-        
+
         criticalImages.forEach(src => {
             if (src && !imageCache.has(src)) {
                 const img = new Image();
