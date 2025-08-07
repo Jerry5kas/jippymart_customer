@@ -309,11 +309,11 @@
             $("#field_error1").css('display','block');
             $("#field_error1").html("");
             jQuery("#field_error1").html("Invalid Email Address. Please enter a valid email.");
-        } 
+        }
         else if ($("#mobileNumber").val() == ""){
             $("#field_error1").css('display','block');
             $("#field_error1").html("");
-            jQuery("#field_error1").html("Please enter phone number");  
+            jQuery("#field_error1").html("Please enter phone number");
         }
         else if (jQuery("#mobileNumber").val() && jQuery("#country_selector").val()) {
             $("#field_error1").css('display','none');

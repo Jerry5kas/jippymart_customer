@@ -12,8 +12,10 @@
     .product-name img {
         border-radius: 5px;
     }
+    #remove-coupon {
+    cursor: pointer !important;
+}
 </style>
-
 <?php
 if (@$order_complete){ ?>
 <div class="d-flex siddhi-cart-item-profile bg-white p-3">
@@ -26,18 +28,16 @@ if (@$order_complete){ ?>
     <?php if (@$cart['item'] && !empty($cart['item'])) {
         $restaurant_id = array_key_first($cart['item']);
         $restaurant_name = @$cart['restaurant']['name'];
-        ?>
-    <div class="restaurant-info mt-2">
-        <small class="text-muted">
-            <i class="fa fa-store"></i> Items from: <strong><?php echo $restaurant_name; ?></strong>
-        </small>
-        <button type="button" class="btn btn-sm btn-outline-danger ml-2" onclick="clearCart()">
-            <i class="fa fa-trash"></i> Clear Cart
-        </button>
-    </div>
+    ?>
+        <div class="d-flex justify-content-between align-items-center">
+            <small class="text-muted">
+            <i class="fa fa-store"></i> Items from: <strong id="restaurant-name"></strong></small>
+            <button type="button" class="btn btn-sm btn-outline-danger ml-2" onclick="clearCart()">
+                <i class="fa fa-trash"></i> Clear Cart
+            </button>
+        </div>
     <?php } ?>
 </div>
-
 <?php
 
 if (@$cart['item']){ ?>
@@ -295,6 +295,9 @@ if (@$cart['item']){ ?>
                 <div class="d-flex justify-content-between mb-2">
                     <span>Coupon Discount</span>
                     <span class="text-success">₹<?php echo number_format(floatval($discount_amount), $digit_decimal); ?></span>
+                    <?php if($coupon_code > 0){ ?>
+                    <span id="remove-coupon" class="pointer text-danger">x</span>
+                    <?php } ?>
                 </div>
                 <div class="d-flex justify-content-between mb-2">
                     <span>Special Discount</span>
@@ -407,12 +410,12 @@ if (@$cart['item']){ ?>
     placeholder="Enter coupon code" required>
     <div id="coupon-message"></div>
     <button type="button" id="apply-coupon-code" class="btn btn-primary btn-sm" data-vendor-id="<?php echo @$cart['restaurant']['id']; ?>">Apply Coupon</button>
-    <button type="button" id="remove-coupon" class="btn btn-primary btn-sm ml-2">Remove Coupon</button>
+    <!-- <button type="button" id="remove-coupon" class="btn btn-primary btn-sm ml-2">Remove Coupon</button> -->
 @php
     $cartTotal = session('$to_pay') ?? 0;
 @endphp
 
-{{-- Coupon suggestions --}}
+<!-- {{-- Coupon suggestions --}}
 @if ($cartTotal < 299)
     <p class="text-muted mt-2">Shop ₹{{ 299 }} more to unlock ₹100 off with code <strong>FLAT100</strong>.</p>
 @elseif ($cartTotal < 599)
@@ -420,7 +423,7 @@ if (@$cart['item']){ ?>
     <p class="text-muted">Shop ₹{{ 599 - $to_pay }} more to unlock ₹50 off with code <strong>SAVE50</strong>.</p>
 @else
     <p class="text-success mt-2">You can use <strong>SAVE30</strong> or <strong>SAVE50</strong>.</p>
-@endif
+@endif -->
 </div>
         <!-- <button class="btn btn-block mt-3" style="background-color: #ff9800; color: #fff; border: none;" type="button"
                 onclick="finalCheckout()">

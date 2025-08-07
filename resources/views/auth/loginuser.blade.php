@@ -13,22 +13,22 @@ foreach ($countries as $keycountry => $valuecountry) {
 ?>
 <link href="{{ asset('vendor/select2/dist/css/select2.min.css')}}" rel="stylesheet">
 <!-- Font Awesome loaded globally in app.blade.php -->
-<div class="login-page vh-100">
+<div class="login-page vh-100 bg-primary">
     <div class="d-flex align-items-center justify-content-center vh-100">
         <div class="col-md-6">
             <div class="col-10 mx-auto card p-3">
-                <h3 class="text-dark my-0 mb-3">{{trans('lang.login')}}</h3>
-                <p class="text-50">{{trans('lang.sign_in_to_continue')}}</p>
+                <h3 class="text-dark text-center font-weight-bold my-0 mb-3">{{trans('lang.login')}}</h3>
+{{--                <p class="text-50">{{trans('lang.sign_in_to_continue')}}</p>--}}
                 <div class="error" id="error"></div>
                 <form class="mt-3 mb-4" action="#" onsubmit="return loginClick()" id="login-box">
                     <div class="form-group">
-                        <label for="email" class="text-dark">{{trans('lang.user_email')}}</label>
+                        <label for="email" class="text-dark font-weight-bold">{{trans('lang.user_email')}}</label>
                         <input type="email" placeholder="{{trans('lang.user_email_help_2')}}" class="form-control"
                                id="email" aria-describedby="emailHelp" name="email">
                         <div  class="error" id="email_required"></div>
                     </div>
                     <div class="form-group">
-                        <label for="password" class="text-dark">{{trans('lang.password')}}</label>
+                        <label for="password" class="text-dark font-weight-bold">{{trans('lang.password')}}</label>
                         <input type="password" placeholder="{{trans('lang.user_password_help_2')}}" class="form-control"
                                id="password" name="password">
                         <div class="error" id="password_required"></div>

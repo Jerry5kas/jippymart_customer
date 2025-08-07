@@ -255,7 +255,7 @@
 <input type="hidden" name="restaurant_id" id="restaurant_id" value="<?php echo isset($_GET['id']) ? $_GET['id'] : ''; ?>">
 <input type="hidden" name="restaurant_name_url" id="restaurant_name_url" value="<?php echo isset($restaurantName) ? $restaurantName : ''; ?>">
 <input type="hidden" name="zone_name_url" id="zone_name_url" value="<?php echo isset($zoneName) ? $zoneName : ''; ?>">
-<input type="hidden" name="restaurant_name" id="restaurant_name" value="">
+<input type="hidden" name="restaurant_name" id="restaurant_name" value="<?php echo isset($restaurantName) ? $restaurantName : ''; ?>">
 <input type="hidden" name="restaurant_location" id="restaurant_location" value="">
 <input type="hidden" name="restaurant_latitude" id="restaurant_latitude" value="">
 <input type="hidden" name="restaurant_longitude" id="restaurant_longitude" value="">
@@ -1443,6 +1443,7 @@
                                 data-vendor-id="${vendorId}"
                                 data-category-id="${product.categoryID}"
                                 data-product-name="${product.name}"
+                                data-product-disPrice="${product.disPrice}"
                                 data-product-price="${product.price}"
                                 data-product-photo="${imgSrc}"
                             >
@@ -1571,14 +1572,21 @@
                 return;
             }
             const btn = e.target;
+            const disPrice = btn.getAttribute('data-product-disPrice');
+            const regularPrice = btn.getAttribute('data-product-price');
+            // Use discounted price if available, otherwise use regular price
+            const finalPrice = disPrice && disPrice !== '0' && disPrice !== 'null' ? disPrice : regularPrice;
+            
             const item = {
                 product_id: btn.getAttribute('data-product-id'),
                 vendor_id: btn.getAttribute('data-vendor-id'),
                 category_id: btn.getAttribute('data-category-id'),
                 name: btn.getAttribute('data-product-name'),
-                price: btn.getAttribute('data-product-price'),
+                price: finalPrice,
+                disPrice: disPrice,
                 photo: btn.getAttribute('data-product-photo'),
-                quantity: 1
+                quantity: 1,
+                restaurant_name: document.getElementById('restaurant_name').value // <-- add this
             };
             addToCart(item);
         }
@@ -1601,6 +1609,14 @@
             const itemTotal = parseFloat(item.price) * item.quantity;
             totalQty += item.quantity;
             totalAmount += itemTotal;
+            
+            // Show price information with discount if available
+            let priceDisplay = `₹${(itemTotal).toFixed(2)}`;
+            if (item.disPrice && item.disPrice !== '0' && item.disPrice !== 'null' && parseFloat(item.disPrice) < parseFloat(item.price)) {
+                const originalTotal = parseFloat(item.disprice) * item.quantity;
+                priceDisplay = `₹${(itemTotal).toFixed(2)} <span class="text-gray-400 line-through text-xs">₹${originalTotal.toFixed(2)}</span>`;
+            }
+            
             html += `<li class="py-2 flex items-center group">
                     <img src="${item.photo}" alt="${item.name}" class="w-12 h-12 object-cover rounded mr-3 border">
                     <div class="flex-1">
@@ -1609,7 +1625,7 @@
                             <button class="cart-qty-btn bg-gray-200 px-2 rounded text-lg font-bold" data-action="decrease" data-idx="${idx}">-</button>
                             <span class="mx-2">${item.quantity}</span>
                             <button class="cart-qty-btn bg-gray-200 px-2 rounded text-lg font-bold" data-action="increase" data-idx="${idx}">+</button>
-                            <span class="ml-4">₹${(itemTotal).toFixed(2)}</span>
+                            <span class="ml-4">${priceDisplay}</span>
                         </div>
                     </div>
                     <button class="cart-remove-btn ml-4 text-gray-400 hover:text-red-600 text-xl" data-idx="${idx}" title="Remove">
@@ -1661,6 +1677,28 @@
             }
             setCart(cart);
             renderCartModal();
+
+            // --- SYNC WITH BACKEND/SIDEBAR ---
+            const item = cart[idx];
+            if (item) {
+                $.ajax({
+                    type: 'POST',
+                    url: '/change-quantity-cart',
+                    data: {
+                        id: item.product_id,
+                        restaurant_id: item.vendor_id,
+                        quantity: item.quantity,
+                        _token: document.querySelector('meta[name=csrf-token]').content
+                    },
+                    success: function(data) {
+                        if (data && data.html) {
+                            if ($('#cart_list').length) {
+                                $('#cart_list').html(data.html);
+                            }
+                        }
+                    }
+                });
+            }
         } else if (e.target.closest('.cart-remove-btn')) {
             const btn = e.target.closest('.cart-remove-btn');
             const idx = parseInt(btn.getAttribute('data-idx'));
@@ -1728,9 +1766,9 @@
                 name: item.name,
                 quantity: item.quantity,
                 stock_quantity: item.stock_quantity || '',
-                item_price: item.price, // assuming price is item_price
+                item_price: item.price, // using the final price (discounted if available)
                 price: item.price,
-                dis_price: item.dis_price || '',
+                dis_price: item.disPrice || '',
                 extra_price: item.extra_price || 0,
                 extra: item.extra || [],
                 size: item.size || '',
