@@ -12,7 +12,7 @@
     "braintree/braintree_php": "^6.7",
     "firebase/php-jwt": "^6.11",
     "google/apiclient": "^2.16",
-    "google/apiclient-services": "*",
+    "google/apiclient-services": "^0.406.0",
     "google/cloud": "*",
     "guzzlehttp/guzzle": "^7.2",
     "illuminate/support": "^10.0",
