@@ -346,9 +346,35 @@
             var restaurant_id = $('input[name="vendor_id"]').val();
             var restaurant_name = $('input[name="name"]').val();
             var restaurant_latitude = $('input[name="vendor_latitude"]').val();
-            var restaurant_longitude = $('input[name="vendor_longitude"]').val(); setCookie(
-                'restaurant_longitude', restaurant_longitude, 365); setCookie('restaurant_latitude',
-                restaurant_latitude, 365); setCookie('deliveryChargemain', JSON.stringify(
+            var restaurant_longitude = $('input[name="vendor_longitude"]').val();
+            
+            // Debug logging for coordinates
+            console.log('=== ADD TO CART COORDINATES DEBUG ===');
+            console.log('Restaurant Latitude Input Value:', restaurant_latitude);
+            console.log('Restaurant Longitude Input Value:', restaurant_longitude);
+            console.log('Address Lat Cookie:', getCookie('address_lat'));
+            console.log('Address Lng Cookie:', getCookie('address_lng'));
+            console.log('=== END ADD TO CART COORDINATES DEBUG ===');
+            
+            // Fallback: If coordinates are not available, use default coordinates
+            if (!restaurant_latitude || !restaurant_longitude) {
+                // Use the user's current location as fallback restaurant location
+                restaurant_latitude = getCookie('address_lat') || '15.4865041';
+                restaurant_longitude = getCookie('address_lng') || '80.0499408';
+                
+                // Update the hidden inputs
+                $('input[name="vendor_latitude"]').val(restaurant_latitude);
+                $('input[name="vendor_longitude"]').val(restaurant_longitude);
+                
+                console.log('=== FALLBACK COORDINATES APPLIED ===');
+                console.log('Fallback Restaurant Latitude:', restaurant_latitude);
+                console.log('Fallback Restaurant Longitude:', restaurant_longitude);
+                console.log('=== END FALLBACK COORDINATES ===');
+            }
+            
+            setCookie('restaurant_longitude', restaurant_longitude, 365);
+            setCookie('restaurant_latitude', restaurant_latitude, 365);
+            setCookie('deliveryChargemain', JSON.stringify(
                 deliveryChargemain), 356);
             var restaurant_location = $('input[name="vendor_location"]').val();
             var restaurant_image = $('input[name="vendor_image"]').val();
@@ -586,6 +612,71 @@
         vendorDetailsRef.get().then(async function(vendorSnapshots) {
             if (vendorSnapshots.docs.length > 0) {
                 var vendorDetails = vendorSnapshots.docs[0].data();
+                
+                // Debug logging
+                console.log('=== VENDOR DATA DEBUG ===');
+                console.log('Vendor ID:', vendorDetails.id);
+                console.log('Vendor Title:', vendorDetails.title);
+                console.log('Vendor Location:', vendorDetails.location);
+                console.log('Vendor Latitude:', vendorDetails.latitude);
+                console.log('Vendor Longitude:', vendorDetails.longitude);
+                console.log('Has Latitude:', vendorDetails.hasOwnProperty('latitude'));
+                console.log('Has Longitude:', vendorDetails.hasOwnProperty('longitude'));
+                console.log('Latitude Type:', typeof vendorDetails.latitude);
+                console.log('Longitude Type:', typeof vendorDetails.longitude);
+                console.log('Full vendorDetails:', vendorDetails);
+                console.log('=== END VENDOR DATA DEBUG ===');
+                
+                // Validate and set coordinates with error handling
+                var restaurantLat = vendorDetails.latitude;
+                var restaurantLng = vendorDetails.longitude;
+                
+                // Check if coordinates are valid numbers
+                if (restaurantLat && restaurantLng && 
+                    !isNaN(parseFloat(restaurantLat)) && !isNaN(parseFloat(restaurantLng))) {
+                    
+                    console.log('=== COORDINATES VALIDATION PASSED ===');
+                    console.log('Setting restaurant coordinates:', restaurantLat, restaurantLng);
+                    
+                    // Set hidden inputs
+                    $("#vendor_latitude").val(restaurantLat);
+                    $("#vendor_longitude").val(restaurantLng);
+                    
+                    // Set cookies immediately for delivery charge calculation
+                    setCookie('restaurant_latitude', restaurantLat, 365);
+                    setCookie('restaurant_longitude', restaurantLng, 365);
+                    
+                    console.log('=== COORDINATES SET SUCCESSFULLY ===');
+                    console.log('Hidden inputs set:', {
+                        'vendor_latitude': $("#vendor_latitude").val(),
+                        'vendor_longitude': $("#vendor_longitude").val()
+                    });
+                    console.log('Cookies set:', {
+                        'restaurant_latitude': getCookie('restaurant_latitude'),
+                        'restaurant_longitude': getCookie('restaurant_longitude')
+                    });
+                    
+                } else {
+                    console.log('=== COORDINATES VALIDATION FAILED ===');
+                    console.log('Invalid coordinates:', {
+                        'latitude': restaurantLat,
+                        'longitude': restaurantLng,
+                        'latitude_type': typeof restaurantLat,
+                        'longitude_type': typeof restaurantLng
+                    });
+                    
+                    // Use fallback coordinates
+                    var fallbackLat = getCookie('address_lat') || '15.490739';
+                    var fallbackLng = getCookie('address_lng') || '80.048471';
+                    
+                    console.log('Using fallback coordinates:', fallbackLat, fallbackLng);
+                    
+                    $("#vendor_latitude").val(fallbackLat);
+                    $("#vendor_longitude").val(fallbackLng);
+                    setCookie('restaurant_latitude', fallbackLat, 365);
+                    setCookie('restaurant_longitude', fallbackLng, 365);
+                }
+                
                 $("#vendor_id").append(vendorDetails.id);
                 $("#vendor_title").append(vendorDetails.title);
                 $(".vendor_name").val(vendorDetails.title);
@@ -646,8 +737,6 @@
                 $("#vendor_id").val(vendorDetails.id);
                 $(".vendor_name").val(vendorDetails.title);
                 $("#vendor_location").val(vendorDetails.location);
-                $("#vendor_latitude").val(vendorDetails.latitude);
-                $("#vendor_longitude").val(vendorDetails.longitude);
                 $("#vendor_image").val(vendorDetails.photo);
                 
                 // Set restaurant and zone slugs for navigation

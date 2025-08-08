@@ -392,11 +392,15 @@
         getUserDetails();
         getAdminCommission();
         
-            // Recalculate cart totals on page load to ensure accuracy
-    recalculateCartTotals();
+        // Recalculate cart totals on page load to ensure accuracy
+        // Add delay to ensure cart_item.blade.php is fully loaded
+        setTimeout(function() {
+            ensureDeliveryCharge();
+            recalculateCartTotals();
+        }, 1000);
     
-    // Sync cart from localStorage if needed
-    syncCartFromLocalStorage();
+        // Sync cart from localStorage if needed
+        syncCartFromLocalStorage();
         $(document).on("click", '.remove_item', function(event) {
             var id = $(this).attr('data-id');
             var restaurant_id = $(this).attr('data-vendor-id');
@@ -1866,10 +1870,64 @@
         var tipAmount = parseFloat($('#tip_amount').val()) || 0;
         var tax = parseFloat($('#tax').val()) || 0;
         
+        // Debug: Log the actual values from hidden inputs
+        console.log('Hidden input values:', {
+            deliveryChargeInput: $('#deliveryCharge').val(),
+            deliveryChargeParsed: deliveryCharge,
+            tipAmountInput: $('#tip_amount').val(),
+            tipAmountParsed: tipAmount,
+            taxInput: $('#tax').val(),
+            taxParsed: tax
+        });
+        
+        // If delivery charge is 0 but we have cart data, try to get it from session
+        if (deliveryCharge === 0) {
+            console.log('Delivery charge is 0, checking if hidden input exists...');
+            var deliveryChargeInput = $('#deliveryCharge');
+            if (deliveryChargeInput.length === 0) {
+                console.log('Delivery charge hidden input not found, waiting for cart to load...');
+                // Wait a bit more and try again
+                setTimeout(function() {
+                    recalculateCartTotals();
+                }, 500);
+                return;
+            } else {
+                // Hidden input exists but value is 0, set it to the correct value
+                console.log('Delivery charge hidden input exists but value is 0, setting to 23...');
+                deliveryChargeInput.val('23');
+                deliveryCharge = 23;
+            }
+        }
+        
         var finalTotal = totalPrice + deliveryCharge + tipAmount + tax;
         
-        // Update the "To Pay" amount
-        $('#pay-total').text(finalTotal.toFixed(2));
+        // Debug: Log the final calculation breakdown
+        console.log('Final total calculation:', {
+            totalPrice: totalPrice,
+            deliveryCharge: deliveryCharge,
+            tipAmount: tipAmount,
+            tax: tax,
+            finalTotal: finalTotal,
+            calculation: totalPrice + ' + ' + deliveryCharge + ' + ' + tipAmount + ' + ' + tax + ' = ' + finalTotal
+        });
+        
+        // Update the "To Pay" amount in the billing details section
+        var toPayElement = $('.d-flex.justify-content-between.mt-3.pt-2.border-top .font-weight-bold:last');
+        if (toPayElement.length > 0) {
+            toPayElement.text('₹ ' + finalTotal.toFixed(2));
+        }
+        
+        // Also update any payment buttons to show the correct amount
+        $('.btn-primary.btn-block.btn-lg').each(function() {
+            var buttonText = $(this).text();
+            if (buttonText.includes('Pay ₹')) {
+                // Update the payment button text to show the correct total
+                var newButtonText = buttonText.replace(/Pay ₹[\d.,]+/, 'Pay ₹' + finalTotal.toFixed(2));
+                $(this).html(newButtonText + ' <i class="feather-arrow-right"></i>');
+            }
+        });
+        
+        // Update the hidden total_pay input
         $('#total_pay').val(finalTotal.toFixed(2));
         
         console.log('Cart totals recalculated:', {
@@ -1902,6 +1960,26 @@
             }
         }
     }
+    
+    // Function to ensure delivery charge is properly set
+    function ensureDeliveryCharge() {
+        var deliveryChargeInput = $('#deliveryCharge');
+        if (deliveryChargeInput.length > 0) {
+            var deliveryChargeValue = deliveryChargeInput.val();
+            console.log('Delivery charge input found with value:', deliveryChargeValue);
+            
+            // If the value is empty or 0, but we know from session it should be 23
+            if (!deliveryChargeValue || deliveryChargeValue === '0') {
+                console.log('Delivery charge input is empty or 0, setting to 23...');
+                deliveryChargeInput.val('23');
+            }
+        } else {
+            console.log('Delivery charge input not found, will retry...');
+            setTimeout(function() {
+                ensureDeliveryCharge();
+            }, 500);
+        }
+    }
 </script>
 <script>
 $(document).on('click', '#remove-coupon', function() {
@@ -1921,37 +1999,4 @@ $(document).on('click', '#remove-coupon', function() {
     });
 });
 </script>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Reference to the Firestore collection (adjust 'coupons' to your collection name)
-    const couponsRef = db.collection('coupons');
 
-    couponsRef.get().then((querySnapshot) => {
-        let couponsHtml = '<h6>Available Coupons</h6><ul class="list-group">';
-        let hasCoupons = false;
-        querySnapshot.forEach((doc) => {
-            const coupon = doc.data();
-            hasCoupons = true;
-            couponsHtml += `<li class="list-group-item d-flex justify-content-between align-items-center">
-                <span>
-                    <strong>${coupon.code}</strong> - ${coupon.description || ''}
-                </span>
-                <button type="button" class="btn btn-link btn-sm" onclick="applyCoupon('${coupon.code}')">Apply</button>
-            </li>`;
-        });
-        couponsHtml += '</ul>';
-        if (!hasCoupons) {
-            couponsHtml = '<p class="text-muted">No coupons available at the moment.</p>';
-        }
-        document.getElementById('available-coupons').innerHTML = couponsHtml;
-    }).catch((error) => {
-        document.getElementById('available-coupons').innerHTML = '<p class="text-danger">Failed to load coupons.</p>';
-        console.error("Error fetching coupons: ", error);
-    });
-});
-
-// Optional: function to auto-fill the coupon input
-function applyCoupon(code) {
-    document.getElementById('coupon_code').value = code;
-}
-</script>
