@@ -391,6 +391,12 @@
         }
         getUserDetails();
         getAdminCommission();
+        
+            // Recalculate cart totals on page load to ensure accuracy
+    recalculateCartTotals();
+    
+    // Sync cart from localStorage if needed
+    syncCartFromLocalStorage();
         $(document).on("click", '.remove_item', function(event) {
             var id = $(this).attr('data-id');
             var restaurant_id = $(this).attr('data-vendor-id');
@@ -412,6 +418,11 @@
                         document.getElementsByName("scheduleTime")[0].min = today;
                     }
                     getAdminCommission();
+                    
+                    // Recalculate totals after item removal
+                    setTimeout(function() {
+                        recalculateCartTotals();
+                    }, 500);
                 }
             });
         });
@@ -454,6 +465,11 @@
                         document.getElementsByName("scheduleTime")[0].min = today;
                     }
                     getAdminCommission();
+                    
+                    // Recalculate totals after quantity change
+                    setTimeout(function() {
+                        recalculateCartTotals();
+                    }, 500);
                 }
             });
 
@@ -1823,6 +1839,67 @@
         // Prevent typing the minus key
         if (e.key === '-' || e.key === 'e') {
             e.preventDefault();
+        }
+    }
+    
+    // Function to recalculate cart totals on page load
+    function recalculateCartTotals() {
+        var totalPrice = 0;
+        
+        // Calculate total for each item
+        $('.product-item').each(function() {
+            var itemId = $(this).data('id');
+            var itemPrice = parseFloat($('#item_price_' + itemId).val()) || 0;
+            var extraPrice = parseFloat($('#extras_price_' + itemId).val()) || 0;
+            var quantity = parseInt($('#quantity_' + itemId).val()) || 0;
+            
+            // Calculate item total
+            var itemTotal = (itemPrice + extraPrice) * quantity;
+            totalPrice += itemTotal;
+            
+            // Update individual item total display
+            $('.cart_iteam_total_' + itemId).text(itemTotal.toFixed(2));
+        });
+        
+        // Update the total price display in billing details
+        var deliveryCharge = parseFloat($('#deliveryCharge').val()) || 0;
+        var tipAmount = parseFloat($('#tip_amount').val()) || 0;
+        var tax = parseFloat($('#tax').val()) || 0;
+        
+        var finalTotal = totalPrice + deliveryCharge + tipAmount + tax;
+        
+        // Update the "To Pay" amount
+        $('#pay-total').text(finalTotal.toFixed(2));
+        $('#total_pay').val(finalTotal.toFixed(2));
+        
+        console.log('Cart totals recalculated:', {
+            totalPrice: totalPrice,
+            deliveryCharge: deliveryCharge,
+            tipAmount: tipAmount,
+            tax: tax,
+            finalTotal: finalTotal
+        });
+    }
+    
+    // Function to sync cart from localStorage if needed
+    function syncCartFromLocalStorage() {
+        // Check if we have cart data in localStorage that needs to be synced
+        var localStorageCart = localStorage.getItem('cart');
+        if (localStorageCart) {
+            try {
+                var cart = JSON.parse(localStorageCart);
+                if (Array.isArray(cart) && cart.length > 0) {
+                    console.log('Found cart data in localStorage:', cart);
+                    
+                    // If cart items exist in localStorage, ensure they're properly synced
+                    // This will trigger a recalculation of totals
+                    setTimeout(function() {
+                        recalculateCartTotals();
+                    }, 1000);
+                }
+            } catch (error) {
+                console.error('Error parsing localStorage cart:', error);
+            }
         }
     }
 </script>

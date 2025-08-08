@@ -190,13 +190,24 @@ if (@$cart['item']){ ?>
             <p class="text-gray mb-0 float-right ml-3 text-muted small">
                 <span class="currency-symbol-left"></span>
                 <span class="cart_iteam_total_<?php echo $key1; ?>">
-                    <?php $totalItemPrice = @floatval($value_item['price']) + @floatval($value_item['extra_price']) * @floatval($value_item['quantity']);
-                        $digit_decimal = 0;
-                        if (@$cart['decimal_degits']) {
-                            $digit_decimal = $cart['decimal_degits'];
-                        }
-                        echo number_format($totalItemPrice, $digit_decimal);
-                        ?>
+                    <?php 
+                    // Calculate individual item total correctly
+                    $basePrice = @floatval($value_item['item_price']); // Use item_price as base price
+                    $extraPrice = @floatval($value_item['extra_price']);
+                    $quantity = @floatval($value_item['quantity']);
+                    $totalItemPrice = ($basePrice + $extraPrice) * $quantity;
+                    
+                    $digit_decimal = 0;
+                    if (@$cart['decimal_degits']) {
+                        $digit_decimal = $cart['decimal_degits'];
+                    }
+                    echo number_format($totalItemPrice, $digit_decimal);
+                    
+                    // Debug information (remove in production)
+                    if (isset($_GET['debug'])) {
+                        echo "<!-- Debug: basePrice=$basePrice, extraPrice=$extraPrice, quantity=$quantity, total=$totalItemPrice -->";
+                    }
+                    ?>
                 </span>
                 <span class="currency-symbol-right"></span>
             </p>
@@ -206,7 +217,13 @@ if (@$cart['item']){ ?>
                 class="fa fa-times"></i></div>
     </div>
 
-        <?php $total_price = $total_price + (floatval($value_item['price']) + (@floatval($value_item['extra_price']) * @floatval($value_item['quantity'])));
+        <?php 
+        // Calculate total price correctly for each item
+        $basePrice = @floatval($value_item['item_price']); // Use item_price as base price
+        $extraPrice = @floatval($value_item['extra_price']);
+        $quantity = @floatval($value_item['quantity']);
+        $itemTotal = ($basePrice + $extraPrice) * $quantity;
+        $total_price = $total_price + $itemTotal;
     } ?>
 
     <?php } ?>
