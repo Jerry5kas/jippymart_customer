@@ -1035,13 +1035,17 @@
     $auth_id = Auth::id();
 
     if ($auth_id) {
-        $user = user::select('email')->where('id', $auth_id)->first();
+        $user = \App\Models\User::select('email')->where('id', $auth_id)->first();
 
-        $user_email = $user->email;
+        if ($user) {
+            $user_email = $user->email;
 
-        $user_uuid = VendorUsers::select('uuid')->where('email', $user_email)->first();
+            $user_uuid = \App\Models\VendorUsers::select('uuid')->where('email', $user_email)->first();
 
-        $user_uuid = $user_uuid->uuid;
+            if ($user_uuid) {
+                $user_uuid = $user_uuid->uuid;
+            }
+        }
     }
 
     ?>

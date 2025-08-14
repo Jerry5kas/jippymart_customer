@@ -511,6 +511,7 @@
 
                 // Set current restaurant for favorite functionality
                 setCurrentRestaurant(vendorId, vendorDetails.title);
+                // Initialize status as closed (will be updated by failproof system)
                 $("#vendor_shop_status").html("{{ trans('lang.closed') }}");
                 $("#vendor_shop_status").addClass('close');
                 var days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday',
@@ -527,7 +528,11 @@
                     minute = '0' + minute
                 }
                 var currentHours = hour + ':' + minute;
+                // Store working hours for failproof status system
                 if (vendorDetails.hasOwnProperty('workingHours')) {
+                    restaurantWorkingHours = vendorDetails.workingHours;
+                    
+                    // Display working hours in UI
                     for (i = 0; i < vendorDetails.workingHours.length; i++) {
                         var day = vendorDetails.workingHours[i]['day'];
                         if (vendorDetails.workingHours[i]['day'] == currentDay) {
@@ -551,12 +556,6 @@
                                         time + ' ' + to +
                                         '<br/><span class="margine" style="margin-right: 65px;"></span>'
                                     );
-                                    if (currentHours >= timeslot[`from`] && currentHours <= timeslot[
-                                        `to`]) {
-                                        $("#vendor_shop_status").html("{{ trans('lang.open') }}");
-                                        $("#vendor_shop_status").removeClass('close');
-                                        $("#vendor_shop_status").addClass('open');
-                                    }
                                 }
                             } else {
                                 $('.time').html('');
@@ -564,9 +563,11 @@
                         }
                     }
                 }
-                if (vendorDetails.hasOwnProperty('isOpen') && vendorDetails.isOpen == true) {
-                    vendorOpen = vendorDetails.isOpen;
+                // Set restaurant open/close status
+                if (vendorDetails.hasOwnProperty('isOpen')) {
+                    restaurantIsOpen = vendorDetails.isOpen;
                 } else {
+                    restaurantIsOpen = null; // No manual toggle set
                 }
                 var newdeliveryCharge = [];
                 try {
@@ -812,6 +813,13 @@
                     locationElem.textContent = vendorDetails.location || '-';
                 }
                 restaurantWorkingHours = vendorDetails.workingHours || [];
+                
+                // Apply failproof restaurant status system
+                const status = getRestaurantStatus(restaurantWorkingHours, restaurantIsOpen);
+                updateRestaurantStatusUI(status);
+                
+                // Start monitoring status changes
+                startStatusMonitoring();
             }
         })
     }
@@ -1562,10 +1570,11 @@
     // Event delegation for add-to-cart buttons
     document.addEventListener('click', function(e) {
         if (e.target.classList.contains('add-to-cart-btn')) {
-            if (!isRestaurantOpenNow(restaurantWorkingHours)) {
+            if (!isRestaurantOpenNow(restaurantWorkingHours, restaurantIsOpen)) {
+                const status = getRestaurantStatus(restaurantWorkingHours, restaurantIsOpen);
                 Swal.fire({
                     title: 'Restaurant Closed',
-                    text: 'You cannot add items to the cart because the restaurant is currently closed.',
+                    text: status.reason,
                     icon: 'error',
                     confirmButtonText: 'OK'
                 });
@@ -1903,9 +1912,12 @@
         setCurrentRestaurant(vendorId, 'Restaurant');
     }
 
-    // Utility function to check if restaurant is open based on workingHours
-    function isRestaurantOpenNow(workingHours) {
-        if (!Array.isArray(workingHours)) return false;
+    // Failproof Restaurant Open/Close Status System
+    // This function implements a comprehensive decision logic that ensures
+    // restaurants can NEVER show as "open" when they should be closed
+    
+    function isRestaurantOpenNow(workingHours, isOpen = null) {
+        // Step 1: Get current day and time
         const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
         const now = new Date();
         const currentDay = days[now.getDay()];
@@ -1914,21 +1926,164 @@
         if (hour < 10) hour = '0' + hour;
         if (minute < 10) minute = '0' + minute;
         const currentTime = hour + ':' + minute;
-        for (let i = 0; i < workingHours.length; i++) {
-            if (workingHours[i]['day'] === currentDay) {
-                const slots = workingHours[i]['timeslot'] || [];
-                for (let j = 0; j < slots.length; j++) {
-                    const from = slots[j]['from'];
-                    const to = slots[j]['to'];
-                    if (currentTime >= from && currentTime <= to) {
-                        return true;
+        
+        // Step 2: Check if within working hours
+        let withinWorkingHours = false;
+        
+        if (Array.isArray(workingHours)) {
+            for (let i = 0; i < workingHours.length; i++) {
+                if (workingHours[i]['day'] === currentDay) {
+                    const slots = workingHours[i]['timeslot'] || [];
+                    for (let j = 0; j < slots.length; j++) {
+                        const from = slots[j]['from'];
+                        const to = slots[j]['to'];
+                        if (currentTime >= from && currentTime <= to) {
+                            withinWorkingHours = true;
+                            break;
+                        }
+                    }
+                    if (withinWorkingHours) break;
+                }
+            }
+        }
+        
+        // Step 3: Apply failproof decision logic
+        // Decision Table:
+        // | isOpen | Within Working Hours? | Final Status | Reason |
+        // |--------|---------------------|--------------|---------|
+        // | true   | yes                  | OPEN         | Normal case – toggle ON and hours valid |
+        // | false  | yes                  | CLOSED       | Manual override to close |
+        // | true   | no                   | CLOSED       | Even if toggle ON, can't open outside hours |
+        // | false  | no                   | CLOSED       | Manual override + hours invalid |
+        // | null   | yes                  | OPEN         | No manual toggle, rely on hours |
+        // | null   | no                   | CLOSED       | No manual toggle, rely on hours |
+        
+        // Failproof rule: Only return true if BOTH conditions are met
+        if (isOpen === true && withinWorkingHours) {
+            return true; // OPEN - both conditions satisfied
+        }
+        
+        // All other cases return false (CLOSED)
+        return false;
+    }
+    
+    // Enhanced function to get restaurant status with detailed information
+    function getRestaurantStatus(workingHours, isOpen = null) {
+        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const now = new Date();
+        const currentDay = days[now.getDay()];
+        let hour = now.getHours();
+        let minute = now.getMinutes();
+        if (hour < 10) hour = '0' + hour;
+        if (minute < 10) minute = '0' + minute;
+        const currentTime = hour + ':' + minute;
+        
+        let withinWorkingHours = false;
+        let workingHoursInfo = {
+            day: currentDay,
+            currentTime: currentTime,
+            slots: []
+        };
+        
+        if (Array.isArray(workingHours)) {
+            for (let i = 0; i < workingHours.length; i++) {
+                if (workingHours[i]['day'] === currentDay) {
+                    const slots = workingHours[i]['timeslot'] || [];
+                    workingHoursInfo.slots = slots;
+                    for (let j = 0; j < slots.length; j++) {
+                        const from = slots[j]['from'];
+                        const to = slots[j]['to'];
+                        if (currentTime >= from && currentTime <= to) {
+                            withinWorkingHours = true;
+                            break;
+                        }
                     }
                 }
             }
         }
-        return false;
+        
+        const isOpenNow = isRestaurantOpenNow(workingHours, isOpen);
+        
+        return {
+            isOpen: isOpenNow,
+            withinWorkingHours: withinWorkingHours,
+            manualToggle: isOpen,
+            workingHoursInfo: workingHoursInfo,
+            reason: getStatusReason(isOpen, withinWorkingHours, isOpenNow)
+        };
     }
+    
+    // Helper function to get human-readable reason for status
+    function getStatusReason(isOpen, withinWorkingHours, finalStatus) {
+        if (finalStatus) {
+            return "Restaurant is open - within working hours and manual toggle is ON";
+        }
+        
+        if (isOpen === false) {
+            return "Restaurant is manually closed by owner";
+        }
+        
+        if (isOpen === true && !withinWorkingHours) {
+            return "Restaurant is outside working hours (manual toggle ignored)";
+        }
+        
+        if (isOpen === null && !withinWorkingHours) {
+            return "Restaurant is outside working hours";
+        }
+        
+        return "Restaurant is closed";
+    }
+    
+    // Function to update UI based on restaurant status
+    function updateRestaurantStatusUI(status) {
+        const statusElement = document.getElementById('vendor_shop_status');
+        const addToCartButtons = document.querySelectorAll('.add-to-cart-btn');
+        
+        if (statusElement) {
+            if (status.isOpen) {
+                statusElement.innerHTML = "{{ trans('lang.open') }}";
+                statusElement.className = 'open';
+            } else {
+                statusElement.innerHTML = "{{ trans('lang.closed') }}";
+                statusElement.className = 'close';
+            }
+        }
+        
+        // Update add-to-cart buttons
+        addToCartButtons.forEach(button => {
+            if (status.isOpen) {
+                button.disabled = false;
+                button.classList.remove('opacity-50', 'cursor-not-allowed');
+                button.innerHTML = '<span class="inline-flex items-center gap-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13l-1.35 2.7A2 2 0 008.48 19h7.04a2 2 0 001.83-1.3L17 13M7 13V6h13"/></svg> ADD</span>';
+            } else {
+                button.disabled = true;
+                button.classList.add('opacity-50', 'cursor-not-allowed');
+                button.innerHTML = '<span class="text-xs font-semibold">Closed</span>';
+            }
+        });
+        
+        // Log status for debugging
+        console.log('Restaurant Status:', status);
+    }
+    
+    // Function to check restaurant status periodically (every 5 minutes)
+    function startStatusMonitoring() {
+        // Check status immediately
+        checkAndUpdateStatus();
+        
+        // Then check every 5 minutes
+        setInterval(checkAndUpdateStatus, 5 * 60 * 1000);
+    }
+    
+    function checkAndUpdateStatus() {
+        if (restaurantWorkingHours && typeof restaurantIsOpen !== 'undefined') {
+            const status = getRestaurantStatus(restaurantWorkingHours, restaurantIsOpen);
+            updateRestaurantStatusUI(status);
+        }
+    }
+    
     let restaurantWorkingHours = [];
+    let restaurantIsOpen = null; // Will be set when vendor details are loaded
 </script>
 
 <!-- Google Fonts: Outfit -->

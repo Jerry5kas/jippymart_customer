@@ -11,19 +11,24 @@ use Xendit\Invoice\CreateInvoiceRequest;
 use Xendit\XenditSdkException;
 use GuzzleHttp\Client;
 use Session;
+use App\Services\DeliveryChargeService;
+
 class CheckoutController extends Controller
 {
+    protected $deliveryChargeService;
+    
     /**
      * Create a new controller instance.
      *
      * @return void
      */
-    public function __construct()
+    public function __construct(DeliveryChargeService $deliveryChargeService)
     {
         if (!isset($_COOKIE['address_name'])) {
             \Redirect::to('set-location')->send();
         }
         $this->middleware('auth');
+        $this->deliveryChargeService = $deliveryChargeService;
     }
     /**
      * Write code on Method
@@ -37,36 +42,142 @@ class CheckoutController extends Controller
         $cart = Session::get('cart', []);
         if (Session::get('takeawayOption') == 'true') {
         } else {
-            $deliveryChargemain = @$_COOKIE['deliveryChargemain'];
             $address_lat = @$_COOKIE['address_lat'];
             $address_lng = @$_COOKIE['address_lng'];
             $restaurant_latitude = @$_COOKIE['restaurant_latitude'];
             $restaurant_longitude = @$_COOKIE['restaurant_longitude'];
-            if (@$deliveryChargemain && @$address_lat && @$address_lng && @$restaurant_latitude && @$restaurant_longitude) {
-                $deliveryChargemain = json_decode($deliveryChargemain);
-                if (!empty($deliveryChargemain)) {
-                    if (!empty($cart['distanceType'])) {
-                        $distanceType = $cart['distanceType'];
-                    } else {
-                        $distanceType = 'km';
+            
+            if (@$address_lat && @$address_lng && @$restaurant_latitude && @$restaurant_longitude) {
+                if (!empty($cart['distanceType'])) {
+                    $distanceType = $cart['distanceType'];
+                } else {
+                    $distanceType = 'km';
+                }
+                
+                $kmradius = $this->distance($address_lat, $address_lng, $restaurant_latitude, $restaurant_longitude, $distanceType);
+                
+                // Store distance for new delivery charge system
+                $cart['deliverykm'] = $kmradius;
+                
+                // Apply new delivery charge system if enabled
+                if ($this->deliveryChargeService->shouldUseNewDeliverySystem()) {
+                    // Calculate item total for new delivery charge system
+                    $itemTotal = $this->calculateCartItemTotal($cart);
+                    
+                    // Debug information (remove in production)
+                    if (isset($_GET['debug'])) {
+                        error_log("DEBUG: Item total = " . $itemTotal);
+                        error_log("DEBUG: Distance = " . $kmradius);
+                        error_log("DEBUG: Address lat = " . $address_lat);
+                        error_log("DEBUG: Address lng = " . $address_lng);
+                        error_log("DEBUG: Restaurant lat = " . $restaurant_latitude);
+                        error_log("DEBUG: Restaurant lng = " . $restaurant_longitude);
                     }
-                    $delivery_charges_per_km = $deliveryChargemain->delivery_charges_per_km;
-                    $minimum_delivery_charges = $deliveryChargemain->minimum_delivery_charges;
-                    $minimum_delivery_charges_within_km = $deliveryChargemain->minimum_delivery_charges_within_km;
-                    $kmradius = $this->distance($address_lat, $address_lng, $restaurant_latitude, $restaurant_longitude, $distanceType);
-                    if ($minimum_delivery_charges_within_km > $kmradius) {
-                        $cart['deliverychargemain'] = $minimum_delivery_charges;
-                    } else {
-                        $cart['deliverychargemain'] = round($kmradius * $delivery_charges_per_km, 2);
+                    
+                    // Calculate new delivery charge
+                    $calculation = $this->deliveryChargeService->calculateDeliveryCharge($itemTotal, $kmradius);
+                    $cart['deliverycharge'] = $calculation['actual_fee'];
+                    $cart['deliverychargemain'] = $calculation['original_fee'];
+                    $cart['delivery_charge_calculation'] = $calculation;
+                    
+                    // Debug information (remove in production)
+                    if (isset($_GET['debug'])) {
+                        error_log("DEBUG: Actual fee = " . $calculation['actual_fee']);
+                        error_log("DEBUG: Original fee = " . $calculation['original_fee']);
+                        error_log("DEBUG: Is free delivery = " . ($calculation['is_free_delivery'] ? 'true' : 'false'));
+                        error_log("DEBUG: UI type = " . $calculation['ui_components']['type']);
                     }
-                    $cart['deliverykm'] = $kmradius;
                 }
             }
 
             if (@$cart['isSelfDelivery'] === true || @$cart['isSelfDelivery'] === "true" ) {
                 $cart['deliverycharge'] = 0;
             } else {
-                $cart['deliverycharge'] = @$cart['deliverychargemain'];
+                // Use new system's actual fee if available, otherwise fall back to old system
+                if (isset($cart['delivery_charge_calculation'])) {
+                    $cart['deliverycharge'] = $cart['delivery_charge_calculation']['actual_fee'];
+                } else {
+                    // If no delivery charge calculation exists, try to calculate with default distance
+                    if ($this->deliveryChargeService->shouldUseNewDeliverySystem()) {
+                        $itemTotal = $this->calculateCartItemTotal($cart);
+                        
+                        // Debug information (remove in production)
+                        if (isset($_GET['debug'])) {
+                            error_log("DEBUG FALLBACK: Item total = " . $itemTotal);
+                            error_log("DEBUG FALLBACK: Address lat exists = " . (isset($_COOKIE['address_lat']) ? 'yes' : 'no'));
+                            error_log("DEBUG FALLBACK: Address lng exists = " . (isset($_COOKIE['address_lng']) ? 'yes' : 'no'));
+                        }
+                        
+                        // Only use fallback if we have some location data
+                        if (isset($_COOKIE['address_lat']) && isset($_COOKIE['address_lng'])) {
+                            // For items below threshold, always use base delivery charge regardless of distance
+                            if ($itemTotal < 299) {
+                                $cart['deliverycharge'] = 23; // Base delivery charge
+                                $cart['deliverychargemain'] = 23;
+                                
+                                // Debug information (remove in production)
+                                if (isset($_GET['debug'])) {
+                                    error_log("DEBUG FALLBACK: Item < 299, using base charge 23 regardless of distance");
+                                }
+                            } else {
+                                // For items above threshold, use a default distance of 5km if restaurant coordinates are missing
+                                $defaultDistance = 5;
+                                $calculation = $this->deliveryChargeService->calculateDeliveryCharge($itemTotal, $defaultDistance);
+                                $cart['deliverycharge'] = $calculation['actual_fee'];
+                                $cart['deliverychargemain'] = $calculation['original_fee'];
+                                $cart['delivery_charge_calculation'] = $calculation;
+                                
+                                // Debug information (remove in production)
+                                if (isset($_GET['debug'])) {
+                                    error_log("DEBUG FALLBACK: Using default distance calculation for item >= 299");
+                                    error_log("DEBUG FALLBACK: Actual fee = " . $calculation['actual_fee']);
+                                    error_log("DEBUG FALLBACK: UI type = " . $calculation['ui_components']['type']);
+                                }
+                            }
+                        } else {
+                            // No location data available - use base delivery charge for items below threshold
+                            if ($itemTotal < 299) {
+                                $cart['deliverycharge'] = 23; // Base delivery charge
+                                $cart['deliverychargemain'] = 23;
+                                
+                                // Debug information (remove in production)
+                                if (isset($_GET['debug'])) {
+                                    error_log("DEBUG FALLBACK: No location data, item < 299, using base charge 23");
+                                }
+                            } else {
+                                // For items above threshold, assume free delivery within range
+                                $cart['deliverycharge'] = 0;
+                                $cart['deliverychargemain'] = 23;
+                                
+                                // Debug information (remove in production)
+                                if (isset($_GET['debug'])) {
+                                    error_log("DEBUG FALLBACK: No location data, item >= 299, using free delivery");
+                                }
+                            }
+                        }
+                    } else {
+                        $cart['deliverycharge'] = @$cart['deliverychargemain'];
+                    }
+                }
+            }
+
+            // Recalculate tax with new delivery charges
+            if (isset($cart['item']) && !empty($cart['item'])) {
+                $itemTotal = $this->calculateCartItemTotal($cart);
+                $delivery_charge_for_tax = $cart['deliverycharge'] ?? 0;
+                
+                // Calculate new tax (SGST + GST)
+                $taxCalculation = $this->calculateNewTax($cart, $itemTotal, $delivery_charge_for_tax);
+                
+                $cart['tax'] = $taxCalculation['total_tax'];
+                $cart['sgst'] = $taxCalculation['sgst'];
+                $cart['gst'] = $taxCalculation['gst'];
+                $cart['tax_label'] = 'SGST + GST';
+            }
+
+            // Ensure decimal_degits is set to 2 for proper display
+            if (!isset($cart['decimal_degits']) || $cart['decimal_degits'] == 0) {
+                $cart['decimal_degits'] = 2;
             }
 
             Session::put('cart', $cart);
@@ -96,7 +207,6 @@ class CheckoutController extends Controller
                 $razorpayKey = $cart['cart_order']['razorpayKey'];
                 $authorName = $cart['cart_order']['authorName'];
                 $total_pay = $cart['cart_order']['total_pay'];
-                $amount = 0;
                 $formatted_price = $cart['cart_order']['currencyData']['symbol'] . number_format($total_pay, $cart['cart_order']['currencyData']['decimal_degits']);
                 return view('checkout.razorpay', ['is_checkout' => 1, 'cart' => $cart, 'id' => $user->uuid, 'email' => $email, 'authorName' => $authorName, 'amount' => $total_pay, 'razorpaySecret' => $razorpaySecret, 'razorpayKey' => $razorpayKey, 'cart_order' => $cart['cart_order'], 'formatted_price' => $formatted_price]);
             } elseif ($cart['cart_order']['payment_method'] == 'payfast') {
@@ -807,6 +917,74 @@ class CheckoutController extends Controller
         } else {
             return $miles;
         }
+    }
+
+    /**
+     * Calculate total item value from cart
+     */
+    private function calculateCartItemTotal($cart)
+    {
+        $total = 0;
+        
+        if (isset($cart['item']) && is_array($cart['item'])) {
+            foreach ($cart['item'] as $restaurantItems) {
+                if (is_array($restaurantItems)) {
+                    foreach ($restaurantItems as $item) {
+                        $basePrice = floatval($item['item_price'] ?? 0);
+                        $extraPrice = floatval($item['extra_price'] ?? 0);
+                        $quantity = floatval($item['quantity'] ?? 1);
+                        
+                        $total += ($basePrice + $extraPrice) * $quantity;
+                    }
+                }
+            }
+        }
+        
+        return $total;
+    }
+
+    /**
+     * Calculate tax according to new rules:
+     * SGST (5%) on Item Total (before discounts)
+     * GST (18%) on Delivery Charges (base ₹23 + extra distance charges)
+     */
+    private function calculateNewTax($cart, $total_item_price, $delivery_charge)
+    {
+        $sgst = 0;
+        $gst = 0;
+        $total_tax = 0;
+        
+        // Calculate SGST (5%) on Item Total (before any discounts)
+        $item_total_before_discount = 0;
+        if (isset($cart['item']) && is_array($cart['item'])) {
+            foreach ($cart['item'] as $restaurantItems) {
+                if (is_array($restaurantItems)) {
+                    foreach ($restaurantItems as $item) {
+                        $basePrice = floatval($item['item_price'] ?? 0);
+                        $extraPrice = floatval($item['extra_price'] ?? 0);
+                        $quantity = floatval($item['quantity'] ?? 1);
+                        $item_total_before_discount += ($basePrice + $extraPrice) * $quantity;
+                    }
+                }
+            }
+        }
+        
+        // SGST = 5% of item total (before discounts)
+        $sgst = ($item_total_before_discount * 5) / 100;
+        
+        // GST = 18% of delivery charge
+        $gst = ($delivery_charge * 18) / 100;
+        
+        // Total tax = SGST + GST
+        $total_tax = $sgst + $gst;
+        
+        return [
+            'sgst' => $sgst,
+            'gst' => $gst,
+            'total_tax' => $total_tax,
+            'item_total_before_discount' => $item_total_before_discount,
+            'delivery_charge' => $delivery_charge
+        ];
     }
 
     // /**

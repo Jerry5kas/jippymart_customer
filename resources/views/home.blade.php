@@ -779,6 +779,7 @@
 <script src="{{ asset('js/geofirestore.js') }}"></script>
 <script src="https://cdn.firebase.com/libs/geofire/5.0.1/geofire.min.js"></script>
 <script type="text/javascript" src="{{ asset('vendor/swiper/swiper.min.js') }}"></script>
+<script src="{{ asset('js/restaurant-status.js') }}"></script>
 
 <script type="text/javascript">
     jQuery("#data-table_processing").show();
@@ -1647,8 +1648,17 @@
         return minPrice === Infinity ? 0 : minPrice;
     }
 
-    // Function to get vendor's current status
+    // Function to get vendor's current status using failproof logic
     function getVendorStatus(vendorData) {
+        // Use the failproof restaurant status manager
+        if (window.restaurantStatusManager) {
+            const workingHours = vendorData.workingHours || [];
+            const isOpen = vendorData.isOpen !== undefined ? vendorData.isOpen : null;
+            const status = window.restaurantStatusManager.isRestaurantOpenNow(workingHours, isOpen);
+            return status ? 'Open' : 'Closed';
+        }
+        
+        // Fallback to old logic if restaurant status manager is not available
         var status = 'Closed';
         var days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
         var currentdate = new Date();
@@ -1855,32 +1865,45 @@
                     rating = Math.round(rating * 10) / 10;
                     reviewsCount = val.reviewsCount;
                 }
+                // Use failproof status logic
                 var status = 'Closed';
                 var statusclass = "closed";
-                var days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-                var currentdate = new Date();
-                var currentDay = days[currentdate.getDay()];
-                hour = currentdate.getHours();
-                minute = currentdate.getMinutes();
-                if (hour < 10) {
-                    hour = '0' + hour
-                }
-                if (minute < 10) {
-                    minute = '0' + minute
-                }
-                var currentHours = hour + ':' + minute;
-                if (val.hasOwnProperty('workingHours')) {
-                    for (i = 0; i < val.workingHours.length; i++) {
-                        var day = val.workingHours[i]['day'];
-                        if (val.workingHours[i]['day'] == currentDay) {
-                            if (val.workingHours[i]['timeslot'].length != 0) {
-                                for (j = 0; j < val.workingHours[i]['timeslot'].length; j++) {
-                                    var timeslot = val.workingHours[i]['timeslot'][j];
-                                    var from = timeslot[`from`];
-                                    var to = timeslot[`to`];
-                                    if (currentHours >= from && currentHours <= to) {
-                                        status = '{{ trans('lang.open') }}';
-                                        statusclass = "open";
+                
+                if (window.restaurantStatusManager) {
+                    const workingHours = val.workingHours || [];
+                    const isOpen = val.isOpen !== undefined ? val.isOpen : null;
+                    const isOpenNow = window.restaurantStatusManager.isRestaurantOpenNow(workingHours, isOpen);
+                    if (isOpenNow) {
+                        status = '{{ trans('lang.open') }}';
+                        statusclass = "open";
+                    }
+                } else {
+                    // Fallback to old logic
+                    var days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                    var currentdate = new Date();
+                    var currentDay = days[currentdate.getDay()];
+                    hour = currentdate.getHours();
+                    minute = currentdate.getMinutes();
+                    if (hour < 10) {
+                        hour = '0' + hour
+                    }
+                    if (minute < 10) {
+                        minute = '0' + minute
+                    }
+                    var currentHours = hour + ':' + minute;
+                    if (val.hasOwnProperty('workingHours')) {
+                        for (i = 0; i < val.workingHours.length; i++) {
+                            var day = val.workingHours[i]['day'];
+                            if (val.workingHours[i]['day'] == currentDay) {
+                                if (val.workingHours[i]['timeslot'].length != 0) {
+                                    for (j = 0; j < val.workingHours[i]['timeslot'].length; j++) {
+                                        var timeslot = val.workingHours[i]['timeslot'][j];
+                                        var from = timeslot[`from`];
+                                        var to = timeslot[`to`];
+                                        if (currentHours >= from && currentHours <= to) {
+                                            status = '{{ trans('lang.open') }}';
+                                            statusclass = "open";
+                                        }
                                     }
                                 }
                             }
@@ -2104,32 +2127,45 @@
                     window.randomizedRatings[val.id] = { rating, reviewsCount };
                 }
             }
+            // Use failproof status logic
             var status = 'Closed';
             var statusclass = "closed";
-            var days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-            var currentdate = new Date();
-            var currentDay = days[currentdate.getDay()];
-            hour = currentdate.getHours();
-            minute = currentdate.getMinutes();
-            if (hour < 10) {
-                hour = '0' + hour
-            }
-            if (minute < 10) {
-                minute = '0' + minute
-            }
-            var currentHours = hour + ':' + minute;
-            if (val.hasOwnProperty('workingHours')) {
-                for (i = 0; i < val.workingHours.length; i++) {
-                    var day = val.workingHours[i]['day'];
-                    if (val.workingHours[i]['day'] == currentDay) {
-                        if (val.workingHours[i]['timeslot'].length != 0) {
-                            for (j = 0; j < val.workingHours[i]['timeslot'].length; j++) {
-                                var timeslot = val.workingHours[i]['timeslot'][j];
-                                var from = timeslot[`from`];
-                                var to = timeslot[`to`];
-                                if (currentHours >= from && currentHours <= to) {
-                                    status = '{{ trans('lang.open') }}';
-                                    statusclass = "open";
+            
+            if (window.restaurantStatusManager) {
+                const workingHours = val.workingHours || [];
+                const isOpen = val.isOpen !== undefined ? val.isOpen : null;
+                const isOpenNow = window.restaurantStatusManager.isRestaurantOpenNow(workingHours, isOpen);
+                if (isOpenNow) {
+                    status = '{{ trans('lang.open') }}';
+                    statusclass = "open";
+                }
+            } else {
+                // Fallback to old logic
+                var days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                var currentdate = new Date();
+                var currentDay = days[currentdate.getDay()];
+                hour = currentdate.getHours();
+                minute = currentdate.getMinutes();
+                if (hour < 10) {
+                    hour = '0' + hour
+                }
+                if (minute < 10) {
+                    minute = '0' + minute
+                }
+                var currentHours = hour + ':' + minute;
+                if (val.hasOwnProperty('workingHours')) {
+                    for (i = 0; i < val.workingHours.length; i++) {
+                        var day = val.workingHours[i]['day'];
+                        if (val.workingHours[i]['day'] == currentDay) {
+                            if (val.workingHours[i]['timeslot'].length != 0) {
+                                for (j = 0; j < val.workingHours[i]['timeslot'].length; j++) {
+                                    var timeslot = val.workingHours[i]['timeslot'][j];
+                                    var from = timeslot[`from`];
+                                    var to = timeslot[`to`];
+                                    if (currentHours >= from && currentHours <= to) {
+                                        status = '{{ trans('lang.open') }}';
+                                        statusclass = "open";
+                                    }
                                 }
                             }
                         }
@@ -2324,32 +2360,45 @@
                     popularItemCount++;
                     popularStoresList.push(val.id);
                 }
+                // Use failproof status logic
                 var status = 'Closed';
                 var statusclass = "closed";
-                var days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-                var currentdate = new Date();
-                var currentDay = days[currentdate.getDay()];
-                hour = currentdate.getHours();
-                minute = currentdate.getMinutes();
-                if (hour < 10) {
-                    hour = '0' + hour
-                }
-                if (minute < 10) {
-                    minute = '0' + minute
-                }
-                var currentHours = hour + ':' + minute;
-                if (val.hasOwnProperty('workingHours')) {
-                    for (i = 0; i < val.workingHours.length; i++) {
-                        var day = val.workingHours[i]['day'];
-                        if (val.workingHours[i]['day'] == currentDay) {
-                            if (val.workingHours[i]['timeslot'].length != 0) {
-                                for (j = 0; j < val.workingHours[i]['timeslot'].length; j++) {
-                                    var timeslot = val.workingHours[i]['timeslot'][j];
-                                    var from = timeslot[`from`];
-                                    var to = timeslot[`to`];
-                                    if (currentHours >= from && currentHours <= to) {
-                                        status = '{{ trans('lang.open') }}';
-                                        statusclass = "open";
+                
+                if (window.restaurantStatusManager) {
+                    const workingHours = val.workingHours || [];
+                    const isOpen = val.isOpen !== undefined ? val.isOpen : null;
+                    const isOpenNow = window.restaurantStatusManager.isRestaurantOpenNow(workingHours, isOpen);
+                    if (isOpenNow) {
+                        status = '{{ trans('lang.open') }}';
+                        statusclass = "open";
+                    }
+                } else {
+                    // Fallback to old logic
+                    var days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                    var currentdate = new Date();
+                    var currentDay = days[currentdate.getDay()];
+                    hour = currentdate.getHours();
+                    minute = currentdate.getMinutes();
+                    if (hour < 10) {
+                        hour = '0' + hour
+                    }
+                    if (minute < 10) {
+                        minute = '0' + minute
+                    }
+                    var currentHours = hour + ':' + minute;
+                    if (val.hasOwnProperty('workingHours')) {
+                        for (i = 0; i < val.workingHours.length; i++) {
+                            var day = val.workingHours[i]['day'];
+                            if (val.workingHours[i]['day'] == currentDay) {
+                                if (val.workingHours[i]['timeslot'].length != 0) {
+                                    for (j = 0; j < val.workingHours[i]['timeslot'].length; j++) {
+                                        var timeslot = val.workingHours[i]['timeslot'][j];
+                                        var from = timeslot[`from`];
+                                        var to = timeslot[`to`];
+                                        if (currentHours >= from && currentHours <= to) {
+                                            status = '{{ trans('lang.open') }}';
+                                            statusclass = "open";
+                                        }
                                     }
                                 }
                             }

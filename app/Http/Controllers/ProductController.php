@@ -8,23 +8,26 @@ use Illuminate\Support\Facades\Storage;
 use Google\Client as Google_Client;
 use Kreait\Firebase\Factory;
 use App\Services\RestaurantService;
+use App\Services\DeliveryChargeService;
 
 class ProductController extends Controller
 {
     protected $restaurantService;
+    protected $deliveryChargeService;
     
     /**
      * Create a new controller instance.
      *
      * @return void
      */
-    public function __construct(RestaurantService $restaurantService)
+    public function __construct(RestaurantService $restaurantService, DeliveryChargeService $deliveryChargeService)
     {
         if (!isset($_COOKIE['address_name'])) {
             \Redirect::to('set-location')->send();
         }
         
         $this->restaurantService = $restaurantService;
+        $this->deliveryChargeService = $deliveryChargeService;
     }
     /**
      * Write code on Method
@@ -75,33 +78,48 @@ class ProductController extends Controller
         $cart['restaurant_longitude'] = $req['restaurant_longitude'];
         $cart['distanceType'] = $req['distanceType'];
         $cart['isSelfDelivery'] = $req['isSelfDelivery'];  
-        $deliveryChargemain = @$_COOKIE['deliveryChargemain'];
         $address_lat = @$_COOKIE['address_lat'];
         $address_lng = @$_COOKIE['address_lng'];
         $restaurant_latitude = @$_COOKIE['restaurant_latitude'];
         $restaurant_longitude = @$_COOKIE['restaurant_longitude'];
         $selfDelivery= $req['isSelfDelivery'];
         
-        if (@$deliveryChargemain && @$address_lat && @$address_lng && @$restaurant_latitude && @$restaurant_longitude) {
-            $deliveryChargemain = json_decode($deliveryChargemain);
-            if (!empty($deliveryChargemain)) {
-                if (! empty($req['distanceType'])) {
-                    $distanceType = $req['distanceType'];
-                }else{
-                    $distanceType = 'km';
+        if (@$address_lat && @$address_lng && @$restaurant_latitude && @$restaurant_longitude) {
+            if (! empty($req['distanceType'])) {
+                $distanceType = $req['distanceType'];
+            }else{
+                $distanceType = 'km';
+            }
+            
+            $kmradius = $this->distance($address_lat, $address_lng, $restaurant_latitude, $restaurant_longitude, $distanceType);
+            
+            // Store distance for new delivery charge system
+            $cart['deliverykm'] = $kmradius;
+            
+            // Apply new delivery charge system if enabled
+            if ($this->deliveryChargeService->shouldUseNewDeliverySystem()) {
+                // Calculate item total for new delivery charge system
+                $itemTotal = 0;
+                if (isset($cart['item'][$restaurant_id])) {
+                    foreach ($cart['item'][$restaurant_id] as $item) {
+                        $basePrice = floatval($item['item_price'] ?? 0);
+                        $extraPrice = floatval($item['extra_price'] ?? 0);
+                        $quantity = floatval($item['quantity'] ?? 1);
+                        $itemTotal += ($basePrice + $extraPrice) * $quantity;
+                    }
                 }
-                $delivery_charges_per_km = $deliveryChargemain->delivery_charges_per_km;
-                $minimum_delivery_charges = $deliveryChargemain->minimum_delivery_charges;
-                $minimum_delivery_charges_within_km = $deliveryChargemain->minimum_delivery_charges_within_km;
-                $kmradius = $this->distance($address_lat, $address_lng, $restaurant_latitude, $restaurant_longitude, $distanceType);
                 
-                if ($minimum_delivery_charges_within_km > $kmradius) {
-                    $cart['deliverychargemain'] = $minimum_delivery_charges;
-                } else {
-                    $cart['deliverychargemain'] = round(($kmradius * $delivery_charges_per_km), 2);
-                }
-                $cart['deliverykm'] = $kmradius;
+                // Add current item to total
+                $currentItemPrice = floatval($req['item_price'] ?? 0);
+                $currentItemExtra = floatval($req['extra_price'] ?? 0);
+                $currentItemQty = floatval($req['quantity'] ?? 1);
+                $itemTotal += ($currentItemPrice + $currentItemExtra) * $currentItemQty;
                 
+                // Calculate new delivery charge
+                $calculation = $this->deliveryChargeService->calculateDeliveryCharge($itemTotal, $kmradius);
+                $cart['deliverycharge'] = $calculation['actual_fee'];
+                $cart['deliverychargemain'] = $calculation['original_fee'];
+                $cart['delivery_charge_calculation'] = $calculation;
             }
         }
        
@@ -111,7 +129,12 @@ class ProductController extends Controller
             $req['delivery_option'] = "delivery";
         }
         if (@$req['delivery_option'] == "delivery") {
-            $cart['deliverycharge'] = @$cart['deliverychargemain'];
+            // Use new system's actual fee if available, otherwise fall back to old system
+            if (isset($cart['delivery_charge_calculation'])) {
+                $cart['deliverycharge'] = $cart['delivery_charge_calculation']['actual_fee'];
+            } else {
+                $cart['deliverycharge'] = @$cart['deliverychargemain'];
+            }
         } else {
             $cart['deliverycharge'] = 0;
             $cart['tip_amount'] = 0;
@@ -199,22 +222,23 @@ class ProductController extends Controller
         $cart['specialOfferDiscount'] = $specialOfferDiscount;
         $cart['specialOfferDiscountVal'] = $specialOfferDiscountVal;
         $cart['specialOfferType'] = $specialOfferType;
-        $totalTaxAmount = 0;
-        if (is_array($cart['taxValue'])) {
-            foreach ($cart['taxValue'] as $val) {
-                if ($val['type'] == 'percentage') {
-                    $tax = ($val['tax'] * $total_item_price) / 100;
-                } else {
-                    $tax = $val['tax'];
-                }
-                $totalTaxAmount += floatval($tax);
-            }
-            $tax = $totalTaxAmount;
-            $tax_label = '';
+        
+        // Calculate delivery charge for tax calculation
+        $delivery_charge_for_tax = 0;
+        if (isset($cart['deliverycharge'])) {
+            $delivery_charge_for_tax = $cart['deliverycharge'];
+        } elseif (isset($cart['deliverychargemain'])) {
+            $delivery_charge_for_tax = $cart['deliverychargemain'];
         }
-        $cart['tax_label'] = $tax_label;
-        $cart['tax'] = $tax;
-        $cart['decimal_degits'] = $req['decimal_degits'];
+        
+        // Calculate new tax (SGST + GST)
+        $taxCalculation = $this->calculateNewTax($cart, $total_item_price, $delivery_charge_for_tax);
+        
+        $cart['tax'] = $taxCalculation['total_tax'];
+        $cart['sgst'] = $taxCalculation['sgst'];
+        $cart['gst'] = $taxCalculation['gst'];
+        $cart['tax_label'] = 'SGST + GST';
+        $cart['decimal_degits'] = $req['decimal_degits'] ?? 2;
         $discounted_subtotal = $total_item_price - $discount_amount - $specialOfferDiscount;
         $five_percent_charge = round($discounted_subtotal * 0.05, 2);
         $cart['eighteen_percent_charge'] = $five_percent_charge;
@@ -240,6 +264,9 @@ class ProductController extends Controller
         echo json_encode($res);
         exit;
     }
+    /**
+     * Calculate distance between two points using Haversine formula
+     */
     public function distance($lat1, $lon1, $lat2, $lon2, $unit)
     {
         $theta = $lon1 - $lon2;
@@ -247,13 +274,13 @@ class ProductController extends Controller
         $dist = acos($dist);
         $dist = rad2deg($dist);
         $miles = $dist * 60 * 1.1515;
-       
-        if ($unit == "km") {
-            return ($miles * 1.609344);
+        if ($unit == 'km') {
+            return $miles * 1.609344;
         } else {
             return $miles;
         }
     }
+
     /**
      * Write code on Method
      *
@@ -643,21 +670,28 @@ class ProductController extends Controller
                 }
             }
             $total_item_price = $total_item_price - $discount_amount - $specialOfferDiscount;
-            $totalTaxAmount = 0;
-            if (is_array($cart['taxValue'])) {
-                foreach ($cart['taxValue'] as $val) {
-                    if ($val['type'] == 'percentage') {
-                        $tax = ($val['tax'] * $total_item_price) / 100;
-                    } else {
-                        $tax = $val['tax'];
-                    }
-                    $totalTaxAmount += floatval($tax);
-                }
-                $tax = $totalTaxAmount;
-                $tax_label = '';
+            
+            // Calculate delivery charge for tax calculation
+            $delivery_charge_for_tax = 0;
+            if (isset($cart['deliverycharge'])) {
+                $delivery_charge_for_tax = $cart['deliverycharge'];
+            } elseif (isset($cart['deliverychargemain'])) {
+                $delivery_charge_for_tax = $cart['deliverychargemain'];
             }
-            $cart['tax_label'] = $tax_label;
-            $cart['tax'] = $tax;
+            
+            // Calculate new tax (SGST + GST)
+            $taxCalculation = $this->calculateNewTax($cart, $total_item_price, $delivery_charge_for_tax);
+            
+            $cart['tax'] = $taxCalculation['total_tax'];
+            $cart['sgst'] = $taxCalculation['sgst'];
+            $cart['gst'] = $taxCalculation['gst'];
+            $cart['tax_label'] = 'SGST + GST';
+            
+            // Ensure decimal_degits is set to 2 for proper display
+            if (!isset($cart['decimal_degits']) || $cart['decimal_degits'] == 0) {
+                $cart['decimal_degits'] = 2;
+            }
+            
             Session::put('cart', $cart);
             Session::save();
             // Auto-apply SAVE30 coupon if item value >= 299, remove if below
@@ -916,7 +950,10 @@ class ProductController extends Controller
         $cart['specialOfferType'] = '';
         $cart['tax_label'] = '';
         $cart['tax'] = 0;
-        $cart['decimal_degits'] = 0;
+        
+        // Get currency data from request or set default
+        $cart['decimal_degits'] = $data['decimal_degits'] ?? 2;
+        
         session(['cart' => $cart]);
         session()->save();
         \Log::debug('syncCart session cart', session('cart'));
@@ -942,5 +979,49 @@ class ProductController extends Controller
     {
         $vendorId = $request->query('vendor_id');
         return response()->json($this->restaurantService->getRestaurantInfo($productId, $vendorId));
+    }
+
+    /**
+     * Calculate tax according to new rules:
+     * SGST (5%) on Item Total (before discounts)
+     * GST (18%) on Delivery Charges (base ₹23 + extra distance charges)
+     */
+    private function calculateNewTax($cart, $total_item_price, $delivery_charge)
+    {
+        $sgst = 0;
+        $gst = 0;
+        $total_tax = 0;
+        
+        // Calculate SGST (5%) on Item Total (before any discounts)
+        $item_total_before_discount = 0;
+        if (isset($cart['item']) && is_array($cart['item'])) {
+            foreach ($cart['item'] as $restaurantItems) {
+                if (is_array($restaurantItems)) {
+                    foreach ($restaurantItems as $item) {
+                        $basePrice = floatval($item['item_price'] ?? 0);
+                        $extraPrice = floatval($item['extra_price'] ?? 0);
+                        $quantity = floatval($item['quantity'] ?? 1);
+                        $item_total_before_discount += ($basePrice + $extraPrice) * $quantity;
+                    }
+                }
+            }
+        }
+        
+        // SGST = 5% of item total (before discounts)
+        $sgst = ($item_total_before_discount * 5) / 100;
+        
+        // GST = 18% of delivery charge
+        $gst = ($delivery_charge * 18) / 100;
+        
+        // Total tax = SGST + GST
+        $total_tax = $sgst + $gst;
+        
+        return [
+            'sgst' => $sgst,
+            'gst' => $gst,
+            'total_tax' => $total_tax,
+            'item_total_before_discount' => $item_total_before_discount,
+            'delivery_charge' => $delivery_charge
+        ];
     }
 }

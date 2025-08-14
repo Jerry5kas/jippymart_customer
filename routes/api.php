@@ -35,3 +35,8 @@ Route::post('/test', function () {
 
 // Route::post('/verify-integrity', [PlayIntegrityController::class, 'verifyToken']);
 Route::middleware('auth:sanctum')->post('/refresh-firebase-token', [App\Http\Controllers\Auth\AjaxController::class, 'refreshFirebaseToken']);
+
+// Delivery Charge API Routes
+Route::post('/calculate-delivery-charge', [App\Http\Controllers\ApiController::class, 'calculateDeliveryCharge']);
+Route::get('/delivery-settings', [App\Http\Controllers\ApiController::class, 'getDeliverySettings']);
+Route::post('/update-delivery-settings', [App\Http\Controllers\ApiController::class, 'updateDeliverySettings']);
