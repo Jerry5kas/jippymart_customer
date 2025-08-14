@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurant Status Test</title>
+    <script src="public/js/restaurant-status.js"></script>
+</head>
+<body>
+    <h1>Restaurant Status Test - Durga Food Plaza</h1>
+    
+    <div id="results"></div>
+    
+    <script>
+        // Durga Food Plaza data from Firestore
+        const durgaFoodPlaza = {
+            id: "ytCN4N4GKPsvIyhnfK7O",
+            title: "Durga Food Plaza",
+            isOpen: false, // This should make it CLOSED regardless of working hours
+            workingHours: [
+                {
+                    day: "Monday",
+                    timeslot: [
+                        { from: "11:00", to: "03:00" },
+                        { from: "06:00", to: "23:00" }
+                    ]
+                },
+                {
+                    day: "Tuesday",
+                    timeslot: [
+                        { from: "11:00", to: "03:00" },
+                        { from: "06:00", to: "23:00" }
+                    ]
+                },
+                {
+                    day: "Wednesday",
+                    timeslot: [
+                        { from: "11:00", to: "03:00" },
+                        { from: "06:00", to: "23:00" }
+                    ]
+                },
+                {
+                    day: "Thursday",
+                    timeslot: [
+                        { from: "11:00", to: "03:00" },
+                        { from: "06:00", to: "23:00" }
+                    ]
+                },
+                {
+                    day: "Friday",
+                    timeslot: [
+                        { from: "11:00", to: "03:00" },
+                        { from: "06:00", to: "23:00" }
+                    ]
+                },
+                {
+                    day: "Saturday",
+                    timeslot: [
+                        { from: "11:00", to: "03:00" },
+                        { from: "06:00", to: "23:00" }
+                    ]
+                },
+                {
+                    day: "Sunday",
+                    timeslot: [
+                        { from: "11:00", to: "03:00" },
+                        { from: "06:00", to: "23:00" }
+                    ]
+                }
+            ]
+        };
+
+        function testRestaurantStatus() {
+            const resultsDiv = document.getElementById('results');
+            let html = '<h2>Test Results:</h2>';
+            
+            // Test 1: Current status with isOpen = false
+            const currentStatus = window.restaurantStatusManager.isRestaurantOpenNow(
+                durgaFoodPlaza.workingHours, 
+                durgaFoodPlaza.isOpen
+            );
+            
+            html += `<p><strong>Test 1 - Current Status (isOpen = false):</strong> ${currentStatus ? 'OPEN' : 'CLOSED'}</p>`;
+            html += `<p>Expected: CLOSED (because isOpen = false)</p>`;
+            html += `<p>Result: ${currentStatus ? '❌ FAIL' : '✅ PASS'}</p>`;
+            
+            // Test 2: Status with isOpen = true
+            const statusWithOpen = window.restaurantStatusManager.isRestaurantOpenNow(
+                durgaFoodPlaza.workingHours, 
+                true
+            );
+            
+            html += `<p><strong>Test 2 - Status with isOpen = true:</strong> ${statusWithOpen ? 'OPEN' : 'CLOSED'}</p>`;
+            html += `<p>Expected: OPEN or CLOSED (depending on current time and working hours)</p>`;
+            html += `<p>Result: ${statusWithOpen ? 'OPEN' : 'CLOSED'}</p>`;
+            
+            // Test 3: Status with isOpen = null (should use working hours only)
+            const statusWithNull = window.restaurantStatusManager.isRestaurantOpenNow(
+                durgaFoodPlaza.workingHours, 
+                null
+            );
+            
+            html += `<p><strong>Test 3 - Status with isOpen = null:</strong> ${statusWithNull ? 'OPEN' : 'CLOSED'}</p>`;
+            html += `<p>Expected: OPEN or CLOSED (based on working hours only)</p>`;
+            html += `<p>Result: ${statusWithNull ? 'OPEN' : 'CLOSED'}</p>`;
+            
+            // Test 4: Get detailed status information
+            const detailedStatus = window.restaurantStatusManager.getRestaurantStatus(
+                durgaFoodPlaza.workingHours, 
+                durgaFoodPlaza.isOpen
+            );
+            
+            html += `<p><strong>Test 4 - Detailed Status:</strong></p>`;
+            html += `<ul>`;
+            html += `<li>Is Open: ${detailedStatus.isOpen ? 'Yes' : 'No'}</li>`;
+            html += `<li>Within Working Hours: ${detailedStatus.withinWorkingHours ? 'Yes' : 'No'}</li>`;
+            html += `<li>Manual Toggle: ${detailedStatus.manualToggle === null ? 'null' : detailedStatus.manualToggle ? 'true' : 'false'}</li>`;
+            html += `<li>Reason: ${detailedStatus.reason}</li>`;
+            html += `</ul>`;
+            
+            resultsDiv.innerHTML = html;
+        }
+        
+        // Run test when page loads
+        window.onload = function() {
+            if (window.restaurantStatusManager) {
+                testRestaurantStatus();
+            } else {
+                document.getElementById('results').innerHTML = '<p style="color: red;">Error: Restaurant status manager not loaded!</p>';
+            }
+        };
+    </script>
+</body>
+</html>
+

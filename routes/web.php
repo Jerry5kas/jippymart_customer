@@ -12,6 +12,7 @@ use App\Http\Controllers\PlayIntegrityController;
 use App\Http\Controllers\PrivacyController;
 
 use App\Http\Controllers\RestaurantController;
+use App\Http\Controllers\RestaurantStatusController;
 
 use App\Http\Controllers\TermsController;
 
@@ -189,6 +190,14 @@ Route::get('/dineinRestaurants', [App\Http\Controllers\DiveinRestaurantControlle
 Route::get('/dyiningrestaurant', [App\Http\Controllers\DiveinRestaurantController::class, 'dyiningrestaurant'])->name('dyiningrestaurant');
 
 Route::post('/sendnotification', [App\Http\Controllers\RestaurantController::class, 'sendnotification'])->name('sendnotification');
+
+// Restaurant Status Management Routes
+Route::prefix('restaurant-status')->group(function () {
+    Route::post('/get-status', [RestaurantStatusController::class, 'getStatus'])->name('restaurant.status.get');
+    Route::post('/get-status-from-firestore', [RestaurantStatusController::class, 'getStatusFromFirestore'])->name('restaurant.status.firestore');
+    Route::post('/update-status', [RestaurantStatusController::class, 'updateStatus'])->name('restaurant.status.update');
+    Route::get('/history/{restaurant_id}', [RestaurantStatusController::class, 'getStatusHistory'])->name('restaurant.status.history');
+});
 
 Route::post('setToken', [App\Http\Controllers\Auth\AjaxController::class, 'setToken'])->name('setToken');
 

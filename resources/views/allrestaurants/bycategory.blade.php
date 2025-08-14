@@ -1313,32 +1313,45 @@
                 var val = listval;
                 html = html +
                     '<div class="col-md-4 pb-3 product-list"><div class="list-card position-relative"><div class="list-card-image">';
+                // Use failproof status logic
                 var status = 'Closed';
                 var statusclass = "closed";
-                var days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-                var currentdate = new Date();
-                var currentDay = days[currentdate.getDay()];
-                hour = currentdate.getHours();
-                minute = currentdate.getMinutes();
-                if (hour < 10) {
-                    hour = '0' + hour
-                }
-                if (minute < 10) {
-                    minute = '0' + minute
-                }
-                var currentHours = hour + ':' + minute;
-                if (val.hasOwnProperty('workingHours')) {
-                    for (i = 0; i < val.workingHours.length; i++) {
-                        var day = val.workingHours[i]['day'];
-                        if (val.workingHours[i]['day'] == currentDay) {
-                            if (val.workingHours[i]['timeslot'].length != 0) {
-                                for (j = 0; j < val.workingHours[i]['timeslot'].length; j++) {
-                                    var timeslot = val.workingHours[i]['timeslot'][j];
-                                    var from = timeslot[`from`];
-                                    var to = timeslot[`to`];
-                                    if (currentHours >= from && currentHours <= to) {
-                                        status = 'Open';
-                                        statusclass = "open";
+                
+                if (window.restaurantStatusManager) {
+                    const workingHours = val.workingHours || [];
+                    const isOpen = val.isOpen !== undefined ? val.isOpen : null;
+                    const isOpenNow = window.restaurantStatusManager.isRestaurantOpenNow(workingHours, isOpen);
+                    if (isOpenNow) {
+                        status = 'Open';
+                        statusclass = "open";
+                    }
+                } else {
+                    // Fallback to old logic
+                    var days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                    var currentdate = new Date();
+                    var currentDay = days[currentdate.getDay()];
+                    hour = currentdate.getHours();
+                    minute = currentdate.getMinutes();
+                    if (hour < 10) {
+                        hour = '0' + hour
+                    }
+                    if (minute < 10) {
+                        minute = '0' + minute
+                    }
+                    var currentHours = hour + ':' + minute;
+                    if (val.hasOwnProperty('workingHours')) {
+                        for (i = 0; i < val.workingHours.length; i++) {
+                            var day = val.workingHours[i]['day'];
+                            if (val.workingHours[i]['day'] == currentDay) {
+                                if (val.workingHours[i]['timeslot'].length != 0) {
+                                    for (j = 0; j < val.workingHours[i]['timeslot'].length; j++) {
+                                        var timeslot = val.workingHours[i]['timeslot'][j];
+                                        var from = timeslot[`from`];
+                                        var to = timeslot[`to`];
+                                        if (currentHours >= from && currentHours <= to) {
+                                            status = 'Open';
+                                            statusclass = "open";
+                                        }
                                     }
                                 }
                             }
@@ -1387,4 +1400,5 @@
         }, 3000);
     }
 </script>
+<script src="{{ asset('js/restaurant-status.js') }}"></script>
 @include('layouts.nav')
