@@ -4,6 +4,7 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+<script src="{{ asset('js/restaurant-status.js') }}"></script>
 
 <!-- Main Content Container (do NOT wrap header) -->
 <div class="max-w-4xl mx-auto bg-white text-gray-800 font-sans px-4 md:px-8 lg:px-16 py-6">
@@ -273,6 +274,23 @@
     var currentCurrency = '';
     var currencyAtRight = false;
     var decimal_degits = 0;
+    var deliveryChargemain = []; // Initialize delivery charge main variable
+    
+    // Check if restaurantStatusManager is loaded
+    console.log('RestaurantStatusManager check on page load:', {
+        manager: !!window.restaurantStatusManager,
+        managerType: typeof window.restaurantStatusManager
+    });
+    
+    // Load delivery charge configuration
+    var refDeliveryCharge = database.collection('settings').doc('deliveryCharge');
+    refDeliveryCharge.get().then(async function (deliveryChargeSnapshots) {
+        if (deliveryChargeSnapshots.exists) {
+            deliveryChargemain = deliveryChargeSnapshots.data();
+            console.log('Loaded delivery charge config:', deliveryChargemain);
+        }
+    });
+    
     var refCurrency = database.collection('currencies').where('isActive', '==', true);
     refCurrency.get().then(async function (snapshots) {
         var currencyData = snapshots.docs[0].data();
@@ -571,16 +589,26 @@
                 }
                 var newdeliveryCharge = [];
                 try {
-                    if (deliveryChargemain.vendor_can_modify) {
+                    if (deliveryChargemain && deliveryChargemain.vendor_can_modify) {
                         if (vendorDetails.deliveryCharge) {
-                            if (vendorDetails.deliveryCharge.delivery_charges_per_km && vendorDetails
-                                .deliveryCharge.minimum_delivery_charges && vendorDetails.deliveryCharge
-                                .minimum_delivery_charges_within_km) {
+                            // Check if delivery charge values are valid numbers (not NaN)
+                            const perKm = parseFloat(vendorDetails.deliveryCharge.delivery_charges_per_km);
+                            const minCharge = parseFloat(vendorDetails.deliveryCharge.minimum_delivery_charges);
+                            const withinKm = parseFloat(vendorDetails.deliveryCharge.minimum_delivery_charges_within_km);
+                            
+                            if (!isNaN(perKm) && !isNaN(minCharge) && !isNaN(withinKm) && 
+                                perKm > 0 && minCharge > 0 && withinKm > 0) {
                                 deliveryChargemain = vendorDetails.deliveryCharge;
+                                console.log('Using vendor delivery charges:', deliveryChargemain);
+                            } else {
+                                console.log('Vendor delivery charges are invalid (NaN or 0):', vendorDetails.deliveryCharge);
                             }
                         }
+                    } else {
+                        console.log('Vendor cannot modify delivery charges or deliveryChargemain not loaded yet');
                     }
                 } catch (error) {
+                    console.error('Error processing delivery charges:', error);
                 }
                 if (vendorDetails.hasOwnProperty('specialDiscount')) {
                     specialOfferVendor = vendorDetails.specialDiscount;
@@ -814,12 +842,28 @@
                 }
                 restaurantWorkingHours = vendorDetails.workingHours || [];
                 
+                // Validate and clean working hours - remove days with empty timeslots
+                if (restaurantWorkingHours.length > 0) {
+                    restaurantWorkingHours = restaurantWorkingHours.filter(day => 
+                        day.timeslot && Array.isArray(day.timeslot) && day.timeslot.length > 0
+                    );
+                    console.log('Cleaned working hours:', restaurantWorkingHours);
+                }
+                
                 // Apply failproof restaurant status system
                 const status = getRestaurantStatus(restaurantWorkingHours, restaurantIsOpen);
+                console.log('Restaurant Status Check:', {
+                    restaurantIsOpen: restaurantIsOpen,
+                    workingHours: restaurantWorkingHours,
+                    status: status
+                });
                 updateRestaurantStatusUI(status);
                 
                 // Start monitoring status changes
                 startStatusMonitoring();
+                
+                // Now render the menu with the correct restaurant status
+                renderMenuAccordionWithFilters();
             }
         })
     }
@@ -1042,9 +1086,57 @@
             });
         }
 
-        // Render menu accordion dynamically
-        renderMenuAccordionWithFilters();
+        // Menu will be rendered after vendor details are loaded
     }
+
+    // Helper function to check restaurant status with fallback
+    function isRestaurantOpenForMenu() {
+        if (window.restaurantStatusManager) {
+            return window.restaurantStatusManager.isRestaurantOpenNow(restaurantWorkingHours, restaurantIsOpen);
+        } else {
+            // Fallback logic
+            console.log('RestaurantStatusManager not available, using fallback logic');
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const now = new Date();
+            const currentDay = days[now.getDay()];
+            let hour = now.getHours();
+            let minute = now.getMinutes();
+            if (hour < 10) hour = '0' + hour;
+            if (minute < 10) minute = '0' + minute;
+            const currentTime = hour + ':' + minute;
+            
+            let withinWorkingHours = false;
+            if (Array.isArray(restaurantWorkingHours)) {
+                for (let i = 0; i < restaurantWorkingHours.length; i++) {
+                    if (restaurantWorkingHours[i]['day'] === currentDay) {
+                        const slots = restaurantWorkingHours[i]['timeslot'] || [];
+                        for (let j = 0; j < slots.length; j++) {
+                            const from = slots[j]['from'];
+                            const to = slots[j]['to'];
+                            if (currentTime >= from && currentTime <= to) {
+                                withinWorkingHours = true;
+                                break;
+                            }
+                        }
+                        if (withinWorkingHours) break;
+                    }
+                }
+            }
+            
+            const result = restaurantIsOpen === true && withinWorkingHours;
+            console.log('Fallback status check:', {
+                restaurantIsOpen: restaurantIsOpen,
+                withinWorkingHours: withinWorkingHours,
+                currentDay: currentDay,
+                currentTime: currentTime,
+                result: result
+            });
+            return result;
+        }
+    }
+    
+    // Global variable to store restaurant status for menu rendering
+    let globalRestaurantStatus = false;
 
     function renderStars(rating, uniqueId = '') {
         let stars = '';
@@ -1157,6 +1249,36 @@
             productsByCategory[product.categoryID].push(product);
         });
 
+        // Debug restaurant status before rendering menu
+        const statusCheck = window.restaurantStatusManager ? window.restaurantStatusManager.isRestaurantOpenNow(restaurantWorkingHours, restaurantIsOpen) : 'Manager not available';
+        console.log('Before rendering menu - Status check:', {
+            restaurantStatusManager: !!window.restaurantStatusManager,
+            restaurantWorkingHours: restaurantWorkingHours,
+            restaurantIsOpen: restaurantIsOpen,
+            statusCheck: statusCheck
+        });
+        
+        // Use the status check result for all menu items
+        const isRestaurantOpen = statusCheck === true;
+        
+        // ROBUST STATUS CHECK: Use fallback logic if restaurantStatusManager is not available
+        let finalRestaurantStatus = false;
+        
+        if (window.restaurantStatusManager) {
+            // Use the global restaurant status manager
+            finalRestaurantStatus = window.restaurantStatusManager.isRestaurantOpenNow(restaurantWorkingHours, restaurantIsOpen);
+            console.log('Using restaurantStatusManager:', finalRestaurantStatus);
+        } else {
+            // Fallback to local status calculation
+            finalRestaurantStatus = isRestaurantOpen;
+            console.log('Using fallback status calculation:', finalRestaurantStatus);
+        }
+        
+        // Store the status globally for use in menu rendering
+        globalRestaurantStatus = finalRestaurantStatus;
+        
+        console.log('Final restaurant status for menu:', globalRestaurantStatus);
+        
         // Render accordions
         let accordionHtml = '';
         categories.forEach(function(category) {
@@ -1233,7 +1355,7 @@
                             <div class="relative w-full h-32 sm:h-28 rounded-xl overflow-hidden shadow-sm mb-3">
                                 <img src="${imgSrc}" alt="${product.name}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
                             </div>
-                            ${isRestaurantOpenNow(restaurantWorkingHours) ? `
+                            ${window.restaurantStatusManager && window.restaurantStatusManager.isRestaurantOpenNow(restaurantWorkingHours, restaurantIsOpen) ? `
                             <button
                                 class="w-full bg-gradient-to-r from-green-500 to-green-600 text-white text-sm font-bold px-6 py-2 rounded-full shadow hover:from-green-600 hover:to-green-700 focus:outline focus:outline-2 focus:outline-orange-600 add-to-cart-btn transition-colors duration-200"
                                 data-product-id="${product.id}"
@@ -1444,7 +1566,7 @@
                             <div class="relative w-full h-32 sm:h-28 rounded-xl overflow-hidden shadow-sm mb-3">
                                 <img src="${imgSrc}" alt="${product.name}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
                             </div>
-                            ${isRestaurantOpenNow(restaurantWorkingHours) ? `
+                            ${window.restaurantStatusManager && window.restaurantStatusManager.isRestaurantOpenNow(restaurantWorkingHours, restaurantIsOpen) ? `
                             <button
                                 class="w-full bg-gradient-to-r from-green-500 to-green-600 text-white text-sm font-bold px-6 py-2 rounded-full shadow hover:from-green-600 hover:to-green-700 focus:outline focus:outline-2 focus:outline-orange-600 add-to-cart-btn transition-colors duration-200"
                                 data-product-id="${product.id}"
@@ -1570,7 +1692,7 @@
     // Event delegation for add-to-cart buttons
     document.addEventListener('click', function(e) {
         if (e.target.classList.contains('add-to-cart-btn')) {
-            if (!isRestaurantOpenNow(restaurantWorkingHours, restaurantIsOpen)) {
+            if (!window.restaurantStatusManager || !window.restaurantStatusManager.isRestaurantOpenNow(restaurantWorkingHours, restaurantIsOpen)) {
                 const status = getRestaurantStatus(restaurantWorkingHours, restaurantIsOpen);
                 Swal.fire({
                     title: 'Restaurant Closed',
@@ -1912,63 +2034,15 @@
         setCurrentRestaurant(vendorId, 'Restaurant');
     }
 
-    // Failproof Restaurant Open/Close Status System
-    // This function implements a comprehensive decision logic that ensures
-    // restaurants can NEVER show as "open" when they should be closed
-    
-    function isRestaurantOpenNow(workingHours, isOpen = null) {
-        // Step 1: Get current day and time
-        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-        const now = new Date();
-        const currentDay = days[now.getDay()];
-        let hour = now.getHours();
-        let minute = now.getMinutes();
-        if (hour < 10) hour = '0' + hour;
-        if (minute < 10) minute = '0' + minute;
-        const currentTime = hour + ':' + minute;
-        
-        // Step 2: Check if within working hours
-        let withinWorkingHours = false;
-        
-        if (Array.isArray(workingHours)) {
-            for (let i = 0; i < workingHours.length; i++) {
-                if (workingHours[i]['day'] === currentDay) {
-                    const slots = workingHours[i]['timeslot'] || [];
-                    for (let j = 0; j < slots.length; j++) {
-                        const from = slots[j]['from'];
-                        const to = slots[j]['to'];
-                        if (currentTime >= from && currentTime <= to) {
-                            withinWorkingHours = true;
-                            break;
-                        }
-                    }
-                    if (withinWorkingHours) break;
-                }
-            }
-        }
-        
-        // Step 3: Apply failproof decision logic
-        // Decision Table:
-        // | isOpen | Within Working Hours? | Final Status | Reason |
-        // |--------|---------------------|--------------|---------|
-        // | true   | yes                  | OPEN         | Normal case – toggle ON and hours valid |
-        // | false  | yes                  | CLOSED       | Manual override to close |
-        // | true   | no                   | CLOSED       | Even if toggle ON, can't open outside hours |
-        // | false  | no                   | CLOSED       | Manual override + hours invalid |
-        // | null   | yes                  | OPEN         | No manual toggle, rely on hours |
-        // | null   | no                   | CLOSED       | No manual toggle, rely on hours |
-        
-        // Failproof rule: Only return true if BOTH conditions are met
-        if (isOpen === true && withinWorkingHours) {
-            return true; // OPEN - both conditions satisfied
-        }
-        
-        // All other cases return false (CLOSED)
-        return false;
-    }
+    // Use global restaurantStatusManager instead of local function
     
     // Enhanced function to get restaurant status with detailed information
     function getRestaurantStatus(workingHours, isOpen = null) {
+        if (window.restaurantStatusManager) {
+            return window.restaurantStatusManager.getRestaurantStatus(workingHours, isOpen);
+        }
+        
+        // Fallback if restaurantStatusManager is not available
         const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
         const now = new Date();
         const currentDay = days[now.getDay()];
@@ -2002,7 +2076,7 @@
             }
         }
         
-        const isOpenNow = isRestaurantOpenNow(workingHours, isOpen);
+        const isOpenNow = false; // Default to closed if manager not available
         
         return {
             isOpen: isOpenNow,
@@ -2036,43 +2110,50 @@
     
     // Function to update UI based on restaurant status
     function updateRestaurantStatusUI(status) {
-        const statusElement = document.getElementById('vendor_shop_status');
-        const addToCartButtons = document.querySelectorAll('.add-to-cart-btn');
-        
-        if (statusElement) {
-            if (status.isOpen) {
-                statusElement.innerHTML = "{{ trans('lang.open') }}";
-                statusElement.className = 'open';
-            } else {
-                statusElement.innerHTML = "{{ trans('lang.closed') }}";
-                statusElement.className = 'close';
+        if (window.restaurantStatusManager) {
+            window.restaurantStatusManager.updateRestaurantStatusUI(status);
+        } else {
+            // Fallback UI update
+            const statusElement = document.getElementById('vendor_shop_status');
+            const addToCartButtons = document.querySelectorAll('.add-to-cart-btn');
+            
+            if (statusElement) {
+                if (status.isOpen) {
+                    statusElement.innerHTML = "{{ trans('lang.open') }}";
+                    statusElement.className = 'open';
+                } else {
+                    statusElement.innerHTML = "{{ trans('lang.closed') }}";
+                    statusElement.className = 'close';
+                }
             }
+            
+            // Update add-to-cart buttons
+            addToCartButtons.forEach(button => {
+                if (status.isOpen) {
+                    button.disabled = false;
+                    button.classList.remove('opacity-50', 'cursor-not-allowed');
+                    button.innerHTML = '<span class="inline-flex items-center gap-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13l-1.35 2.7A2 2 0 008.48 19h7.04a2 2 0 001.83-1.3L17 13M7 13V6h13"/></svg> ADD</span>';
+                } else {
+                    button.disabled = true;
+                    button.classList.add('opacity-50', 'cursor-not-allowed');
+                    button.innerHTML = '<span class="text-xs font-semibold">Closed</span>';
+                }
+            });
+            
+            // Log status for debugging
+            console.log('Restaurant Status:', status);
         }
-        
-        // Update add-to-cart buttons
-        addToCartButtons.forEach(button => {
-            if (status.isOpen) {
-                button.disabled = false;
-                button.classList.remove('opacity-50', 'cursor-not-allowed');
-                button.innerHTML = '<span class="inline-flex items-center gap-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13l-1.35 2.7A2 2 0 008.48 19h7.04a2 2 0 001.83-1.3L17 13M7 13V6h13"/></svg> ADD</span>';
-            } else {
-                button.disabled = true;
-                button.classList.add('opacity-50', 'cursor-not-allowed');
-                button.innerHTML = '<span class="text-xs font-semibold">Closed</span>';
-            }
-        });
-        
-        // Log status for debugging
-        console.log('Restaurant Status:', status);
     }
     
     // Function to check restaurant status periodically (every 5 minutes)
     function startStatusMonitoring() {
-        // Check status immediately
-        checkAndUpdateStatus();
-        
-        // Then check every 5 minutes
-        setInterval(checkAndUpdateStatus, 5 * 60 * 1000);
+        if (window.restaurantStatusManager) {
+            window.restaurantStatusManager.startStatusMonitoring(5);
+        } else {
+            // Fallback monitoring
+            checkAndUpdateStatus();
+            setInterval(checkAndUpdateStatus, 5 * 60 * 1000);
+        }
     }
     
     function checkAndUpdateStatus() {
