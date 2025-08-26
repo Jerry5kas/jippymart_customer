@@ -40,3 +40,41 @@ Route::middleware('auth:sanctum')->post('/refresh-firebase-token', [App\Http\Con
 Route::post('/calculate-delivery-charge', [App\Http\Controllers\ApiController::class, 'calculateDeliveryCharge']);
 Route::get('/delivery-settings', [App\Http\Controllers\ApiController::class, 'getDeliverySettings']);
 Route::post('/update-delivery-settings', [App\Http\Controllers\ApiController::class, 'updateDeliverySettings']);
+
+// Product Stock API Routes
+Route::post('/product-stock-info', [App\Http\Controllers\ApiController::class, 'getProductStockInfo']);
+
+// Razorpay API Routes
+Route::prefix('razorpay')->group(function () {
+    // Public routes (no authentication required)
+    Route::get('/settings', [App\Http\Controllers\Api\RazorpayController::class, 'getSettings']);
+    
+    // Protected routes (authentication required)
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('/create-order', [App\Http\Controllers\Api\RazorpayController::class, 'createOrder']);
+        Route::post('/verify-payment', [App\Http\Controllers\Api\RazorpayController::class, 'verifyPayment']);
+        Route::post('/payment-details', [App\Http\Controllers\Api\RazorpayController::class, 'getPaymentDetails']);
+        Route::post('/refund-payment', [App\Http\Controllers\Api\RazorpayController::class, 'refundPayment']);
+        Route::post('/order-status', [App\Http\Controllers\Api\RazorpayController::class, 'getOrderStatus']);
+    });
+});
+
+// Mart API Routes
+Route::prefix('mart')->group(function () {
+    // Public routes (no authentication required)
+    Route::get('/categories', [App\Http\Controllers\Api\MartController::class, 'getMartCategories']);
+    Route::get('/items', [App\Http\Controllers\Api\MartController::class, 'getMartItems']);
+    Route::post('/item-details', [App\Http\Controllers\Api\MartController::class, 'getItemDetails']);
+    Route::post('/search-items', [App\Http\Controllers\Api\MartController::class, 'searchItems']);
+    Route::post('/vendor-details', [App\Http\Controllers\Api\MartController::class, 'getVendorDetails']);
+    Route::post('/nearby-vendors', [App\Http\Controllers\Api\MartController::class, 'getNearbyVendors']);
+    Route::post('/vendor-working-hours', [App\Http\Controllers\Api\MartController::class, 'getVendorWorkingHours']);
+    Route::post('/vendor-special-discounts', [App\Http\Controllers\Api\MartController::class, 'getVendorSpecialDiscounts']);
+    Route::post('/vendor-items-by-category', [App\Http\Controllers\Api\MartController::class, 'getVendorItemsByCategory']);
+    
+    // Protected routes (authentication required)
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/user-profile', [App\Http\Controllers\Api\MartController::class, 'getUserProfile']);
+        Route::post('/update-user-profile', [App\Http\Controllers\Api\MartController::class, 'updateUserProfile']);
+    });
+});

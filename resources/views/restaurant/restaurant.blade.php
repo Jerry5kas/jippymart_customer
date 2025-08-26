@@ -1466,6 +1466,18 @@
             html = html +
                 '<div class="star position-relative mt-3"><span class="badge badge-success"><i class="feather-star"></i>' +
                 rating + ' (' + reviewsCount + ')</span></div>';
+            
+            // Add quantity display
+            if (val.hasOwnProperty('quantity')) {
+                if (val.quantity == -1) {
+                    html = html + '<div class="mt-2"><small class="text-success"><i class="feather-check-circle"></i> In Stock (Unlimited)</small></div>';
+                } else if (val.quantity > 0) {
+                    html = html + '<div class="mt-2"><small class="text-warning"><i class="feather-alert-circle"></i> Only ' + val.quantity + ' left</small></div>';
+                } else {
+                    html = html + '<div class="mt-2"><small class="text-danger"><i class="feather-x-circle"></i> Out of Stock</small></div>';
+                }
+            }
+            
             html = html + '</div>';
             html = html + '</div></div></div>';
         });
