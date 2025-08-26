@@ -66,7 +66,7 @@ Route::prefix('mart')->group(function () {
     Route::get('/items', [App\Http\Controllers\Api\MartController::class, 'getMartItems']);
     Route::post('/item-details', [App\Http\Controllers\Api\MartController::class, 'getItemDetails']);
     Route::post('/search-items', [App\Http\Controllers\Api\MartController::class, 'searchItems']);
-    Route::post('/vendor-details', [App\Http\Controllers\Api\MartController::class, 'getVendorDetails']);
+    Route::get('/vendor-details/{vendor_id}', [App\Http\Controllers\Api\MartController::class, 'getVendorDetails']);
     Route::post('/nearby-vendors', [App\Http\Controllers\Api\MartController::class, 'getNearbyVendors']);
     Route::post('/vendor-working-hours', [App\Http\Controllers\Api\MartController::class, 'getVendorWorkingHours']);
     Route::post('/vendor-special-discounts', [App\Http\Controllers\Api\MartController::class, 'getVendorSpecialDiscounts']);

@@ -123,24 +123,21 @@ class MartController extends Controller
      * Get vendor details
      *
      * @param Request $request
+     * @param string $vendor_id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function getVendorDetails(Request $request)
+    public function getVendorDetails(Request $request, $vendor_id)
     {
-        $validator = Validator::make($request->all(), [
-            'vendor_id' => 'required|string'
-        ]);
-
-        if ($validator->fails()) {
+        // Validate vendor_id parameter
+        if (empty($vendor_id)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
+                'message' => 'Vendor ID is required'
             ], 422);
         }
 
         try {
-            $vendorData = $this->firebaseService->getVendorData($request->vendor_id);
+            $vendorData = $this->firebaseService->getVendorData($vendor_id);
 
             if (!$vendorData) {
                 return response()->json([
