@@ -43,11 +43,11 @@ class FirebaseService
     {
         try {
             $document = $this->firestore->collection('settings')->document('razorpaySettings')->snapshot();
-            
+
             if ($document->exists()) {
                 return $document->data();
             }
-            
+
             return null;
         } catch (\Exception $e) {
             \Log::error('Error fetching Razorpay settings: ' . $e->getMessage());
@@ -65,11 +65,11 @@ class FirebaseService
     {
         try {
             $document = $this->firestore->collection('users')->document($userId)->snapshot();
-            
+
             if ($document->exists()) {
                 return $document->data();
             }
-            
+
             return null;
         } catch (\Exception $e) {
             \Log::error('Error fetching user data: ' . $e->getMessage());
@@ -122,11 +122,11 @@ class FirebaseService
     {
         try {
             $document = $this->firestore->collection('orders')->document($orderId)->snapshot();
-            
+
             if ($document->exists()) {
                 return $document->data();
             }
-            
+
             return null;
         } catch (\Exception $e) {
             \Log::error('Error fetching order data: ' . $e->getMessage());
@@ -162,11 +162,11 @@ class FirebaseService
     {
         try {
             $document = $this->firestore->collection('vendors')->document($vendorId)->snapshot();
-            
+
             if ($document->exists()) {
                 return $document->data();
             }
-            
+
             return null;
         } catch (\Exception $e) {
             \Log::error('Error fetching vendor data: ' . $e->getMessage());
@@ -188,16 +188,16 @@ class FirebaseService
         try {
             // Create a GeoPoint for the center
             $center = new \Google\Cloud\Core\GeoPoint($latitude, $longitude);
-            
+
             // Calculate bounding box for the radius (approximate)
             $latDelta = $radius / 111.32; // 1 degree = 111.32 km
             $lngDelta = $radius / (111.32 * cos(deg2rad($latitude)));
-            
+
             $minLat = $latitude - $latDelta;
             $maxLat = $latitude + $latDelta;
             $minLng = $longitude - $lngDelta;
             $maxLng = $longitude + $lngDelta;
-            
+
             // Query vendors within the bounding box
             $query = $this->firestore->collection('vendors')
                 ->where('latitude', '>=', $minLat)
@@ -206,31 +206,31 @@ class FirebaseService
                 ->where('longitude', '<=', $maxLng)
                 ->where('isOpen', '==', true)
                 ->limit($limit);
-            
+
             $documents = $query->documents();
             $vendors = [];
-            
+
             foreach ($documents as $document) {
                 $vendorData = $document->data();
                 $vendorData['id'] = $document->id();
-                
+
                 // Calculate actual distance
                 $vendorLat = $vendorData['latitude'] ?? 0;
                 $vendorLng = $vendorData['longitude'] ?? 0;
                 $distance = $this->calculateDistance($latitude, $longitude, $vendorLat, $vendorLng);
-                
+
                 // Only include vendors within the specified radius
                 if ($distance <= $radius) {
                     $vendorData['distance'] = round($distance, 2);
                     $vendors[] = $vendorData;
                 }
             }
-            
+
             // Sort by distance
             usort($vendors, function($a, $b) {
                 return $a['distance'] <=> $b['distance'];
             });
-            
+
             return $vendors;
         } catch (\Exception $e) {
             \Log::error('Error fetching nearby vendors: ' . $e->getMessage());
@@ -248,21 +248,21 @@ class FirebaseService
     {
         try {
             $query = $this->firestore->collection('mart_categories');
-            
+
             // Apply filters
             if (isset($filters['publish'])) {
                 $query = $query->where('publish', '==', $filters['publish']);
             }
-            
+
             $documents = $query->documents();
             $categories = [];
-            
+
             foreach ($documents as $document) {
                 $categoryData = $document->data();
                 $categoryData['id'] = $document->id();
                 $categories[] = $categoryData;
             }
-            
+
             return $categories;
         } catch (\Exception $e) {
             \Log::error('Error fetching mart categories: ' . $e->getMessage());
@@ -283,7 +283,7 @@ class FirebaseService
     {
         try {
             $query = $this->firestore->collection('mart_items');
-            
+
             // Apply filters
             if (isset($filters['vendor_id'])) {
                 $query = $query->where('vendorID', '==', $filters['vendor_id']);
@@ -297,29 +297,29 @@ class FirebaseService
             if (isset($filters['publish'])) {
                 $query = $query->where('publish', '==', $filters['publish']);
             }
-            
+
             // Apply search if provided
             if ($search) {
                 $query = $query->where('name', '>=', $search)
                               ->where('name', '<=', $search . '\uf8ff');
             }
-            
+
             // Apply pagination
             $offset = ($page - 1) * $limit;
             $query = $query->limit($limit)->offset($offset);
-            
+
             $documents = $query->documents();
             $items = [];
-            
+
             foreach ($documents as $document) {
                 $itemData = $document->data();
                 $itemData['id'] = $document->id();
                 $items[] = $itemData;
             }
-            
+
             // For simplicity, we'll assume there are more results if we got the full limit
             $hasMore = count($items) === $limit;
-            
+
             return [
                 'data' => $items,
                 'total' => count($items) + ($page - 1) * $limit,
@@ -345,13 +345,13 @@ class FirebaseService
     {
         try {
             $document = $this->firestore->collection('mart_items')->document($itemId)->snapshot();
-            
+
             if ($document->exists()) {
                 $itemData = $document->data();
                 $itemData['id'] = $document->id();
                 return $itemData;
             }
-            
+
             return null;
         } catch (\Exception $e) {
             \Log::error('Error fetching mart item: ' . $e->getMessage());
@@ -372,7 +372,7 @@ class FirebaseService
     {
         try {
             $searchQuery = $this->firestore->collection('mart_items');
-            
+
             // Apply filters first
             if (isset($filters['vendor_id'])) {
                 $searchQuery = $searchQuery->where('vendorID', '==', $filters['vendor_id']);
@@ -380,26 +380,26 @@ class FirebaseService
             if (isset($filters['category_id'])) {
                 $searchQuery = $searchQuery->where('categoryID', '==', $filters['category_id']);
             }
-            
+
             // Apply search
             $searchQuery = $searchQuery->where('name', '>=', $query)
                                      ->where('name', '<=', $query . '\uf8ff');
-            
+
             // Apply pagination
             $offset = ($page - 1) * $limit;
             $searchQuery = $searchQuery->limit($limit)->offset($offset);
-            
+
             $documents = $searchQuery->documents();
             $items = [];
-            
+
             foreach ($documents as $document) {
                 $itemData = $document->data();
                 $itemData['id'] = $document->id();
                 $items[] = $itemData;
             }
-            
+
             $hasMore = count($items) === $limit;
-            
+
             return [
                 'data' => $items,
                 'total' => count($items) + ($page - 1) * $limit,
@@ -432,22 +432,22 @@ class FirebaseService
                 ->where('categoryID', '==', $categoryId)
                 ->where('publish', '==', true)
                 ->where('isAvailable', '==', true);
-            
+
             // Apply pagination
             $offset = ($page - 1) * $limit;
             $query = $query->limit($limit)->offset($offset);
-            
+
             $documents = $query->documents();
             $items = [];
-            
+
             foreach ($documents as $document) {
                 $itemData = $document->data();
                 $itemData['id'] = $document->id();
                 $items[] = $itemData;
             }
-            
+
             $hasMore = count($items) === $limit;
-            
+
             return [
                 'data' => $items,
                 'total' => count($items) + ($page - 1) * $limit,
@@ -475,16 +475,80 @@ class FirebaseService
     private function calculateDistance(float $lat1, float $lon1, float $lat2, float $lon2): float
     {
         $earthRadius = 6371; // Earth's radius in kilometers
-        
+
         $latDelta = deg2rad($lat2 - $lat1);
         $lonDelta = deg2rad($lon2 - $lon1);
-        
+
         $a = sin($latDelta / 2) * sin($latDelta / 2) +
              cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
              sin($lonDelta / 2) * sin($lonDelta / 2);
-        
+
         $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
-        
+
         return $earthRadius * $c;
+    }
+    /**
+     * Get all mart vendors with filters and pagination
+     *
+     * @param array $filters
+     * @param string|null $search
+     * @param int $page
+     * @param int $limit
+     * @return array
+     */
+    public function getAllMartVendors(array $filters = [], ?string $search = null, int $page = 1, int $limit = 20)
+    {
+        try {
+            $query = $this->firestore->collection('vendors');
+
+            // Always filter by vType = 'mart'
+            $query = $query->where('vType', '==', 'mart');
+
+            // Apply additional filters
+            if (isset($filters['isOpen'])) {
+                $query = $query->where('isOpen', '==', $filters['isOpen']);
+            }
+            if (isset($filters['enabledDelivery'])) {
+                $query = $query->where('enabledDelivery', '==', $filters['enabledDelivery']);
+            }
+            if (isset($filters['categoryID'])) {
+                $query = $query->where('categoryID', 'array-contains', $filters['categoryID']);
+            }
+
+            // Apply search if provided
+            if ($search) {
+                $query = $query->where('title', '>=', $search)
+                              ->where('title', '<=', $search . '\uf8ff');
+            }
+
+            // Apply pagination
+            $offset = ($page - 1) * $limit;
+            $query = $query->limit($limit)->offset($offset);
+
+            $documents = $query->documents();
+            $vendors = [];
+
+            foreach ($documents as $document) {
+                $vendorData = $document->data();
+                $vendorData['id'] = $document->id();
+                $vendors[] = $vendorData;
+            }
+
+            // For simplicity, we'll assume there are more results if we got the full limit
+            $hasMore = count($vendors) === $limit;
+
+            return [
+                'data' => $vendors,
+                'total' => count($vendors) + ($page - 1) * $limit,
+                'has_more' => $hasMore
+            ];
+        } catch (\Exception $e) {
+            \Log::error('Error fetching all mart vendors: ' . $e->getMessage());
+            return [
+                'data' => [],
+                'total' => 0,
+                'has_more' => false
+            ];
+        }
     }
 }

@@ -583,4 +583,71 @@ class MartController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Get all mart vendors
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getAllMartVendors(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'is_open' => 'sometimes|boolean',
+            'enabled_delivery' => 'sometimes|boolean',
+            'category_id' => 'sometimes|string',
+            'page' => 'sometimes|integer|min:1',
+            'limit' => 'sometimes|integer|min:1|max:100',
+            'search' => 'sometimes|string|max:100'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            $filters = [
+                'vType' => 'mart' // Only get mart vendors
+            ];
+
+            // Add optional filters
+            if ($request->has('is_open')) {
+                $filters['isOpen'] = $request->is_open;
+            }
+            if ($request->has('enabled_delivery')) {
+                $filters['enabledDelivery'] = $request->enabled_delivery;
+            }
+            if ($request->has('category_id')) {
+                $filters['categoryID'] = $request->category_id;
+            }
+
+            $page = $request->page ?? 1;
+            $limit = $request->limit ?? 20;
+            $search = $request->search ?? null;
+
+            $vendors = $this->firebaseService->getAllMartVendors($filters, $search, $page, $limit);
+
+            return response()->json([
+                'success' => true,
+                'data' => $vendors['data'],
+                'meta' => [
+                    'current_page' => $page,
+                    'per_page' => $limit,
+                    'total' => $vendors['total'],
+                    'has_more' => $vendors['has_more'],
+                    'filters_applied' => $filters
+                ]
+            ]);
+
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to get mart vendors: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }
