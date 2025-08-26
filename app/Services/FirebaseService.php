@@ -164,7 +164,9 @@ class FirebaseService
             $document = $this->firestore->collection('vendors')->document($vendorId)->snapshot();
 
             if ($document->exists()) {
-                return $document->data();
+                $vendorData = $document->data();
+                // Sanitize the data to remove Inf and NaN values
+                return $this->sanitizeData($vendorData);
             }
 
             return null;
@@ -213,6 +215,9 @@ class FirebaseService
             foreach ($documents as $document) {
                 $vendorData = $document->data();
                 $vendorData['id'] = $document->id();
+
+                // Sanitize the data to remove Inf and NaN values
+                $vendorData = $this->sanitizeData($vendorData);
 
                 // Calculate actual distance
                 $vendorLat = $vendorData['latitude'] ?? 0;
@@ -487,6 +492,52 @@ class FirebaseService
 
         return $earthRadius * $c;
     }
+
+    /**
+     * Sanitize data to remove Inf and NaN values
+     *
+     * @param mixed $data
+     * @return mixed
+     */
+    private function sanitizeData($data)
+    {
+        try {
+            if (is_array($data)) {
+                foreach ($data as $key => $value) {
+                    $data[$key] = $this->sanitizeData($value);
+                }
+                return $data;
+            } elseif (is_float($data)) {
+                // Check for infinite or NaN values
+                if (is_infinite($data) || is_nan($data)) {
+                    \Log::warning('Found infinite or NaN value in vendor data: ' . $data);
+                    return null;
+                }
+                return $data;
+            } elseif (is_numeric($data)) {
+                // Convert to float and check
+                $floatValue = (float) $data;
+                if (is_infinite($floatValue) || is_nan($floatValue)) {
+                    \Log::warning('Found infinite or NaN value in vendor data: ' . $data);
+                    return null;
+                }
+                return $data;
+            } elseif (is_object($data)) {
+                // Handle Firestore objects
+                if (method_exists($data, 'toArray')) {
+                    return $this->sanitizeData($data->toArray());
+                }
+                // Convert to array if possible
+                return $this->sanitizeData((array) $data);
+            }
+            
+            return $data;
+        } catch (\Exception $e) {
+            \Log::error('Error sanitizing data: ' . $e->getMessage());
+            return null;
+        }
+    }
+
     /**
      * Get all mart vendors with filters and pagination
      *
@@ -531,17 +582,35 @@ class FirebaseService
             foreach ($documents as $document) {
                 $vendorData = $document->data();
                 $vendorData['id'] = $document->id();
+                
+                // Sanitize the data to remove Inf and NaN values
+                $vendorData = $this->sanitizeData($vendorData);
+                
                 $vendors[] = $vendorData;
             }
 
             // For simplicity, we'll assume there are more results if we got the full limit
             $hasMore = count($vendors) === $limit;
 
-            return [
+            $result = [
                 'data' => $vendors,
                 'total' => count($vendors) + ($page - 1) * $limit,
                 'has_more' => $hasMore
             ];
+
+            // Validate that the result can be JSON encoded
+            $jsonTest = json_encode($result);
+            if ($jsonTest === false) {
+                \Log::error('JSON encoding failed for vendor data: ' . json_last_error_msg());
+                // Return a simplified version if JSON encoding fails
+                return [
+                    'data' => [],
+                    'total' => 0,
+                    'has_more' => false
+                ];
+            }
+
+            return $result;
         } catch (\Exception $e) {
             \Log::error('Error fetching all mart vendors: ' . $e->getMessage());
             return [

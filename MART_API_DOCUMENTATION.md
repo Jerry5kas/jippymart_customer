@@ -87,18 +87,84 @@ Update the current authenticated user's profile information.
 
 ### Vendor Management
 
-#### 3. Get Vendor Details
-**POST** `/api/mart/vendor-details`
+#### 3. Get All Mart Vendors
+**GET** `/api/mart/vendors`
+
+Get all mart vendors with optional filtering and pagination.
+
+**No authentication required**
+
+#### Query Parameters
+- `is_open` (optional): Filter by open status (true/false)
+- `enabled_delivery` (optional): Filter by delivery availability (true/false)
+- `category_id` (optional): Filter by category ID
+- `search` (optional): Search vendors by title
+- `page` (optional): Page number for pagination (default: 1)
+- `limit` (optional): Number of vendors per page (default: 20, max: 100)
+
+#### Example Request
+```
+GET /api/mart/vendors?is_open=true&enabled_delivery=true&page=1&limit=10
+```
+
+#### Response
+```json
+{
+    "success": true,
+    "data": [
+        {
+            "id": "4ir2OLhuMEc2yg9L1YxX",
+            "title": "Jippy Mart",
+            "description": "-",
+            "location": "7th Line Ram Nagar",
+            "phonenumber": "9390579864",
+            "latitude": 15.486759,
+            "longitude": 80.049118,
+            "coordinates": [15.486759, 80.049118],
+            "isOpen": true,
+            "enabledDelivery": false,
+            "vType": "mart",
+            "categoryID": ["68a46e8810c9d"],
+            "categoryTitle": ["Groceries"],
+            "workingHours": [...],
+            "specialDiscount": [...],
+            "adminCommission": {
+                "commissionType": "Percent",
+                "fix_commission": 0,
+                "isEnabled": true
+            },
+            "filters": {...},
+            "photos": [],
+            "createdAt": "2025-08-21T06:46:37.000Z"
+        }
+    ],
+    "meta": {
+        "current_page": 1,
+        "per_page": 10,
+        "total": 25,
+        "has_more": true,
+        "filters_applied": {
+            "vType": "mart",
+            "isOpen": true,
+            "enabledDelivery": true
+        }
+    }
+}
+```
+
+#### 4. Get Vendor Details
+**GET** `/api/mart/vendor-details/{vendor_id}`
 
 Get detailed information about a specific vendor.
 
 **No authentication required**
 
-#### Request Body
-```json
-{
-    "vendor_id": "4ir2OLhuMEc2yg9L1YxX"
-}
+#### URL Parameters
+- `vendor_id` (required): The unique identifier of the vendor
+
+#### Example Request
+```
+GET /api/mart/vendor-details/4ir2OLhuMEc2yg9L1YxX
 ```
 
 #### Response

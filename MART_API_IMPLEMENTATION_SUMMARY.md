@@ -28,7 +28,8 @@ This document summarizes the complete implementation of Mart API endpoints for m
 **API Endpoints:**
 - `getUserProfile()`: Get authenticated user profile
 - `updateUserProfile()`: Update user profile information
-- `getVendorDetails()`: Get detailed vendor information
+- `getAllMartVendors()`: Get all mart vendors with filters and pagination
+- `getVendorDetails($vendor_id)`: Get detailed vendor information by ID
 - `getNearbyVendors()`: Get vendors within radius
 - `getMartCategories()`: Get mart categories
 - `getMartItems()`: Get mart items with filters
@@ -55,7 +56,8 @@ Route::prefix('mart')->group(function () {
     Route::get('/items', [MartController::class, 'getMartItems']);
     Route::post('/item-details', [MartController::class, 'getItemDetails']);
     Route::post('/search-items', [MartController::class, 'searchItems']);
-    Route::post('/vendor-details', [MartController::class, 'getVendorDetails']);
+    Route::get('/vendors', [MartController::class, 'getAllMartVendors']);
+    Route::get('/vendor-details/{vendor_id}', [MartController::class, 'getVendorDetails']);
     Route::post('/nearby-vendors', [MartController::class, 'getNearbyVendors']);
     Route::post('/vendor-working-hours', [MartController::class, 'getVendorWorkingHours']);
     Route::post('/vendor-special-discounts', [MartController::class, 'getVendorSpecialDiscounts']);
@@ -75,7 +77,8 @@ Route::prefix('mart')->group(function () {
 |----------|--------|---------------|---------|
 | `/api/mart/user-profile` | GET | Yes | Get user profile |
 | `/api/mart/update-user-profile` | POST | Yes | Update user profile |
-| `/api/mart/vendor-details` | POST | No | Get vendor details |
+| `/api/mart/vendors` | GET | No | Get all mart vendors |
+| `/api/mart/vendor-details/{vendor_id}` | GET | No | Get vendor details |
 | `/api/mart/nearby-vendors` | POST | No | Get nearby vendors |
 | `/api/mart/vendor-working-hours` | POST | No | Get vendor working hours |
 | `/api/mart/vendor-special-discounts` | POST | No | Get vendor discounts |

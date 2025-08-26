@@ -644,6 +644,9 @@ class MartController extends Controller
             ]);
 
         } catch (Exception $e) {
+            \Log::error('Error in getAllMartVendors: ' . $e->getMessage());
+            \Log::error('Stack trace: ' . $e->getTraceAsString());
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to get mart vendors: ' . $e->getMessage()
