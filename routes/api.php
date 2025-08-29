@@ -48,7 +48,7 @@ Route::post('/product-stock-info', [App\Http\Controllers\ApiController::class, '
 Route::prefix('razorpay')->group(function () {
     // Public routes (no authentication required)
     Route::get('/settings', [App\Http\Controllers\Api\RazorpayController::class, 'getSettings']);
-    
+
     // Protected routes (authentication required)
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/create-order', [App\Http\Controllers\Api\RazorpayController::class, 'createOrder']);
@@ -72,10 +72,73 @@ Route::prefix('mart')->group(function () {
     Route::post('/vendor-working-hours', [App\Http\Controllers\Api\MartController::class, 'getVendorWorkingHours']);
     Route::post('/vendor-special-discounts', [App\Http\Controllers\Api\MartController::class, 'getVendorSpecialDiscounts']);
     Route::post('/vendor-items-by-category', [App\Http\Controllers\Api\MartController::class, 'getVendorItemsByCategory']);
-    
+
     // Protected routes (authentication required)
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/user-profile', [App\Http\Controllers\Api\MartController::class, 'getUserProfile']);
         Route::post('/update-user-profile', [App\Http\Controllers\Api\MartController::class, 'updateUserProfile']);
+    });
+});
+
+// Mart Categories API Routes (Enhanced)
+Route::prefix('mart/categories')->group(function () {
+    // Public routes (no authentication required)
+    Route::get('/', [App\Http\Controllers\Api\Mart\MartCategoryController::class, 'index']);
+    Route::get('/homepage', [App\Http\Controllers\Api\Mart\MartCategoryController::class, 'getHomepageCategories']);
+    Route::get('/with-subcategories', [App\Http\Controllers\Api\Mart\MartCategoryController::class, 'getCategoriesWithSubcategories']);
+    Route::post('/search', [App\Http\Controllers\Api\Mart\MartCategoryController::class, 'search']);
+    Route::get('/{category_id}', [App\Http\Controllers\Api\Mart\MartCategoryController::class, 'show']);
+
+    // Protected routes (authentication required)
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('/', [App\Http\Controllers\Api\Mart\MartCategoryController::class, 'store']);
+        Route::put('/{category_id}', [App\Http\Controllers\Api\Mart\MartCategoryController::class, 'update']);
+        Route::delete('/{category_id}', [App\Http\Controllers\Api\Mart\MartCategoryController::class, 'destroy']);
+        Route::post('/bulk-update', [App\Http\Controllers\Api\Mart\MartCategoryController::class, 'bulkUpdate']);
+    });
+});
+
+// Mart Sub Categories API Routes (Enhanced)
+Route::prefix('mart/subcategories')->group(function () {
+    // Public routes (no authentication required)
+    Route::get('/', [App\Http\Controllers\Api\Mart\MartSubCategoryController::class, 'index']);
+    Route::get('/homepage', [App\Http\Controllers\Api\Mart\MartSubCategoryController::class, 'getHomepageSubcategories']);
+    Route::get('/by-parent/{parent_category_id}', [App\Http\Controllers\Api\Mart\MartSubCategoryController::class, 'getByParentCategory']);
+    Route::post('/search', [App\Http\Controllers\Api\Mart\MartSubCategoryController::class, 'search']);
+    Route::get('/{subcategory_id}', [App\Http\Controllers\Api\Mart\MartSubCategoryController::class, 'show']);
+
+    // Protected routes (authentication required)
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('/', [App\Http\Controllers\Api\Mart\MartSubCategoryController::class, 'store']);
+        Route::put('/{subcategory_id}', [App\Http\Controllers\Api\Mart\MartSubCategoryController::class, 'update']);
+        Route::delete('/{subcategory_id}', [App\Http\Controllers\Api\Mart\MartSubCategoryController::class, 'destroy']);
+        Route::post('/bulk-update', [App\Http\Controllers\Api\Mart\MartSubCategoryController::class, 'bulkUpdate']);
+    });
+});
+
+// Mart Items API Routes (Enhanced)
+Route::prefix('mart/items')->group(function () {
+    // Public routes (no authentication required)
+    Route::get('/', [App\Http\Controllers\Api\Mart\MartItemController::class, 'index']);
+    Route::get('/featured', [App\Http\Controllers\Api\Mart\MartItemController::class, 'getFeaturedItems']);
+    Route::get('/by-vendor/{vendor_id}', [App\Http\Controllers\Api\Mart\MartItemController::class, 'getByVendor']);
+    Route::get('/by-category/{category_id}', [App\Http\Controllers\Api\Mart\MartItemController::class, 'getByCategory']);
+    Route::get('/by-subcategory/{subcategory_id}', [App\Http\Controllers\Api\Mart\MartItemController::class, 'getBySubCategory']);
+    Route::get('/best-sellers', [App\Http\Controllers\Api\Mart\MartItemController::class, 'getBestSellers']);
+    Route::get('/featured-items', [App\Http\Controllers\Api\Mart\MartItemController::class, 'getFeatured']);
+    Route::get('/new-items', [App\Http\Controllers\Api\Mart\MartItemController::class, 'getNewItems']);
+    Route::get('/seasonal', [App\Http\Controllers\Api\Mart\MartItemController::class, 'getSeasonal']);
+    Route::get('/spotlight', [App\Http\Controllers\Api\Mart\MartItemController::class, 'getSpotlight']);
+    Route::get('/steal-of-moment', [App\Http\Controllers\Api\Mart\MartItemController::class, 'getStealOfMoment']);
+    Route::get('/trending', [App\Http\Controllers\Api\Mart\MartItemController::class, 'getTrending']);
+    Route::post('/search', [App\Http\Controllers\Api\Mart\MartItemController::class, 'search']);
+    Route::get('/{item_id}', [App\Http\Controllers\Api\Mart\MartItemController::class, 'show']);
+
+    // Protected routes (authentication required)
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('/', [App\Http\Controllers\Api\Mart\MartItemController::class, 'store']);
+        Route::put('/{item_id}', [App\Http\Controllers\Api\Mart\MartItemController::class, 'update']);
+        Route::delete('/{item_id}', [App\Http\Controllers\Api\Mart\MartItemController::class, 'destroy']);
+        Route::post('/bulk-update', [App\Http\Controllers\Api\Mart\MartItemController::class, 'bulkUpdate']);
     });
 });
