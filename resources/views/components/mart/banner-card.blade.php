@@ -13,7 +13,7 @@
         scrollbar-width: none;
     }
 </style>
-<div class="sm:w-[95%] w-full mx-auto" x-data>
+<div class="sm:w-[90%] w-full mx-auto my-10" x-data>
     <div class="bg-orange-50 rounded-2xl p-4 sm:p-6">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-center">
 

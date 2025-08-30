@@ -1,4 +1,4 @@
-<div x-data="{ scroll: 0 }" class="md:w-1/2 w-full my-6 px-4 rounded-2xl">
+<div x-data="{ scroll: 0 }" class="md:w-1/2 w-full mt-8 px-4 rounded-2xl">
 
     <!-- Banner (Fixed) -->
     <div class="h-40 bg-black flex items-center justify-center rounded-t-2xl">
