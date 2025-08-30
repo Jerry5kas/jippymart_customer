@@ -943,9 +943,8 @@ class MartItemController extends Controller
 
         try {
             $filters = [
-                'subcategory_id' => $subcategory_id,
-                'publish' => true,
-                'is_available' => true
+                'subcategory_id' => $subcategory_id
+                // Temporarily removed publish and is_available filters for debugging
             ];
 
             $page = $request->page ?? 1;
@@ -953,9 +952,9 @@ class MartItemController extends Controller
             $sortBy = $request->sort_by ?? 'name';
             $sortOrder = $request->sort_order ?? 'asc';
 
-            $items = $this->firebaseService->getMartItemsWithPagination(
+            $items = $this->firebaseService->getMartItemsBySubcategory(
+                $subcategory_id,
                 $filters,
-                null,
                 $page,
                 $limit,
                 $sortBy,

@@ -60,7 +60,7 @@ Route::prefix('razorpay')->group(function () {
 });
 
 // Mart API Routes
-Route::prefix('layouts')->group(function () {
+Route::prefix('marts')->group(function () {
     // Public routes (no authentication required)
     Route::get('/categories', [App\Http\Controllers\Api\MartController::class, 'getMartCategories']);
     Route::get('/items', [App\Http\Controllers\Api\MartController::class, 'getMartItems']);
@@ -81,7 +81,7 @@ Route::prefix('layouts')->group(function () {
 });
 
 // Mart Categories API Routes (Enhanced)
-Route::prefix('layouts/categories')->group(function () {
+Route::prefix('marts/categories')->group(function () {
     // Public routes (no authentication required)
     Route::get('/', [App\Http\Controllers\Api\Mart\MartCategoryController::class, 'index']);
     Route::get('/homepage', [App\Http\Controllers\Api\Mart\MartCategoryController::class, 'getHomepageCategories']);
@@ -99,7 +99,7 @@ Route::prefix('layouts/categories')->group(function () {
 });
 
 // Mart Sub Categories API Routes (Enhanced)
-Route::prefix('layouts/subcategories')->group(function () {
+Route::prefix('marts/subcategories')->group(function () {
     // Public routes (no authentication required)
     Route::get('/', [App\Http\Controllers\Api\Mart\MartSubCategoryController::class, 'index']);
     Route::get('/homepage', [App\Http\Controllers\Api\Mart\MartSubCategoryController::class, 'getHomepageSubcategories']);
@@ -117,7 +117,7 @@ Route::prefix('layouts/subcategories')->group(function () {
 });
 
 // Mart Items API Routes (Enhanced)
-Route::prefix('layouts/items')->group(function () {
+Route::prefix('marts/items')->group(function () {
     // Public routes (no authentication required)
     Route::get('/', [App\Http\Controllers\Api\Mart\MartItemController::class, 'index']);
     Route::get('/featured', [App\Http\Controllers\Api\Mart\MartItemController::class, 'getFeaturedItems']);

@@ -1,3 +1,8 @@
+@props(
+    [
+        "headings" => ''
+]
+)
 <style>
     /* hide scrollbar for all browsers */
     .scrollbar-hide::-webkit-scrollbar {
@@ -9,36 +14,34 @@
         scrollbar-width: none;
     }
 </style>
-<div class="max-w-6xl mx-auto" x-data>
+<div class="sm:w-[90%] w-full mx-auto" x-data>
 
-    <div class="text-2xl font-semibold mb-4 px-4">Get Your Home Needs</div>
+    <div class="text-2xl font-semibold mb-4 px-4">{{$headings}}</div>
     <!-- Slider wrapper -->
     <div class="relative">
-
         <!-- Left Arrow -->
 {{--        <button--}}
 {{--            @click="$refs.scroller.scrollBy({ left: -220, behavior: 'smooth' })"--}}
 {{--            class="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow rounded-full p-2">--}}
 {{--            ◀--}}
 {{--        </button>--}}
-
         <!-- Cards scroller -->
         <div
             x-ref="scroller"
             class="flex space-x-4 overflow-x-auto scrollbar-hide scroll-smooth snap-x snap-mandatory pb-4">
 
             <!-- Product Card -->
-            <template x-for="i in 8" :key="i">
+            <template x-for="i in 10" :key="i">
                 <div class="w-40 flex-shrink-0 snap-center">
                     <div class="bg-white rounded-2xl flex flex-col " x-data="{ added: false }">
                         <!-- Product Image -->
                         <div class="relative shadow rounded-xl">
-                            <img src="https://placehold.co/200x200" alt="Product"
+                            <img src="https://icon2.cleanpng.com/20180411/ucw/avu5woreh.webp" alt="Product"
                                  class="rounded-xl w-full object-cover">
                             <!-- Add Button -->
                             <button
                                 @click="added = !added"
-                                class="absolute bottom-2 right-2 px-4 py-1.5 rounded-xl border border-b-2 border-r-2 border-pink-500 text-pink-500 text-xs font-semibold bg-white hover:bg-pink-50 transition">
+                                class="absolute bottom-2 right-2 px-4 py-1.5 rounded-xl border border-b-2 border-r-2 border-violet-500 text-violet-500 text-xs font-semibold bg-white hover:bg-violet-50 transition">
                                 <span x-show="!added">ADD</span>
                                 <span x-show="added">✔ Added</span>
                             </button>

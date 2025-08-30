@@ -1,6 +1,6 @@
 <!-- Navbar -->
-<header class="w-full text-sm shadow-sm bg-gradient-to-b from-purple-100 to-white">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<header class="w-full text-sm bg-gradient-to-b from-purple-100 to-white">
+    <div class="sm:w-[90%] mx-auto w-full px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center py-4">
 
             <!-- Left section -->

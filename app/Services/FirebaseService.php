@@ -1234,15 +1234,8 @@ class FirebaseService
             if (isset($filters['category_id'])) {
                 $query = $query->where('categoryID', '==', $filters['category_id']);
             }
-            if (isset($filters['subcategory_id'])) {
-                // Handle both single subcategory_id and array of subcategory_ids
-                if (is_array($filters['subcategory_id'])) {
-                    $query = $query->where('subcategoryID', 'array-contains-any', $filters['subcategory_id']);
-                } else {
-                    // Single subcategory_id - check if it exists in the array
-                    $query = $query->where('subcategoryID', 'array-contains', $filters['subcategory_id']);
-                }
-            }
+            // Note: subcategory_id filtering will be done in PHP after fetching documents
+            // due to potential issues with array-contains queries
             if (isset($filters['is_available'])) {
                 $query = $query->where('isAvailable', '==', $filters['is_available']);
             }
@@ -1335,6 +1328,56 @@ class FirebaseService
             ];
         } catch (\Exception $e) {
             \Log::error('Error fetching layouts items with pagination: ' . $e->getMessage());
+            return [
+                'data' => [],
+                'total' => 0,
+                'has_more' => false
+            ];
+        }
+    }
+
+    /**
+     * Get items by subcategory with PHP filtering
+     *
+     * @param string $subcategoryId
+     * @param array $filters
+     * @param int $page
+     * @param int $limit
+     * @param string $sortBy
+     * @param string $sortOrder
+     * @return array
+     */
+    public function getMartItemsBySubcategory(string $subcategoryId, array $filters = [], int $page = 1, int $limit = 20, string $sortBy = 'name', string $sortOrder = 'asc')
+    {
+        try {
+            // Remove subcategory_id from filters since we'll handle it separately
+            $queryFilters = $filters;
+            unset($queryFilters['subcategory_id']);
+            
+            // Get all items first (without subcategory filter)
+            $allItems = $this->getMartItemsWithPagination($queryFilters, null, 1, 1000, $sortBy, $sortOrder);
+            
+            // Filter by subcategory in PHP
+            $filteredItems = [];
+            foreach ($allItems['data'] as $item) {
+                if (isset($item['subcategoryID']) && is_array($item['subcategoryID']) && in_array($subcategoryId, $item['subcategoryID'])) {
+                    $filteredItems[] = $item;
+                }
+            }
+            
+            // Apply pagination
+            $offset = ($page - 1) * $limit;
+            $paginatedItems = array_slice($filteredItems, $offset, $limit);
+            
+            $hasMore = count($filteredItems) > ($offset + $limit);
+            
+            return [
+                'data' => $paginatedItems,
+                'total' => count($filteredItems),
+                'has_more' => $hasMore
+            ];
+        } catch (\Exception $e) {
+            \Log::error('Error fetching items by subcategory: ' . $e->getMessage());
             return [
                 'data' => [],
                 'total' => 0,
