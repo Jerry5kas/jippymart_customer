@@ -2,7 +2,7 @@
     "use strict"; // Start of use strict
 $( document ).ready(function() {
 
-    $(document).on("click", '.dec', function(event) { 
+    $(document).on("click", '.dec', function(event) {
         var node=$(this).next();
         if(node.prop('type')=='text'){
 
@@ -10,7 +10,7 @@ $( document ).ready(function() {
             if(tvalue==''){
                 tvalue=0;
             }else{
-              tvalue=parseInt(tvalue)-1;    
+              tvalue=parseInt(tvalue)-1;
               if(tvalue>=1){
                 node.val(tvalue);
               }else{
@@ -20,14 +20,14 @@ $( document ).ready(function() {
         }
     });
 
-    $(document).on("click", '.inc', function(event) { 
+    $(document).on("click", '.inc', function(event) {
         var node=$(this).prev();
         if(node.prop('type')=='text'){
             var tvalue=node.val();
             if(tvalue==''){
                 tvalue=1;
             }else{
-              tvalue=parseInt(tvalue)+1;    
+              tvalue=parseInt(tvalue)+1;
               if(tvalue>1){
                 node.val(tvalue);
               }else{
@@ -114,7 +114,7 @@ $( document ).ready(function() {
             }
         ]
     });
-    
+
 
 
     // Most popular slider
@@ -191,7 +191,7 @@ $( document ).ready(function() {
         disableAt: false,
         customToggle: $toggle,
         levelSpacing: 40,
-        navTitle: '<span class="jippy-green">Jippy</span><span class="mart-orange">Mart</span>',
+        navTitle: '<span class="jippy-green">Jippy</span><span class="layouts-orange">Mart</span>',
         levelTitles: true,
         levelTitleAsBack: true,
         pushContent: '#container',

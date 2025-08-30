@@ -19,7 +19,7 @@ class MartItemController extends Controller
     }
 
     /**
-     * Get all mart items with pagination and filters
+     * Get all layouts items with pagination and filters
      */
     public function index(Request $request)
     {
@@ -59,7 +59,7 @@ class MartItemController extends Controller
 
         try {
             $filters = [];
-            
+
             // Basic filters
             if ($request->has('vendor_id')) {
                 $filters['vendor_id'] = $request->vendor_id;
@@ -79,7 +79,7 @@ class MartItemController extends Controller
             if ($request->has('has_options')) {
                 $filters['has_options'] = $request->has_options;
             }
-            
+
             // Feature filters
             if ($request->has('is_spotlight')) {
                 $filters['is_spotlight'] = $request->is_spotlight;
@@ -102,7 +102,7 @@ class MartItemController extends Controller
             if ($request->has('is_seasonal')) {
                 $filters['is_seasonal'] = $request->is_seasonal;
             }
-            
+
             // Dietary filters
             if ($request->has('veg')) {
                 $filters['veg'] = $request->veg;
@@ -113,7 +113,7 @@ class MartItemController extends Controller
             if ($request->has('takeaway_option')) {
                 $filters['takeaway_option'] = $request->takeaway_option;
             }
-            
+
             // Price filters
             if ($request->has('min_price')) {
                 $filters['min_price'] = $request->min_price;
@@ -129,11 +129,11 @@ class MartItemController extends Controller
             $sortOrder = $request->sort_order ?? 'asc';
 
             $items = $this->firebaseService->getMartItemsWithPagination(
-                $filters, 
-                $search, 
-                $page, 
-                $limit, 
-                $sortBy, 
+                $filters,
+                $search,
+                $page,
+                $limit,
+                $sortBy,
                 $sortOrder
             );
 
@@ -153,16 +153,16 @@ class MartItemController extends Controller
 
         } catch (Exception $e) {
             \Log::error('Error in MartItemController@index: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to get mart items: ' . $e->getMessage()
+                'message' => 'Failed to get layouts items: ' . $e->getMessage()
             ], 500);
         }
     }
 
     /**
-     * Get a specific mart item by ID
+     * Get a specific layouts item by ID
      */
     public function show(Request $request, $item_id)
     {
@@ -190,16 +190,16 @@ class MartItemController extends Controller
 
         } catch (Exception $e) {
             \Log::error('Error in MartItemController@show: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to get mart item details: ' . $e->getMessage()
+                'message' => 'Failed to get layouts item details: ' . $e->getMessage()
             ], 500);
         }
     }
 
     /**
-     * Create a new mart item
+     * Create a new layouts item
      */
     public function store(Request $request)
     {
@@ -219,7 +219,7 @@ class MartItemController extends Controller
             'veg' => 'sometimes|boolean',
             'nonveg' => 'sometimes|boolean',
             'takeaway_option' => 'sometimes|boolean',
-            
+
             // Enhanced filter fields
             'is_spotlight' => 'sometimes|boolean',
             'is_steal_of_moment' => 'sometimes|boolean',
@@ -228,7 +228,7 @@ class MartItemController extends Controller
             'is_new' => 'sometimes|boolean',
             'is_best_seller' => 'sometimes|boolean',
             'is_seasonal' => 'sometimes|boolean',
-            
+
             // Options configuration
             'has_options' => 'sometimes|boolean',
             'options_enabled' => 'sometimes|boolean',
@@ -250,13 +250,13 @@ class MartItemController extends Controller
             'options.*.is_available' => 'sometimes|boolean',
             'options.*.is_featured' => 'sometimes|boolean',
             'options.*.sort_order' => 'sometimes|integer|min:1',
-            
+
             // Nutrition fields
             'calories' => 'sometimes|numeric|min:0',
             'grams' => 'sometimes|numeric|min:0',
             'proteins' => 'sometimes|numeric|min:0',
             'fats' => 'sometimes|numeric|min:0',
-            
+
             // Additional fields
             'quantity' => 'sometimes|integer|min:-1',
             'add_ons_title' => 'sometimes|array',
@@ -316,7 +316,7 @@ class MartItemController extends Controller
                 'veg' => $request->veg ?? true,
                 'nonveg' => $request->nonveg ?? false,
                 'takeawayOption' => $request->takeaway_option ?? false,
-                
+
                 // Enhanced filter fields
                 'isSpotlight' => $request->is_spotlight ?? false,
                 'isStealOfMoment' => $request->is_steal_of_moment ?? false,
@@ -325,41 +325,41 @@ class MartItemController extends Controller
                 'isNew' => $request->is_new ?? false,
                 'isBestSeller' => $request->is_best_seller ?? false,
                 'isSeasonal' => $request->is_seasonal ?? false,
-                
+
                 // Options configuration
                 'has_options' => $request->has_options ?? false,
                 'options_enabled' => $request->options_enabled ?? false,
                 'options_toggle' => $request->options_toggle ?? false,
                 'options_count' => $request->has_options ? count($request->options ?? []) : 0,
                 'options' => $request->options ?? [],
-                
+
                 // Calculate price range for items with options
                 'min_price' => $request->has_options ? min(array_column($request->options ?? [], 'price')) : $request->price,
                 'max_price' => $request->has_options ? max(array_column($request->options ?? [], 'price')) : $request->price,
-                'price_range' => $request->has_options ? 
-                    '₹' . min(array_column($request->options ?? [], 'price')) . ' - ₹' . max(array_column($request->options ?? [], 'price')) : 
+                'price_range' => $request->has_options ?
+                    '₹' . min(array_column($request->options ?? [], 'price')) . ' - ₹' . max(array_column($request->options ?? [], 'price')) :
                     '₹' . $request->price,
-                
+
                 // Default option and best value
-                'default_option_id' => $request->has_options ? 
-                    collect($request->options)->where('is_featured', true)->first()['id'] ?? 
+                'default_option_id' => $request->has_options ?
+                    collect($request->options)->where('is_featured', true)->first()['id'] ??
                     collect($request->options)->first()['id'] ?? '' : '',
-                'best_value_option' => $request->has_options ? 
+                'best_value_option' => $request->has_options ?
                     collect($request->options)->sortBy('unit_price')->first()['id'] ?? '' : '',
-                
+
                 // Nutrition fields
                 'calories' => $request->calories ?? 0,
                 'grams' => $request->grams ?? 0,
                 'proteins' => $request->proteins ?? 0,
                 'fats' => $request->fats ?? 0,
-                
+
                 // Additional fields
                 'quantity' => $request->quantity ?? -1,
                 'addOnsTitle' => $request->add_ons_title ?? [],
                 'addOnsPrice' => $request->add_ons_price ?? [],
                 'product_specification' => $request->product_specification ?? [],
                 'item_attribute' => $request->item_attribute ?? null,
-                
+
                 // Timestamps
                 'created_at' => now()->toISOString(),
                 'updated_at' => now()->toISOString(),
@@ -371,7 +371,7 @@ class MartItemController extends Controller
             if (!$itemId) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Failed to create mart item'
+                    'message' => 'Failed to create layouts item'
                 ], 500);
             }
 
@@ -386,16 +386,16 @@ class MartItemController extends Controller
 
         } catch (Exception $e) {
             \Log::error('Error in MartItemController@store: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to create mart item: ' . $e->getMessage()
+                'message' => 'Failed to create layouts item: ' . $e->getMessage()
             ], 500);
         }
     }
 
     /**
-     * Update a mart item
+     * Update a layouts item
      */
     public function update(Request $request, $item_id)
     {
@@ -414,7 +414,7 @@ class MartItemController extends Controller
             'veg' => 'sometimes|boolean',
             'nonveg' => 'sometimes|boolean',
             'takeaway_option' => 'sometimes|boolean',
-            
+
             // Enhanced filter fields
             'is_spotlight' => 'sometimes|boolean',
             'is_steal_of_moment' => 'sometimes|boolean',
@@ -423,7 +423,7 @@ class MartItemController extends Controller
             'is_new' => 'sometimes|boolean',
             'is_best_seller' => 'sometimes|boolean',
             'is_seasonal' => 'sometimes|boolean',
-            
+
             // Options configuration
             'has_options' => 'sometimes|boolean',
             'options_enabled' => 'sometimes|boolean',
@@ -445,13 +445,13 @@ class MartItemController extends Controller
             'options.*.is_available' => 'sometimes|boolean',
             'options.*.is_featured' => 'sometimes|boolean',
             'options.*.sort_order' => 'sometimes|integer|min:1',
-            
+
             // Nutrition fields
             'calories' => 'sometimes|numeric|min:0',
             'grams' => 'sometimes|numeric|min:0',
             'proteins' => 'sometimes|numeric|min:0',
             'fats' => 'sometimes|numeric|min:0',
-            
+
             // Additional fields
             'quantity' => 'sometimes|integer|min:-1',
             'add_ons_title' => 'sometimes|array',
@@ -499,7 +499,7 @@ class MartItemController extends Controller
             }
 
             $updateData = [];
-            
+
             // Basic fields
             if ($request->has('name')) $updateData['name'] = $request->name;
             if ($request->has('description')) $updateData['description'] = $request->description;
@@ -514,7 +514,7 @@ class MartItemController extends Controller
             if ($request->has('veg')) $updateData['veg'] = $request->veg;
             if ($request->has('nonveg')) $updateData['nonveg'] = $request->nonveg;
             if ($request->has('takeaway_option')) $updateData['takeawayOption'] = $request->takeaway_option;
-            
+
             // Enhanced filter fields
             if ($request->has('is_spotlight')) $updateData['isSpotlight'] = $request->is_spotlight;
             if ($request->has('is_steal_of_moment')) $updateData['isStealOfMoment'] = $request->is_steal_of_moment;
@@ -523,7 +523,7 @@ class MartItemController extends Controller
             if ($request->has('is_new')) $updateData['isNew'] = $request->is_new;
             if ($request->has('is_best_seller')) $updateData['isBestSeller'] = $request->is_best_seller;
             if ($request->has('is_seasonal')) $updateData['isSeasonal'] = $request->is_seasonal;
-            
+
             // Options configuration
             if ($request->has('has_options')) $updateData['has_options'] = $request->has_options;
             if ($request->has('options_enabled')) $updateData['options_enabled'] = $request->options_enabled;
@@ -531,31 +531,31 @@ class MartItemController extends Controller
             if ($request->has('options')) {
                 $updateData['options'] = $request->options;
                 $updateData['options_count'] = count($request->options);
-                
+
                 // Recalculate price range
                 $updateData['min_price'] = min(array_column($request->options, 'price'));
                 $updateData['max_price'] = max(array_column($request->options, 'price'));
                 $updateData['price_range'] = '₹' . $updateData['min_price'] . ' - ₹' . $updateData['max_price'];
-                
+
                 // Update default and best value options
-                $updateData['default_option_id'] = collect($request->options)->where('is_featured', true)->first()['id'] ?? 
+                $updateData['default_option_id'] = collect($request->options)->where('is_featured', true)->first()['id'] ??
                     collect($request->options)->first()['id'] ?? '';
                 $updateData['best_value_option'] = collect($request->options)->sortBy('unit_price')->first()['id'] ?? '';
             }
-            
+
             // Nutrition fields
             if ($request->has('calories')) $updateData['calories'] = $request->calories;
             if ($request->has('grams')) $updateData['grams'] = $request->grams;
             if ($request->has('proteins')) $updateData['proteins'] = $request->proteins;
             if ($request->has('fats')) $updateData['fats'] = $request->fats;
-            
+
             // Additional fields
             if ($request->has('quantity')) $updateData['quantity'] = $request->quantity;
             if ($request->has('add_ons_title')) $updateData['addOnsTitle'] = $request->add_ons_title;
             if ($request->has('add_ons_price')) $updateData['addOnsPrice'] = $request->add_ons_price;
             if ($request->has('product_specification')) $updateData['product_specification'] = $request->product_specification;
             if ($request->has('item_attribute')) $updateData['item_attribute'] = $request->item_attribute;
-            
+
             // Update timestamp
             $updateData['updated_at'] = now()->toISOString();
             $updateData['updated_by'] = $user->id;
@@ -565,7 +565,7 @@ class MartItemController extends Controller
             if (!$success) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Failed to update mart item'
+                    'message' => 'Failed to update layouts item'
                 ], 500);
             }
 
@@ -580,16 +580,16 @@ class MartItemController extends Controller
 
         } catch (Exception $e) {
             \Log::error('Error in MartItemController@update: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to update mart item: ' . $e->getMessage()
+                'message' => 'Failed to update layouts item: ' . $e->getMessage()
             ], 500);
         }
     }
 
     /**
-     * Delete a mart item
+     * Delete a layouts item
      */
     public function destroy(Request $request, $item_id)
     {
@@ -623,7 +623,7 @@ class MartItemController extends Controller
             if (!$success) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Failed to delete mart item'
+                    'message' => 'Failed to delete layouts item'
                 ], 500);
             }
 
@@ -634,16 +634,16 @@ class MartItemController extends Controller
 
         } catch (Exception $e) {
             \Log::error('Error in MartItemController@destroy: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to delete mart item: ' . $e->getMessage()
+                'message' => 'Failed to delete layouts item: ' . $e->getMessage()
             ], 500);
         }
     }
 
     /**
-     * Search mart items
+     * Search layouts items
      */
     public function search(Request $request)
     {
@@ -673,7 +673,7 @@ class MartItemController extends Controller
 
         try {
             $filters = [];
-            
+
             if ($request->has('vendor_id')) {
                 $filters['vendor_id'] = $request->vendor_id;
             }
@@ -705,11 +705,11 @@ class MartItemController extends Controller
             $sortOrder = $request->sort_order ?? 'asc';
 
             $results = $this->firebaseService->searchMartItemsWithFilters(
-                $request->query, 
-                $filters, 
-                $page, 
-                $limit, 
-                $sortBy, 
+                $request->query,
+                $filters,
+                $page,
+                $limit,
+                $sortBy,
                 $sortOrder
             );
 
@@ -730,10 +730,10 @@ class MartItemController extends Controller
 
         } catch (Exception $e) {
             \Log::error('Error in MartItemController@search: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to search mart items: ' . $e->getMessage()
+                'message' => 'Failed to search layouts items: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -763,7 +763,7 @@ class MartItemController extends Controller
                 'publish' => true,
                 'is_available' => true
             ];
-            
+
             // Map feature type to field name
             $featureMap = [
                 'spotlight' => 'is_spotlight',
@@ -774,9 +774,9 @@ class MartItemController extends Controller
                 'best_seller' => 'is_best_seller',
                 'seasonal' => 'is_seasonal'
             ];
-            
+
             $filters[$featureMap[$request->feature_type]] = true;
-            
+
             if ($request->has('vendor_id')) {
                 $filters['vendor_id'] = $request->vendor_id;
             }
@@ -787,11 +787,11 @@ class MartItemController extends Controller
             $limit = $request->limit ?? 20;
 
             $items = $this->firebaseService->getMartItemsWithPagination(
-                $filters, 
-                null, 
-                1, 
-                $limit, 
-                'created_at', 
+                $filters,
+                null,
+                1,
+                $limit,
+                'created_at',
                 'desc'
             );
 
@@ -807,7 +807,7 @@ class MartItemController extends Controller
 
         } catch (Exception $e) {
             \Log::error('Error in MartItemController@getFeaturedItems: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to get featured items: ' . $e->getMessage()
@@ -840,11 +840,11 @@ class MartItemController extends Controller
             $sortOrder = $request->sort_order ?? 'asc';
 
             $items = $this->firebaseService->getMartItemsWithPagination(
-                $filters, 
-                null, 
-                $page, 
-                $limit, 
-                $sortBy, 
+                $filters,
+                null,
+                $page,
+                $limit,
+                $sortBy,
                 $sortOrder
             );
 
@@ -864,7 +864,7 @@ class MartItemController extends Controller
 
         } catch (Exception $e) {
             \Log::error('Error in MartItemController@getByVendor: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to get vendor items: ' . $e->getMessage()
@@ -897,11 +897,11 @@ class MartItemController extends Controller
             $sortOrder = $request->sort_order ?? 'asc';
 
             $items = $this->firebaseService->getMartItemsWithPagination(
-                $filters, 
-                null, 
-                $page, 
-                $limit, 
-                $sortBy, 
+                $filters,
+                null,
+                $page,
+                $limit,
+                $sortBy,
                 $sortOrder
             );
 
@@ -921,7 +921,7 @@ class MartItemController extends Controller
 
         } catch (Exception $e) {
             \Log::error('Error in MartItemController@getByCategory: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to get category items: ' . $e->getMessage()
@@ -954,11 +954,11 @@ class MartItemController extends Controller
             $sortOrder = $request->sort_order ?? 'asc';
 
             $items = $this->firebaseService->getMartItemsWithPagination(
-                $filters, 
-                null, 
-                $page, 
-                $limit, 
-                $sortBy, 
+                $filters,
+                null,
+                $page,
+                $limit,
+                $sortBy,
                 $sortOrder
             );
 
@@ -978,7 +978,7 @@ class MartItemController extends Controller
 
         } catch (Exception $e) {
             \Log::error('Error in MartItemController@getBySubCategory: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to get subcategory items: ' . $e->getMessage()
@@ -1015,7 +1015,7 @@ class MartItemController extends Controller
                 'publish' => true,
                 'is_available' => true
             ];
-            
+
             if ($request->has('vendor_id')) {
                 $filters['vendor_id'] = $request->vendor_id;
             }
@@ -1032,11 +1032,11 @@ class MartItemController extends Controller
             $sortOrder = $request->sort_order ?? 'asc';
 
             $items = $this->firebaseService->getMartItemsWithPagination(
-                $filters, 
-                null, 
-                $page, 
-                $limit, 
-                $sortBy, 
+                $filters,
+                null,
+                $page,
+                $limit,
+                $sortBy,
                 $sortOrder
             );
 
@@ -1057,7 +1057,7 @@ class MartItemController extends Controller
 
         } catch (Exception $e) {
             \Log::error('Error in MartItemController@getBestSellers: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to get best seller items: ' . $e->getMessage()
@@ -1094,7 +1094,7 @@ class MartItemController extends Controller
                 'publish' => true,
                 'is_available' => true
             ];
-            
+
             if ($request->has('vendor_id')) {
                 $filters['vendor_id'] = $request->vendor_id;
             }
@@ -1111,11 +1111,11 @@ class MartItemController extends Controller
             $sortOrder = $request->sort_order ?? 'asc';
 
             $items = $this->firebaseService->getMartItemsWithPagination(
-                $filters, 
-                null, 
-                $page, 
-                $limit, 
-                $sortBy, 
+                $filters,
+                null,
+                $page,
+                $limit,
+                $sortBy,
                 $sortOrder
             );
 
@@ -1136,7 +1136,7 @@ class MartItemController extends Controller
 
         } catch (Exception $e) {
             \Log::error('Error in MartItemController@getFeatured: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to get featured items: ' . $e->getMessage()
@@ -1173,7 +1173,7 @@ class MartItemController extends Controller
                 'publish' => true,
                 'is_available' => true
             ];
-            
+
             if ($request->has('vendor_id')) {
                 $filters['vendor_id'] = $request->vendor_id;
             }
@@ -1190,11 +1190,11 @@ class MartItemController extends Controller
             $sortOrder = $request->sort_order ?? 'asc';
 
             $items = $this->firebaseService->getMartItemsWithPagination(
-                $filters, 
-                null, 
-                $page, 
-                $limit, 
-                $sortBy, 
+                $filters,
+                null,
+                $page,
+                $limit,
+                $sortBy,
                 $sortOrder
             );
 
@@ -1215,7 +1215,7 @@ class MartItemController extends Controller
 
         } catch (Exception $e) {
             \Log::error('Error in MartItemController@getNewItems: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to get new items: ' . $e->getMessage()
@@ -1252,7 +1252,7 @@ class MartItemController extends Controller
                 'publish' => true,
                 'is_available' => true
             ];
-            
+
             if ($request->has('vendor_id')) {
                 $filters['vendor_id'] = $request->vendor_id;
             }
@@ -1269,11 +1269,11 @@ class MartItemController extends Controller
             $sortOrder = $request->sort_order ?? 'asc';
 
             $items = $this->firebaseService->getMartItemsWithPagination(
-                $filters, 
-                null, 
-                $page, 
-                $limit, 
-                $sortBy, 
+                $filters,
+                null,
+                $page,
+                $limit,
+                $sortBy,
                 $sortOrder
             );
 
@@ -1294,7 +1294,7 @@ class MartItemController extends Controller
 
         } catch (Exception $e) {
             \Log::error('Error in MartItemController@getSeasonal: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to get seasonal items: ' . $e->getMessage()
@@ -1331,7 +1331,7 @@ class MartItemController extends Controller
                 'publish' => true,
                 'is_available' => true
             ];
-            
+
             if ($request->has('vendor_id')) {
                 $filters['vendor_id'] = $request->vendor_id;
             }
@@ -1348,11 +1348,11 @@ class MartItemController extends Controller
             $sortOrder = $request->sort_order ?? 'asc';
 
             $items = $this->firebaseService->getMartItemsWithPagination(
-                $filters, 
-                null, 
-                $page, 
-                $limit, 
-                $sortBy, 
+                $filters,
+                null,
+                $page,
+                $limit,
+                $sortBy,
                 $sortOrder
             );
 
@@ -1373,7 +1373,7 @@ class MartItemController extends Controller
 
         } catch (Exception $e) {
             \Log::error('Error in MartItemController@getSpotlight: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to get spotlight items: ' . $e->getMessage()
@@ -1410,7 +1410,7 @@ class MartItemController extends Controller
                 'publish' => true,
                 'is_available' => true
             ];
-            
+
             if ($request->has('vendor_id')) {
                 $filters['vendor_id'] = $request->vendor_id;
             }
@@ -1427,11 +1427,11 @@ class MartItemController extends Controller
             $sortOrder = $request->sort_order ?? 'asc';
 
             $items = $this->firebaseService->getMartItemsWithPagination(
-                $filters, 
-                null, 
-                $page, 
-                $limit, 
-                $sortBy, 
+                $filters,
+                null,
+                $page,
+                $limit,
+                $sortBy,
                 $sortOrder
             );
 
@@ -1452,7 +1452,7 @@ class MartItemController extends Controller
 
         } catch (Exception $e) {
             \Log::error('Error in MartItemController@getStealOfMoment: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to get steal of moment items: ' . $e->getMessage()
@@ -1489,7 +1489,7 @@ class MartItemController extends Controller
                 'publish' => true,
                 'is_available' => true
             ];
-            
+
             if ($request->has('vendor_id')) {
                 $filters['vendor_id'] = $request->vendor_id;
             }
@@ -1506,11 +1506,11 @@ class MartItemController extends Controller
             $sortOrder = $request->sort_order ?? 'asc';
 
             $items = $this->firebaseService->getMartItemsWithPagination(
-                $filters, 
-                null, 
-                $page, 
-                $limit, 
-                $sortBy, 
+                $filters,
+                null,
+                $page,
+                $limit,
+                $sortBy,
                 $sortOrder
             );
 
@@ -1531,7 +1531,7 @@ class MartItemController extends Controller
 
         } catch (Exception $e) {
             \Log::error('Error in MartItemController@getTrending: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to get trending items: ' . $e->getMessage()
@@ -1540,7 +1540,7 @@ class MartItemController extends Controller
     }
 
     /**
-     * Bulk update mart items
+     * Bulk update layouts items
      */
     public function bulkUpdate(Request $request)
     {
@@ -1577,15 +1577,15 @@ class MartItemController extends Controller
             }
 
             $success = $this->firebaseService->bulkUpdateMartItems(
-                $request->item_ids, 
-                $request->updates, 
+                $request->item_ids,
+                $request->updates,
                 $user->id
             );
 
             if (!$success) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Failed to bulk update mart items'
+                    'message' => 'Failed to bulk update layouts items'
                 ], 500);
             }
 
@@ -1600,10 +1600,10 @@ class MartItemController extends Controller
 
         } catch (Exception $e) {
             \Log::error('Error in MartItemController@bulkUpdate: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to bulk update mart items: ' . $e->getMessage()
+                'message' => 'Failed to bulk update layouts items: ' . $e->getMessage()
             ], 500);
         }
     }

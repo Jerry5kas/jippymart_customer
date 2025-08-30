@@ -91,7 +91,7 @@ class MartController extends Controller
             }
 
             $updateData = $request->only([
-                'firstName', 'lastName', 'phoneNumber', 
+                'firstName', 'lastName', 'phoneNumber',
                 'profilePictureURL', 'countryCode'
             ]);
 
@@ -189,9 +189,9 @@ class MartController extends Controller
             $limit = $request->limit ?? 20;
 
             $vendors = $this->firebaseService->getNearbyVendors(
-                $latitude, 
-                $longitude, 
-                $radius, 
+                $latitude,
+                $longitude,
+                $radius,
                 $limit
             );
 
@@ -215,7 +215,7 @@ class MartController extends Controller
     }
 
     /**
-     * Get mart categories
+     * Get layouts categories
      *
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
@@ -260,7 +260,7 @@ class MartController extends Controller
     }
 
     /**
-     * Get mart items
+     * Get layouts items
      *
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
@@ -405,9 +405,9 @@ class MartController extends Controller
             $limit = $request->limit ?? 20;
 
             $results = $this->firebaseService->searchMartItems(
-                $request->query, 
-                $filters, 
-                $page, 
+                $request->query,
+                $filters,
+                $page,
                 $limit
             );
 
@@ -585,7 +585,7 @@ class MartController extends Controller
     }
 
     /**
-     * Get all mart vendors
+     * Get all layouts vendors
      *
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
@@ -611,7 +611,7 @@ class MartController extends Controller
 
         try {
             $filters = [
-                'vType' => 'mart' // Only get mart vendors
+                'vType' => 'layouts' // Only get layouts vendors
             ];
 
             // Add optional filters
@@ -646,10 +646,10 @@ class MartController extends Controller
         } catch (Exception $e) {
             \Log::error('Error in getAllMartVendors: ' . $e->getMessage());
             \Log::error('Stack trace: ' . $e->getTraceAsString());
-            
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to get mart vendors: ' . $e->getMessage()
+                'message' => 'Failed to get layouts vendors: ' . $e->getMessage()
             ], 500);
         }
     }

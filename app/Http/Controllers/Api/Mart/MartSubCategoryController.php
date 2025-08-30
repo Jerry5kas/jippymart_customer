@@ -19,7 +19,7 @@ class MartSubCategoryController extends Controller
     }
 
     /**
-     * Get all mart subcategories with enhanced filtering
+     * Get all layouts subcategories with enhanced filtering
      *
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
@@ -48,7 +48,7 @@ class MartSubCategoryController extends Controller
 
         try {
             $filters = [];
-            
+
             // Apply filters
             if ($request->has('publish')) {
                 $filters['publish'] = $request->publish;
@@ -70,11 +70,11 @@ class MartSubCategoryController extends Controller
             $sortOrder = $request->sort_order ?? 'asc';
 
             $subcategories = $this->firebaseService->getMartSubCategoriesWithPagination(
-                $filters, 
-                $search, 
-                $page, 
-                $limit, 
-                $sortBy, 
+                $filters,
+                $search,
+                $page,
+                $limit,
+                $sortBy,
                 $sortOrder
             );
 
@@ -94,7 +94,7 @@ class MartSubCategoryController extends Controller
 
         } catch (Exception $e) {
             \Log::error('Error in MartSubCategoryController@index: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to get subcategories: ' . $e->getMessage()
@@ -103,7 +103,7 @@ class MartSubCategoryController extends Controller
     }
 
     /**
-     * Get a specific mart subcategory by ID
+     * Get a specific layouts subcategory by ID
      *
      * @param Request $request
      * @param string $subcategory_id
@@ -136,7 +136,7 @@ class MartSubCategoryController extends Controller
 
         } catch (Exception $e) {
             \Log::error('Error in MartSubCategoryController@show: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to get subcategory details: ' . $e->getMessage()
@@ -145,7 +145,7 @@ class MartSubCategoryController extends Controller
     }
 
     /**
-     * Create a new mart subcategory
+     * Create a new layouts subcategory
      *
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
@@ -208,7 +208,7 @@ class MartSubCategoryController extends Controller
                 'section_order' => $request->section_order ?? 1,
                 'mart_id' => $request->mart_id ?? '',
                 'review_attributes' => $request->review_attributes ?? [],
-                'migratedBy' => 'migrate:mart-subcategories',
+                'migratedBy' => 'migrate:layouts-subcategories',
                 'created_at' => now()->toISOString(),
                 'updated_at' => now()->toISOString(),
                 'created_by' => $user->id
@@ -237,7 +237,7 @@ class MartSubCategoryController extends Controller
 
         } catch (Exception $e) {
             \Log::error('Error in MartSubCategoryController@store: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to create subcategory: ' . $e->getMessage()
@@ -246,7 +246,7 @@ class MartSubCategoryController extends Controller
     }
 
     /**
-     * Update an existing mart subcategory
+     * Update an existing layouts subcategory
      *
      * @param Request $request
      * @param string $subcategory_id
@@ -297,7 +297,7 @@ class MartSubCategoryController extends Controller
             }
 
             $updateData = $request->only([
-                'title', 'description', 'photo', 'publish', 
+                'title', 'description', 'photo', 'publish',
                 'show_in_homepage', 'category_order', 'subcategory_order',
                 'section', 'section_order', 'mart_id', 'review_attributes'
             ]);
@@ -343,7 +343,7 @@ class MartSubCategoryController extends Controller
 
         } catch (Exception $e) {
             \Log::error('Error in MartSubCategoryController@update: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to update subcategory: ' . $e->getMessage()
@@ -352,7 +352,7 @@ class MartSubCategoryController extends Controller
     }
 
     /**
-     * Delete a mart subcategory
+     * Delete a layouts subcategory
      *
      * @param Request $request
      * @param string $subcategory_id
@@ -397,7 +397,7 @@ class MartSubCategoryController extends Controller
 
         } catch (Exception $e) {
             \Log::error('Error in MartSubCategoryController@destroy: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to delete subcategory: ' . $e->getMessage()
@@ -444,7 +444,7 @@ class MartSubCategoryController extends Controller
             $filters = [
                 'parent_category_id' => $parent_category_id
             ];
-            
+
             if ($request->has('publish')) {
                 $filters['publish'] = $request->publish;
             }
@@ -458,11 +458,11 @@ class MartSubCategoryController extends Controller
             $sortOrder = $request->sort_order ?? 'asc';
 
             $subcategories = $this->firebaseService->getMartSubCategoriesWithPagination(
-                $filters, 
-                null, 
-                $page, 
-                $limit, 
-                $sortBy, 
+                $filters,
+                null,
+                $page,
+                $limit,
+                $sortBy,
                 $sortOrder
             );
 
@@ -480,7 +480,7 @@ class MartSubCategoryController extends Controller
 
         } catch (Exception $e) {
             \Log::error('Error in MartSubCategoryController@getByParentCategory: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to get subcategories: ' . $e->getMessage()
@@ -522,11 +522,11 @@ class MartSubCategoryController extends Controller
             }
 
             $subcategories = $this->firebaseService->getMartSubCategoriesWithPagination(
-                $filters, 
-                null, 
-                1, 
-                $limit, 
-                'subcategory_order', 
+                $filters,
+                null,
+                1,
+                $limit,
+                'subcategory_order',
                 'asc'
             );
 
@@ -541,7 +541,7 @@ class MartSubCategoryController extends Controller
 
         } catch (Exception $e) {
             \Log::error('Error in MartSubCategoryController@getHomepageSubcategories: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to get homepage subcategories: ' . $e->getMessage()
@@ -586,9 +586,9 @@ class MartSubCategoryController extends Controller
             $limit = $request->limit ?? 20;
 
             $results = $this->firebaseService->searchMartSubCategories(
-                $request->query, 
-                $filters, 
-                $page, 
+                $request->query,
+                $filters,
+                $page,
                 $limit
             );
 
@@ -606,7 +606,7 @@ class MartSubCategoryController extends Controller
 
         } catch (Exception $e) {
             \Log::error('Error in MartSubCategoryController@search: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to search subcategories: ' . $e->getMessage()
@@ -653,7 +653,7 @@ class MartSubCategoryController extends Controller
             $updateData['updated_by'] = $user->id;
 
             $results = $this->firebaseService->bulkUpdateMartSubCategories(
-                $request->subcategory_ids, 
+                $request->subcategory_ids,
                 $updateData
             );
 
@@ -669,7 +669,7 @@ class MartSubCategoryController extends Controller
 
         } catch (Exception $e) {
             \Log::error('Error in MartSubCategoryController@bulkUpdate: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to bulk update subcategories: ' . $e->getMessage()

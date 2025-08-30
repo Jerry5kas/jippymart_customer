@@ -244,7 +244,7 @@ class FirebaseService
     }
 
     /**
-     * Get mart categories
+     * Get layouts categories
      *
      * @param array $filters
      * @return array
@@ -271,13 +271,13 @@ class FirebaseService
 
             return $categories;
         } catch (\Exception $e) {
-            \Log::error('Error fetching mart categories: ' . $e->getMessage());
+            \Log::error('Error fetching layouts categories: ' . $e->getMessage());
             return [];
         }
     }
 
     /**
-     * Get mart categories with pagination and enhanced filtering
+     * Get layouts categories with pagination and enhanced filtering
      *
      * @param array $filters
      * @param string|null $search
@@ -341,7 +341,7 @@ class FirebaseService
                 'has_more' => $hasMore
             ];
         } catch (\Exception $e) {
-            \Log::error('Error fetching mart categories with pagination: ' . $e->getMessage());
+            \Log::error('Error fetching layouts categories with pagination: ' . $e->getMessage());
             return [
                 'data' => [],
                 'total' => 0,
@@ -351,7 +351,7 @@ class FirebaseService
     }
 
     /**
-     * Get specific mart category by ID
+     * Get specific layouts category by ID
      *
      * @param string $categoryId
      * @return array|null
@@ -370,13 +370,13 @@ class FirebaseService
 
             return null;
         } catch (\Exception $e) {
-            \Log::error('Error fetching mart category: ' . $e->getMessage());
+            \Log::error('Error fetching layouts category: ' . $e->getMessage());
             return null;
         }
     }
 
     /**
-     * Create a new mart category
+     * Create a new layouts category
      *
      * @param array $categoryData
      * @return string|false
@@ -387,13 +387,13 @@ class FirebaseService
             $document = $this->firestore->collection('mart_categories')->add($categoryData);
             return $document->id();
         } catch (\Exception $e) {
-            \Log::error('Error creating mart category: ' . $e->getMessage());
+            \Log::error('Error creating layouts category: ' . $e->getMessage());
             return false;
         }
     }
 
     /**
-     * Update an existing mart category
+     * Update an existing layouts category
      *
      * @param string $categoryId
      * @param array $updateData
@@ -405,13 +405,13 @@ class FirebaseService
             $this->firestore->collection('mart_categories')->document($categoryId)->set($updateData, ['merge' => true]);
             return true;
         } catch (\Exception $e) {
-            \Log::error('Error updating mart category: ' . $e->getMessage());
+            \Log::error('Error updating layouts category: ' . $e->getMessage());
             return false;
         }
     }
 
     /**
-     * Delete a mart category
+     * Delete a layouts category
      *
      * @param string $categoryId
      * @return bool
@@ -422,13 +422,13 @@ class FirebaseService
             $this->firestore->collection('mart_categories')->document($categoryId)->delete();
             return true;
         } catch (\Exception $e) {
-            \Log::error('Error deleting mart category: ' . $e->getMessage());
+            \Log::error('Error deleting layouts category: ' . $e->getMessage());
             return false;
         }
     }
 
     /**
-     * Search mart categories
+     * Search layouts categories
      *
      * @param string $query
      * @param array $filters
@@ -472,7 +472,7 @@ class FirebaseService
                 'has_more' => $hasMore
             ];
         } catch (\Exception $e) {
-            \Log::error('Error searching mart categories: ' . $e->getMessage());
+            \Log::error('Error searching layouts categories: ' . $e->getMessage());
             return [
                 'data' => [],
                 'total' => 0,
@@ -482,7 +482,7 @@ class FirebaseService
     }
 
     /**
-     * Bulk update mart categories
+     * Bulk update layouts categories
      *
      * @param array $categoryIds
      * @param array $updateData
@@ -517,7 +517,7 @@ class FirebaseService
 
             return $results;
         } catch (\Exception $e) {
-            \Log::error('Error in bulk update mart categories: ' . $e->getMessage());
+            \Log::error('Error in bulk update layouts categories: ' . $e->getMessage());
             $results['failed'] = count($categoryIds);
             $results['failed_ids'] = $categoryIds;
             return $results;
@@ -525,7 +525,7 @@ class FirebaseService
     }
 
     /**
-     * Get mart items with pagination and filters
+     * Get layouts items with pagination and filters
      *
      * @param array $filters
      * @param string|null $search
@@ -580,7 +580,7 @@ class FirebaseService
                 'has_more' => $hasMore
             ];
         } catch (\Exception $e) {
-            \Log::error('Error fetching mart items: ' . $e->getMessage());
+            \Log::error('Error fetching layouts items: ' . $e->getMessage());
             return [
                 'data' => [],
                 'total' => 0,
@@ -590,7 +590,7 @@ class FirebaseService
     }
 
     /**
-     * Get specific mart item
+     * Get specific layouts item
      *
      * @param string $itemId
      * @return array|null
@@ -608,13 +608,13 @@ class FirebaseService
 
             return null;
         } catch (\Exception $e) {
-            \Log::error('Error fetching mart item: ' . $e->getMessage());
+            \Log::error('Error fetching layouts item: ' . $e->getMessage());
             return null;
         }
     }
 
     /**
-     * Search mart items
+     * Search layouts items
      *
      * @param string $query
      * @param array $filters
@@ -660,7 +660,7 @@ class FirebaseService
                 'has_more' => $hasMore
             ];
         } catch (\Exception $e) {
-            \Log::error('Error searching mart items: ' . $e->getMessage());
+            \Log::error('Error searching layouts items: ' . $e->getMessage());
             return [
                 'data' => [],
                 'total' => 0,
@@ -779,7 +779,7 @@ class FirebaseService
                 // Convert to array if possible
                 return $this->sanitizeData((array) $data);
             }
-            
+
             return $data;
         } catch (\Exception $e) {
             \Log::error('Error sanitizing data: ' . $e->getMessage());
@@ -788,7 +788,7 @@ class FirebaseService
     }
 
     /**
-     * Ensure consistent field structure for mart categories with default values
+     * Ensure consistent field structure for layouts categories with default values
      *
      * @param array $categoryData
      * @return array
@@ -809,7 +809,7 @@ class FirebaseService
     }
 
     /**
-     * Get all mart vendors with filters and pagination
+     * Get all layouts vendors with filters and pagination
      *
      * @param array $filters
      * @param string|null $search
@@ -822,8 +822,8 @@ class FirebaseService
         try {
             $query = $this->firestore->collection('vendors');
 
-            // Always filter by vType = 'mart'
-            $query = $query->where('vType', '==', 'mart');
+            // Always filter by vType = 'layouts'
+            $query = $query->where('vType', '==', 'layouts');
 
             // Apply additional filters
             if (isset($filters['isOpen'])) {
@@ -852,10 +852,10 @@ class FirebaseService
             foreach ($documents as $document) {
                 $vendorData = $document->data();
                 $vendorData['id'] = $document->id();
-                
+
                 // Sanitize the data to remove Inf and NaN values
                 $vendorData = $this->sanitizeData($vendorData);
-                
+
                 $vendors[] = $vendorData;
             }
 
@@ -882,7 +882,7 @@ class FirebaseService
 
             return $result;
         } catch (\Exception $e) {
-            \Log::error('Error fetching all mart vendors: ' . $e->getMessage());
+            \Log::error('Error fetching all layouts vendors: ' . $e->getMessage());
             return [
                 'data' => [],
                 'total' => 0,
@@ -894,7 +894,7 @@ class FirebaseService
     // ==================== MART SUBCATEGORIES METHODS ====================
 
     /**
-     * Get mart subcategories with pagination and enhanced filtering
+     * Get layouts subcategories with pagination and enhanced filtering
      *
      * @param array $filters
      * @param string|null $search
@@ -963,7 +963,7 @@ class FirebaseService
                 'has_more' => $hasMore
             ];
         } catch (\Exception $e) {
-            \Log::error('Error fetching mart subcategories with pagination: ' . $e->getMessage());
+            \Log::error('Error fetching layouts subcategories with pagination: ' . $e->getMessage());
             return [
                 'data' => [],
                 'total' => 0,
@@ -973,7 +973,7 @@ class FirebaseService
     }
 
     /**
-     * Get specific mart subcategory by ID
+     * Get specific layouts subcategory by ID
      *
      * @param string $subcategoryId
      * @return array|null
@@ -992,13 +992,13 @@ class FirebaseService
 
             return null;
         } catch (\Exception $e) {
-            \Log::error('Error fetching mart subcategory: ' . $e->getMessage());
+            \Log::error('Error fetching layouts subcategory: ' . $e->getMessage());
             return null;
         }
     }
 
     /**
-     * Create a new mart subcategory
+     * Create a new layouts subcategory
      *
      * @param array $subcategoryData
      * @return string|false
@@ -1009,13 +1009,13 @@ class FirebaseService
             $document = $this->firestore->collection('mart_subcategories')->add($subcategoryData);
             return $document->id();
         } catch (\Exception $e) {
-            \Log::error('Error creating mart subcategory: ' . $e->getMessage());
+            \Log::error('Error creating layouts subcategory: ' . $e->getMessage());
             return false;
         }
     }
 
     /**
-     * Update an existing mart subcategory
+     * Update an existing layouts subcategory
      *
      * @param string $subcategoryId
      * @param array $updateData
@@ -1027,13 +1027,13 @@ class FirebaseService
             $this->firestore->collection('mart_subcategories')->document($subcategoryId)->set($updateData, ['merge' => true]);
             return true;
         } catch (\Exception $e) {
-            \Log::error('Error updating mart subcategory: ' . $e->getMessage());
+            \Log::error('Error updating layouts subcategory: ' . $e->getMessage());
             return false;
         }
     }
 
     /**
-     * Delete a mart subcategory
+     * Delete a layouts subcategory
      *
      * @param string $subcategoryId
      * @return bool
@@ -1044,13 +1044,13 @@ class FirebaseService
             $this->firestore->collection('mart_subcategories')->document($subcategoryId)->delete();
             return true;
         } catch (\Exception $e) {
-            \Log::error('Error deleting mart subcategory: ' . $e->getMessage());
+            \Log::error('Error deleting layouts subcategory: ' . $e->getMessage());
             return false;
         }
     }
 
     /**
-     * Search mart subcategories
+     * Search layouts subcategories
      *
      * @param string $query
      * @param array $filters
@@ -1097,7 +1097,7 @@ class FirebaseService
                 'has_more' => $hasMore
             ];
         } catch (\Exception $e) {
-            \Log::error('Error searching mart subcategories: ' . $e->getMessage());
+            \Log::error('Error searching layouts subcategories: ' . $e->getMessage());
             return [
                 'data' => [],
                 'total' => 0,
@@ -1107,7 +1107,7 @@ class FirebaseService
     }
 
     /**
-     * Bulk update mart subcategories
+     * Bulk update layouts subcategories
      *
      * @param array $subcategoryIds
      * @param array $updateData
@@ -1140,7 +1140,7 @@ class FirebaseService
 
             return $results;
         } catch (\Exception $e) {
-            \Log::error('Error in bulk update mart subcategories: ' . $e->getMessage());
+            \Log::error('Error in bulk update layouts subcategories: ' . $e->getMessage());
             return $results;
         }
     }
@@ -1207,12 +1207,12 @@ class FirebaseService
             'section_order' => 1,
             'mart_id' => '',
             'review_attributes' => [],
-            'migratedBy' => 'migrate:mart-subcategories'
+            'migratedBy' => 'migrate:layouts-subcategories'
         ], $subcategoryData);
     }
 
     /**
-     * Get mart items with enhanced pagination and filters
+     * Get layouts items with enhanced pagination and filters
      *
      * @param array $filters
      * @param string|null $search
@@ -1252,7 +1252,7 @@ class FirebaseService
             if (isset($filters['has_options'])) {
                 $query = $query->where('has_options', '==', $filters['has_options']);
             }
-            
+
             // Enhanced filter fields
             if (isset($filters['is_spotlight'])) {
                 $query = $query->where('isSpotlight', '==', $filters['is_spotlight']);
@@ -1275,7 +1275,7 @@ class FirebaseService
             if (isset($filters['is_seasonal'])) {
                 $query = $query->where('isSeasonal', '==', $filters['is_seasonal']);
             }
-            
+
             // Dietary filters
             if (isset($filters['veg'])) {
                 $query = $query->where('veg', '==', $filters['veg']);
@@ -1286,7 +1286,7 @@ class FirebaseService
             if (isset($filters['takeaway_option'])) {
                 $query = $query->where('takeawayOption', '==', $filters['takeaway_option']);
             }
-            
+
             // Price filters
             if (isset($filters['min_price'])) {
                 $query = $query->where('price', '>=', $filters['min_price']);
@@ -1334,7 +1334,7 @@ class FirebaseService
                 'has_more' => $hasMore
             ];
         } catch (\Exception $e) {
-            \Log::error('Error fetching mart items with pagination: ' . $e->getMessage());
+            \Log::error('Error fetching layouts items with pagination: ' . $e->getMessage());
             return [
                 'data' => [],
                 'total' => 0,
@@ -1344,7 +1344,7 @@ class FirebaseService
     }
 
     /**
-     * Search mart items with enhanced filters
+     * Search layouts items with enhanced filters
      *
      * @param string $query
      * @param array $filters
@@ -1422,7 +1422,7 @@ class FirebaseService
                 'has_more' => $hasMore
             ];
         } catch (\Exception $e) {
-            \Log::error('Error searching mart items with filters: ' . $e->getMessage());
+            \Log::error('Error searching layouts items with filters: ' . $e->getMessage());
             return [
                 'data' => [],
                 'total' => 0,
@@ -1432,7 +1432,7 @@ class FirebaseService
     }
 
     /**
-     * Create a new mart item
+     * Create a new layouts item
      *
      * @param array $itemData
      * @return string|false
@@ -1441,18 +1441,18 @@ class FirebaseService
     {
         try {
             $itemData = $this->ensureMartItemFieldStructure($itemData);
-            
+
             $documentRef = $this->firestore->collection('mart_items')->add($itemData);
-            
+
             return $documentRef->id();
         } catch (\Exception $e) {
-            \Log::error('Error creating mart item: ' . $e->getMessage());
+            \Log::error('Error creating layouts item: ' . $e->getMessage());
             return false;
         }
     }
 
     /**
-     * Update a mart item
+     * Update a layouts item
      *
      * @param string $itemId
      * @param array $updateData
@@ -1465,13 +1465,13 @@ class FirebaseService
             $itemRef->update($updateData);
             return true;
         } catch (\Exception $e) {
-            \Log::error('Error updating mart item: ' . $e->getMessage());
+            \Log::error('Error updating layouts item: ' . $e->getMessage());
             return false;
         }
     }
 
     /**
-     * Delete a mart item
+     * Delete a layouts item
      *
      * @param string $itemId
      * @return bool
@@ -1482,13 +1482,13 @@ class FirebaseService
             $this->firestore->collection('mart_items')->document($itemId)->delete();
             return true;
         } catch (\Exception $e) {
-            \Log::error('Error deleting mart item: ' . $e->getMessage());
+            \Log::error('Error deleting layouts item: ' . $e->getMessage());
             return false;
         }
     }
 
     /**
-     * Bulk update mart items
+     * Bulk update layouts items
      *
      * @param array $itemIds
      * @param array $updates
@@ -1499,26 +1499,26 @@ class FirebaseService
     {
         try {
             $batch = $this->firestore->batch();
-            
+
             // Add updated_by and updated_at to updates
             $updates['updated_by'] = $userId;
             $updates['updated_at'] = now()->toISOString();
-            
+
             foreach ($itemIds as $itemId) {
                 $itemRef = $this->firestore->collection('mart_items')->document($itemId);
                 $batch->update($itemRef, $updates);
             }
-            
+
             $batch->commit();
             return true;
         } catch (\Exception $e) {
-            \Log::error('Error bulk updating mart items: ' . $e->getMessage());
+            \Log::error('Error bulk updating layouts items: ' . $e->getMessage());
             return false;
         }
     }
 
     /**
-     * Ensure mart item field structure
+     * Ensure layouts item field structure
      *
      * @param array $itemData
      * @return array
@@ -1540,7 +1540,7 @@ class FirebaseService
             'veg' => true,
             'nonveg' => false,
             'takeawayOption' => false,
-            
+
             // Enhanced filter fields
             'isSpotlight' => false,
             'isStealOfMoment' => false,
@@ -1549,7 +1549,7 @@ class FirebaseService
             'isNew' => false,
             'isBestSeller' => false,
             'isSeasonal' => false,
-            
+
             // Options configuration
             'has_options' => false,
             'options_enabled' => false,
@@ -1562,20 +1562,20 @@ class FirebaseService
             'default_option_id' => '',
             'best_value_option' => '',
             'savings_percentage' => 0,
-            
+
             // Nutrition fields
             'calories' => 0,
             'grams' => 0,
             'proteins' => 0,
             'fats' => 0,
-            
+
             // Additional fields
             'quantity' => -1,
             'addOnsTitle' => [],
             'addOnsPrice' => [],
             'product_specification' => [],
             'item_attribute' => null,
-            
+
             // Timestamps
             'created_at' => now()->toISOString(),
             'updated_at' => now()->toISOString(),

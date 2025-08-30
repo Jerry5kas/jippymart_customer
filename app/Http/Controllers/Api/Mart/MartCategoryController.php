@@ -19,7 +19,7 @@ class MartCategoryController extends Controller
     }
 
     /**
-     * Get all mart categories with enhanced filtering
+     * Get all layouts categories with enhanced filtering
      *
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
@@ -46,7 +46,7 @@ class MartCategoryController extends Controller
 
         try {
             $filters = [];
-            
+
             // Apply filters
             if ($request->has('publish')) {
                 $filters['publish'] = $request->publish;
@@ -62,11 +62,11 @@ class MartCategoryController extends Controller
             $sortOrder = $request->sort_order ?? 'asc';
 
             $categories = $this->firebaseService->getMartCategoriesWithPagination(
-                $filters, 
-                $search, 
-                $page, 
-                $limit, 
-                $sortBy, 
+                $filters,
+                $search,
+                $page,
+                $limit,
+                $sortBy,
                 $sortOrder
             );
 
@@ -86,7 +86,7 @@ class MartCategoryController extends Controller
 
         } catch (Exception $e) {
             \Log::error('Error in MartCategoryController@index: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to get categories: ' . $e->getMessage()
@@ -95,7 +95,7 @@ class MartCategoryController extends Controller
     }
 
     /**
-     * Get a specific mart category by ID
+     * Get a specific layouts category by ID
      *
      * @param Request $request
      * @param string $category_id
@@ -128,7 +128,7 @@ class MartCategoryController extends Controller
 
         } catch (Exception $e) {
             \Log::error('Error in MartCategoryController@show: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to get category details: ' . $e->getMessage()
@@ -137,7 +137,7 @@ class MartCategoryController extends Controller
     }
 
     /**
-     * Create a new mart category
+     * Create a new layouts category
      *
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
@@ -206,7 +206,7 @@ class MartCategoryController extends Controller
 
         } catch (Exception $e) {
             \Log::error('Error in MartCategoryController@store: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to create category: ' . $e->getMessage()
@@ -215,7 +215,7 @@ class MartCategoryController extends Controller
     }
 
     /**
-     * Update an existing mart category
+     * Update an existing layouts category
      *
      * @param Request $request
      * @param string $category_id
@@ -261,7 +261,7 @@ class MartCategoryController extends Controller
             }
 
             $updateData = $request->only([
-                'title', 'description', 'photo', 'publish', 
+                'title', 'description', 'photo', 'publish',
                 'show_in_homepage', 'has_subcategories', 'review_attributes'
             ]);
 
@@ -288,7 +288,7 @@ class MartCategoryController extends Controller
 
         } catch (Exception $e) {
             \Log::error('Error in MartCategoryController@update: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to update category: ' . $e->getMessage()
@@ -297,7 +297,7 @@ class MartCategoryController extends Controller
     }
 
     /**
-     * Delete a mart category
+     * Delete a layouts category
      *
      * @param Request $request
      * @param string $category_id
@@ -347,7 +347,7 @@ class MartCategoryController extends Controller
 
         } catch (Exception $e) {
             \Log::error('Error in MartCategoryController@destroy: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to delete category: ' . $e->getMessage()
@@ -384,11 +384,11 @@ class MartCategoryController extends Controller
             ];
 
             $categories = $this->firebaseService->getMartCategoriesWithPagination(
-                $filters, 
-                null, 
-                1, 
-                $limit, 
-                'title', 
+                $filters,
+                null,
+                1,
+                $limit,
+                'title',
                 'asc'
             );
 
@@ -403,7 +403,7 @@ class MartCategoryController extends Controller
 
         } catch (Exception $e) {
             \Log::error('Error in MartCategoryController@getHomepageCategories: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to get homepage categories: ' . $e->getMessage()
@@ -444,9 +444,9 @@ class MartCategoryController extends Controller
             $limit = $request->limit ?? 20;
 
             $results = $this->firebaseService->searchMartCategories(
-                $request->query, 
-                $filters, 
-                $page, 
+                $request->query,
+                $filters,
+                $page,
                 $limit
             );
 
@@ -464,7 +464,7 @@ class MartCategoryController extends Controller
 
         } catch (Exception $e) {
             \Log::error('Error in MartCategoryController@search: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to search categories: ' . $e->getMessage()
@@ -498,7 +498,7 @@ class MartCategoryController extends Controller
             $filters = [
                 'has_subcategories' => true
             ];
-            
+
             if ($request->has('publish')) {
                 $filters['publish'] = $request->publish;
             }
@@ -507,11 +507,11 @@ class MartCategoryController extends Controller
             $limit = $request->limit ?? 20;
 
             $categories = $this->firebaseService->getMartCategoriesWithPagination(
-                $filters, 
-                null, 
-                $page, 
-                $limit, 
-                'title', 
+                $filters,
+                null,
+                $page,
+                $limit,
+                'title',
                 'asc'
             );
 
@@ -528,7 +528,7 @@ class MartCategoryController extends Controller
 
         } catch (Exception $e) {
             \Log::error('Error in MartCategoryController@getCategoriesWithSubcategories: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to get categories with subcategories: ' . $e->getMessage()
@@ -574,7 +574,7 @@ class MartCategoryController extends Controller
             $updateData['updated_by'] = $user->id;
 
             $results = $this->firebaseService->bulkUpdateMartCategories(
-                $request->category_ids, 
+                $request->category_ids,
                 $updateData
             );
 
@@ -590,7 +590,7 @@ class MartCategoryController extends Controller
 
         } catch (Exception $e) {
             \Log::error('Error in MartCategoryController@bulkUpdate: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to bulk update categories: ' . $e->getMessage()
