@@ -53,15 +53,9 @@
                                 <span class="text-xs font-bold text-gray-900">₹12,999</span>
                                 <span class="text-gray-400 line-through text-xs">₹37,999</span>
                             </div>
-                            <p class="text-green-600 font-semibold text-xs">SAVE ₹25K</p>
+                            <p class="bg-gradient-to-r from-green-100 to-white text-green-600 font-semibold text-xs p-0.5">SAVE ₹25K</p>
                             <p class="text-gray-500 text-xs">1 pc</p>
                         </div>
-
-                        <!-- EMI -->
-                        <span
-                            class="bg-gradient-to-r from-yellow-100 to-white py-0.5 text-yellow-800 px-2 rounded text-xs font-semibold mt-1">
-                ₹1246/month EMI
-              </span>
 
                         <!-- Title -->
                         <h3 class="mt-1 text-xs font-medium text-gray-800 line-clamp-2">
@@ -84,9 +78,9 @@
                         </div>
 
                         <!-- Rating -->
-                        <div class="flex items-center space-x-1 mb-1">
+                        <div class="flex items-center space-x-1 my-1">
                             <span
-                                class="bg-green-100 text-green-600 px-2 py-0.5 text-xs rounded-full font-semibold">4.5</span>
+                                class="bg-yellow-100 text-yellow-600 px-2 py-0.5 text-xs rounded-full font-semibold">4.5</span>
                             <span class="text-gray-500 text-xs">(728)</span>
                         </div>
                     </div>
