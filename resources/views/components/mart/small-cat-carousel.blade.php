@@ -20,89 +20,17 @@
             class="flex space-x-4 bg-black overflow-x-auto scrollbar-hide scroll-smooth snap-x snap-mandatory pb-6 px-2 rounded-2xl ">
 
             <!-- Category Item -->
-            <div
-                class="flex-shrink-0 w-24 h-24 bg-white rounded-xl shadow flex flex-col items-center justify-center snap-center">
-                <img src="https://icon2.cleanpng.com/20231119/yws/transparent-dental-hygiene-products-toothbrushes-toothpaste-de-colorful-dental-hygiene-basket-with-various-1711009023497.webp" alt="Cat 1" class="w-12 h-12 mb-2">
-                <span class="text-sm">Fruits</span>
-            </div>
+            <x-mart.small-cat-card />
+            <x-mart.small-cat-card />
+            <x-mart.small-cat-card />
+            <x-mart.small-cat-card />
+            <x-mart.small-cat-card />
+            <x-mart.small-cat-card />
+            <x-mart.small-cat-card />
+            <x-mart.small-cat-card />
+            <x-mart.small-cat-card />
+            <x-mart.small-cat-card />
 
-            <div
-                class="flex-shrink-0 w-24 h-24 bg-white rounded-xl shadow flex flex-col items-center justify-center snap-center">
-                <img src="https://icon2.cleanpng.com/20231119/yws/transparent-dental-hygiene-products-toothbrushes-toothpaste-de-colorful-dental-hygiene-basket-with-various-1711009023497.webp" alt="Cat 2" class="w-12 h-12 mb-2">
-                <span class="text-sm">Veggies</span>
-            </div>
-
-            <div
-                class="flex-shrink-0 w-24 h-24 bg-white rounded-xl shadow flex flex-col items-center justify-center snap-center">
-                <img src="https://icon2.cleanpng.com/20231119/yws/transparent-dental-hygiene-products-toothbrushes-toothpaste-de-colorful-dental-hygiene-basket-with-various-1711009023497.webp" alt="Cat 3" class="w-12 h-12 mb-2">
-                <span class="text-sm">Bakery</span>
-            </div>
-
-            <div
-                class="flex-shrink-0 w-24 h-24 bg-white rounded-xl shadow flex flex-col items-center justify-center snap-center">
-                <img src="https://icon2.cleanpng.com/20231119/yws/transparent-dental-hygiene-products-toothbrushes-toothpaste-de-colorful-dental-hygiene-basket-with-various-1711009023497.webp" alt="Cat 4" class="w-12 h-12 mb-2">
-                <span class="text-sm">Snacks</span>
-            </div>
-
-            <div
-                class="flex-shrink-0 w-24 h-24 bg-white rounded-xl shadow flex flex-col items-center justify-center snap-center">
-                <img src="https://icon2.cleanpng.com/20231119/yws/transparent-dental-hygiene-products-toothbrushes-toothpaste-de-colorful-dental-hygiene-basket-with-various-1711009023497.webp" alt="Cat 5" class="w-12 h-12 mb-2">
-                <span class="text-sm">Dairy</span>
-            </div>
-
-            <div
-                class="flex-shrink-0 w-24 h-24 bg-white rounded-xl shadow flex flex-col items-center justify-center snap-center">
-                <img src="https://icon2.cleanpng.com/20231119/yws/transparent-dental-hygiene-products-toothbrushes-toothpaste-de-colorful-dental-hygiene-basket-with-various-1711009023497.webp" alt="Cat 6" class="w-12 h-12 mb-2">
-                <span class="text-sm">Beverages</span>
-            </div>
-
-            <div
-                class="flex-shrink-0 w-24 h-24 bg-white rounded-xl shadow flex flex-col items-center justify-center snap-center">
-                <img src="https://icon2.cleanpng.com/20231119/yws/transparent-dental-hygiene-products-toothbrushes-toothpaste-de-colorful-dental-hygiene-basket-with-various-1711009023497.webp" alt="Cat 6" class="w-12 h-12 mb-2">
-                <span class="text-sm">Beverages</span>
-            </div>
-
-            <div
-                class="flex-shrink-0 w-24 h-24 bg-white rounded-xl shadow flex flex-col items-center justify-center snap-center">
-                <img src="https://icon2.cleanpng.com/20231119/yws/transparent-dental-hygiene-products-toothbrushes-toothpaste-de-colorful-dental-hygiene-basket-with-various-1711009023497.webp" alt="Cat 6" class="w-12 h-12 mb-2">
-                <span class="text-sm">Beverages</span>
-            </div>
-
-            <div
-                class="flex-shrink-0 w-24 h-24 bg-white rounded-xl shadow flex flex-col items-center justify-center snap-center">
-                <img src="https://icon2.cleanpng.com/20231119/yws/transparent-dental-hygiene-products-toothbrushes-toothpaste-de-colorful-dental-hygiene-basket-with-various-1711009023497.webp" alt="Cat 6" class="w-12 h-12 mb-2">
-                <span class="text-sm">Beverages</span>
-            </div>
-
-            <div
-                class="flex-shrink-0 w-24 h-24 bg-white rounded-xl shadow flex flex-col items-center justify-center snap-center">
-                <img src="https://icon2.cleanpng.com/20231119/yws/transparent-dental-hygiene-products-toothbrushes-toothpaste-de-colorful-dental-hygiene-basket-with-various-1711009023497.webp" alt="Cat 6" class="w-12 h-12 mb-2">
-                <span class="text-sm">Beverages</span>
-            </div>
-
-            <div
-                class="flex-shrink-0 w-24 h-24 bg-white rounded-xl shadow flex flex-col items-center justify-center snap-center">
-                <img src="https://icon2.cleanpng.com/20231119/yws/transparent-dental-hygiene-products-toothbrushes-toothpaste-de-colorful-dental-hygiene-basket-with-various-1711009023497.webp" alt="Cat 6" class="w-12 h-12 mb-2">
-                <span class="text-sm">Beverages</span>
-            </div>
-
-            <div
-                class="flex-shrink-0 w-24 h-24 bg-white rounded-xl shadow flex flex-col items-center justify-center snap-center">
-                <img src="https://icon2.cleanpng.com/20231119/yws/transparent-dental-hygiene-products-toothbrushes-toothpaste-de-colorful-dental-hygiene-basket-with-various-1711009023497.webp" alt="Cat 6" class="w-12 h-12 mb-2">
-                <span class="text-sm">Beverages</span>
-            </div>
-
-            <div
-                class="flex-shrink-0 w-24 h-24 bg-white rounded-xl shadow flex flex-col items-center justify-center snap-center">
-                <img src="https://icon2.cleanpng.com/20231119/yws/transparent-dental-hygiene-products-toothbrushes-toothpaste-de-colorful-dental-hygiene-basket-with-various-1711009023497.webp" alt="Cat 6" class="w-12 h-12 mb-2">
-                <span class="text-sm">Beverages</span>
-            </div>
-
-            <div
-                class="flex-shrink-0 w-24 h-24 bg-white rounded-xl shadow flex flex-col items-center justify-center snap-center">
-                <img src="https://icon2.cleanpng.com/20231119/yws/transparent-dental-hygiene-products-toothbrushes-toothpaste-de-colorful-dental-hygiene-basket-with-various-1711009023497.webp" alt="Cat 6" class="w-12 h-12 mb-2">
-                <span class="text-sm">Beverages</span>
-            </div>
         </div>
 
         <!-- Right Button -->

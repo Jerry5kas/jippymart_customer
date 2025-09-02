@@ -1,41 +1,127 @@
 <x-layouts.app>
 
+    <div
+        class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 font-semibold text-xs text-gray-500 inline-flex items-center text-gray-700 gap-x-3">
+        <span>Home</span>
+        <span>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                 stroke="currentColor" class="size-4 ">
+              <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/>
+            </svg>
+        </span>
+        <span>Groceries</span>
+        <span>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                 stroke="currentColor" class="size-4 ">
+              <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/>
+            </svg>
+        </span>
+        <span class="text-violet-700 font-semibold">Top Picks</span>
+    </div>
     <div x-data="{ sidebarOpen: false }" class="flex h-screen overflow-hidden">
 
         <!-- Sidebar -->
-        <x-layouts.sidebar />
+        <x-layouts.sidebar/>
 
 
-{{--        <!-- Mobile Sidebar -->--}}
-{{--        <div x-show="sidebarOpen" class="fixed inset-0 z-40 flex md:hidden" x-transition>--}}
-{{--            <div class="fixed inset-0 bg-black bg-opacity-40" @click="sidebarOpen = false"></div>--}}
-{{--            <aside class="relative bg-white w-64 p-4 space-y-3">--}}
-{{--                <button class="absolute top-2 right-2" @click="sidebarOpen = false">✖</button>--}}
-{{--                <h2 class="text-lg font-bold">Categories</h2>--}}
-{{--                <nav class="space-y-2">--}}
-{{--                    <a href="#" class="flex items-center space-x-3 p-2 rounded-xl hover:bg-violet-50">🍅 Fresh--}}
-{{--                        Vegetables</a>--}}
-{{--                    <a href="#" class="flex items-center space-x-3 p-2 rounded-xl hover:bg-violet-50">🍎 Fresh Fruits</a>--}}
-{{--                    <a href="#" class="flex items-center space-x-3 p-2 rounded-xl hover:bg-violet-50">🥑 Exotics &--}}
-{{--                        Premium</a>--}}
-{{--                    <a href="#" class="flex items-center space-x-3 p-2 rounded-xl hover:bg-violet-50">🌸 Flowers &--}}
-{{--                        Leaves</a>--}}
-{{--                </nav>--}}
-{{--            </aside>--}}
-{{--        </div>--}}
 
 
         <!-- Main content -->
         <div class="flex-1 overflow-y-auto">
             <!-- Top bar -->
-            <header class="flex items-center justify-between p-4 bg-white border-b">
-                <h1 class="text-xl font-bold text-gray-800">Fresh Vegetables</h1>
+            <header class="flex items-center justify-between p-4 bg-white border-b shadow-md">
+                <h1 class="text-xl font-bold text-gray-800">Groceries</h1>
                 <button class="md:hidden px-3 py-2 border rounded-lg" @click="sidebarOpen = true">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" />
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                         stroke="currentColor" class="size-6">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75"/>
                     </svg>
                 </button>
+                <div x-data="{ openFilter: false }" class="relative ">
+
+                    <!-- Filter Button -->
+                    <button @click="openFilter = !openFilter"
+                            class="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-full shadow-md hover:bg-violet-700 transition">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L15 14.414V20a1 1 0 01-1.447.894l-4-2A1 1 0 019 18v-3.586L3.293 6.707A1 1 0 013 6V4z"/>
+                        </svg>
+                        Filters
+                    </button>
+
+                    <!-- Dropdown Panel -->
+                    <div x-show="openFilter" @click.away="openFilter = false"
+                         x-transition
+                         class="absolute top-12 left-0 w-72 bg-white shadow-2xl rounded-xl border border-gray-200 p-4 space-y-6 z-50">
+
+                        <!-- Category Filter -->
+                        <div x-data="{ openCategory: true }">
+                            <button @click="openCategory = !openCategory"
+                                    class="flex justify-between items-center w-full text-left font-semibold">
+                                Category
+                                <svg :class="{ 'rotate-180': openCategory }" class="w-4 h-4 transition-transform"
+                                     fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                          d="M19 9l-7 7-7-7"/>
+                                </svg>
+                            </button>
+                            <div x-show="openCategory" x-collapse class="mt-2 space-y-1">
+                                <label class="flex items-center space-x-2 text-sm"><input type="checkbox"> <span>Beverages</span></label>
+                                <label class="flex items-center space-x-2 text-sm"><input type="checkbox"> <span>Snacks</span></label>
+                                <label class="flex items-center space-x-2 text-sm"><input type="checkbox"> <span>Dairy</span></label>
+                            </div>
+                        </div>
+
+                        <!-- Price Filter -->
+                        <div x-data="{ openPrice: false }">
+                            <button @click="openPrice = !openPrice"
+                                    class="flex justify-between items-center w-full text-left font-semibold">
+                                Price
+                                <svg :class="{ 'rotate-180': openPrice }" class="w-4 h-4 transition-transform"
+                                     fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                          d="M19 9l-7 7-7-7"/>
+                                </svg>
+                            </button>
+                            <div x-show="openPrice" x-collapse class="mt-2">
+                                <input type="range" min="10" max="1000" class="w-full accent-violet-600">
+                                <div class="flex justify-between text-xs text-gray-600">
+                                    <span>₹10</span>
+                                    <span>₹1000</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Brand Filter -->
+                        <div x-data="{ openBrand: false }">
+                            <button @click="openBrand = !openBrand"
+                                    class="flex justify-between items-center w-full text-left font-semibold">
+                                Brand
+                                <svg :class="{ 'rotate-180': openBrand }" class="w-4 h-4 transition-transform"
+                                     fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                          d="M19 9l-7 7-7-7"/>
+                                </svg>
+                            </button>
+                            <div x-show="openBrand" x-collapse class="mt-2 space-y-1">
+                                <label class="flex items-center space-x-2 text-sm"><input type="checkbox"> <span>Nestle</span></label>
+                                <label class="flex items-center space-x-2 text-sm"><input type="checkbox"> <span>Amul</span></label>
+                                <label class="flex items-center space-x-2 text-sm"><input type="checkbox"> <span>PepsiCo</span></label>
+                            </div>
+                        </div>
+
+                        <!-- Apply / Reset Buttons -->
+                        <div class="flex justify-between pt-3 border-t border-gray-100">
+                            <button class="px-3 py-1 text-sm text-gray-600 hover:text-gray-800">Reset</button>
+                            <button class="px-4 py-1.5 bg-violet-600 text-white rounded-lg hover:bg-violet-700 text-sm">Apply</button>
+                        </div>
+                    </div>
+                </div>
             </header>
+
+
+
 
             <!-- Products -->
             <main class="p-4">
@@ -43,97 +129,16 @@
 
                     <!-- Card Component -->
                     <div class="w-full flex-shrink-0">
-                        <div class="bg-white rounded-2xl flex flex-col" x-data="{ added: false }">
-                            <!-- Product Image -->
-                            <div class="relative rounded-xl shadow-lg">
-                                <img
-                                    src="https://icon2.cleanpng.com/20180411/ucw/avu5woreh.webp"
-                                    alt="Onion"
-                                    class="rounded-xl w-full object-cover">
-                                <!-- Add Button -->
-                                <button
-                                    @click="added = !added"
-                                    class="absolute bottom-2 right-2 px-4 py-1.5 rounded-xl border border-b-2 border-r-2 border-violet-500 text-violet-500 text-xs font-semibold bg-white hover:bg-violet-50 transition">
-                                    <span x-show="!added">ADD</span>
-                                    <span x-show="added">✔ Added</span>
-                                </button>
-                            </div>
-
-                            <!-- Price -->
-                            <div class="mt-2">
-                                <div class="flex items-center space-x-1">
-                                    <span class="text-sm font-bold text-gray-900">₹30</span>
-                                    <span class="text-gray-400 line-through text-xs">₹51</span>
-                                </div>
-                                <p class="bg-gradient-to-r from-green-200 to-white text-green-600 text-xs font-semibold p-0.5 rounded-lg">
-                                    SAVE ₹9</p>
-                                <p class="text-gray-500 text-xs">1 Pack (900-1000g)</p>
-                            </div>
-
-                            <!-- Title -->
-                            <h3 class="mt-1 text-sm font-medium text-gray-800">Fresh Onion</h3>
-
-                            <!-- Rating -->
-                            <div class="flex items-center space-x-1 mt-1">
-                                <span
-                                    class="bg-yellow-100 text-yellow-600 px-2 py-0.5 text-xs rounded-full font-semibold">4.4</span>
-                                <span class="text-gray-500 text-xs">(74.9k)</span>
-                                <div
-                                    class="flex items-center space-x-1 bg-gradient-to-r from-gray-200 to-white rounded-full px-1 text-xs">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                                         fill="currentColor" class="w-3 h-3">
-                                        <path fill-rule="evenodd"
-                                              d="M14.615 1.595a.75.75 0 0 1 .359.852L12.982 9.75h7.268a.75.75 0 0 1 .548 1.262l-10.5 11.25a.75.75 0 0 1-1.272-.71l1.992-7.302H3.75a.75.75 0 0 1-.548-1.262l10.5-11.25a.75.75 0 0 1 .913-.143Z"
-                                              clip-rule="evenodd"/>
-                                    </svg>
-                                    <span>15 mins</span>
-                                </div>
-                            </div>
+                        <div class="bg-white rounded-2xl flex flex-col gap-y-1" x-data="{ added: false }">
+                            <x-mart.product-item-card />
                         </div>
                     </div>
 
                     <!-- duplicate card for demo -->
                     <template x-for="i in 8">
                         <div class="w-full flex-shrink-0">
-                            <div class="bg-white rounded-2xl flex flex-col" x-data="{ added: false }">
-                                <div class="relative shadow-lg rounded-xl">
-                                    <img
-                                        src="https://icon2.cleanpng.com/20180411/ucw/avu5woreh.webp"
-                                        alt="Mushroom"
-                                        class="rounded-xl w-full object-cover">
-                                    <!-- Add Button -->
-                                    <button
-                                        @click="added = !added"
-                                        class="absolute bottom-2 right-2 px-4 py-1.5 rounded-xl border border-b-2 border-r-2 border-violet-500 text-violet-500 text-xs font-semibold bg-white hover:bg-violet-50 transition">
-                                        <span x-show="!added">ADD</span>
-                                        <span x-show="added">✔ Added</span>
-                                    </button>
-                                </div>
-                                <div class="mt-2">
-                                    <div class="flex items-center space-x-1">
-                                        <span class="text-sm font-bold text-gray-900">₹69</span>
-                                        <span class="text-gray-400 line-through text-xs">₹78</span>
-                                    </div>
-                                    <p class="bg-gradient-to-r from-green-200 to-white text-green-600 text-xs font-semibold p-0.5 rounded-lg">
-                                        SAVE ₹9</p>
-                                    <p class="text-gray-500 text-xs">200g</p>
-                                </div>
-                                <h3 class="mt-1 text-sm font-medium text-gray-800">Mushroom Button</h3>
-                                <div class="flex items-center space-x-1 mt-1">
-                                    <span
-                                        class="bg-yellow-100 text-yellow-600 px-2 py-0.5 text-xs rounded-full font-semibold">4.5</span>
-                                    <span class="text-gray-500 text-xs">(43.2k)</span>
-                                    <div
-                                        class="flex items-center space-x-1 bg-gradient-to-r from-gray-200 to-white rounded-full px-1 text-xs">
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                                             fill="currentColor" class="w-3 h-3">
-                                            <path fill-rule="evenodd"
-                                                  d="M14.615 1.595a.75.75 0 0 1 .359.852L12.982 9.75h7.268a.75.75 0 0 1 .548 1.262l-10.5 11.25a.75.75 0 0 1-1.272-.71l1.992-7.302H3.75a.75.75 0 0 1-.548-1.262l10.5-11.25a.75.75 0 0 1 .913-.143Z"
-                                                  clip-rule="evenodd"/>
-                                        </svg>
-                                        <span>15 mins</span>
-                                    </div>
-                                </div>
+                            <div class="bg-white rounded-2xl flex flex-col gap-y-1" x-data="{ added: false }">
+                                <x-mart.product-item-card />
                             </div>
                         </div>
                     </template>

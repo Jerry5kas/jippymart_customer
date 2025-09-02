@@ -1,6 +1,9 @@
-<aside class="bg-white border-r w-64 hidden md:flex flex-col p-4 space-y-3">
-    <h2 class="text-lg font-bold text-gray-800">Categories</h2>
+
+<aside class="bg-white border-r-2 border-violet-400 w-64 hidden md:flex flex-col p-4 space-y-3 shadow-lg">
+{{--    <h2 class="text-lg font-bold text-gray-800">Top Categories</h2>--}}
+
     <nav class="space-y-2">
+        <x-layouts.menu  href="#" text="Top Picks" src="https://icon2.cleanpng.com/lnd/20240921/v/7d42c2a7d0611ceb83a88d707e4a04.webp" class="bg-violet-200" />
         <x-layouts.menu href="#" text="Fresh Vegetables" src="https://img.icons8.com/color/48/vegetarian-food.png"/>
         <x-layouts.menu href="#" text="Fresh Fruits" src="https://img.icons8.com/color/48/apple.png"/>
         <x-layouts.menu href="#" text="Exotics & Premium" src="https://img.icons8.com/color/48/avocado.png"/>

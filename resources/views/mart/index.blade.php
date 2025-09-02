@@ -5,10 +5,7 @@
 
     <x-mart.banner-card/>
 
-
     <x-mart.categories/>
-
-
 
     <div class="w-full sm:w-[90%] mx-auto flex md:flex-row flex-col gap-4">
         <x-mart.small-cat-carousel/>

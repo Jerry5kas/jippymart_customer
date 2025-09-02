@@ -2,64 +2,12 @@
     <!-- Slides -->
     <div class="relative flex transition-transform duration-700 ease-in-out"
          :style="`transform: translateX(-${active * 100}%);`">
-
-        <!-- Slide 1 -->
-        <div class="w-full flex-shrink-0 bg-pink-100 bg-cover bg-center"
-             style="background-image: url('https://www.freepik.com/free-vector/cosmetic-bottle-geometric-podium-banner_7062218.htm#fromView=search&page=1&position=32&uuid=8397253f-4ab7-4081-b454-fb1a9b43ac76&query=products+banner')">
-            <div class="bg-black/30 w-full h-full flex items-center p-6 md:p-12">
-                <div class="max-w-lg text-white">
-                    <p class="text-sm uppercase font-semibold">Powered by Lakmé</p>
-                    <h1 class="text-3xl md:text-5xl font-bold mt-2">Beauty LIT Fest</h1>
-                    <p class="mt-4 text-lg">UP TO <span class="font-bold">60% OFF</span></p>
-                    <button class="mt-6 px-5 py-2 bg-pink-600 text-white rounded-xl shadow hover:bg-pink-700">
-                        Shop Now
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Slide 2 -->
-        <div class="w-full flex-shrink-0 bg-pink-50 bg-cover bg-center"
-             style="background-image: url('https://www.freepik.com/free-psd/black-friday-super-sale-facebook-cover-banner-template_375800645.htm#fromView=search&page=1&position=33&uuid=8397253f-4ab7-4081-b454-fb1a9b43ac76&query=products+banner')">
-            <div class="bg-black/30 w-full h-full flex items-center p-6 md:p-12">
-                <div class="max-w-lg text-white">
-                    <h2 class="text-2xl md:text-4xl font-bold">Dazzling Eyes</h2>
-                    <p class="mt-3">Get UP TO <span class="font-bold">60% OFF</span> on eyeliners, kajals & more.</p>
-                    <button class="mt-6 px-5 py-2 bg-gray-900 text-white rounded-xl shadow hover:bg-gray-800">
-                        Shop Now
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Slide 3 -->
-        <div class="w-full flex-shrink-0 bg-pink-200 bg-cover bg-center"
-             style="background-image: url('https://www.freepik.com/free-psd/black-friday-super-sale-facebook-cover-template_34013086.htm#fromView=search&page=1&position=49&uuid=8397253f-4ab7-4081-b454-fb1a9b43ac76&query=products+banner')">
-            <div class="bg-black/30 w-full h-full flex items-center p-6 md:p-12">
-                <div class="max-w-lg text-white">
-                    <h2 class="text-2xl md:text-4xl font-bold">Flawless Face</h2>
-                    <p class="mt-3">UP TO <span class="font-bold">45% OFF</span> on foundation & concealers.</p>
-                    <button class="mt-6 px-5 py-2 bg-pink-700 text-white rounded-xl shadow hover:bg-pink-800">
-                        Shop Now
-                    </button>
-                </div>
-            </div>
-        </div>
+        <x-mart.slide/>
+        <x-mart.slide
+            src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT14yDUeoaf-N-53xpJnSwVvsVEeR9ofHYcfA&s"/>
+        <x-mart.slide
+            src="https://static.vecteezy.com/system/resources/thumbnails/005/715/816/small/banner-abstract-background-board-for-text-and-message-design-modern-free-vector.jpg"/>
     </div>
-
-    <!-- Navigation Arrows -->
-    {{--    <button @click="prev"--}}
-    {{--            class="absolute left-3 top-1/2 -translate-y-1/2 bg-white/70 hover:bg-white p-2 rounded-full shadow">--}}
-    {{--        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">--}}
-    {{--            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>--}}
-    {{--        </svg>--}}
-    {{--    </button>--}}
-    {{--    <button @click="next"--}}
-    {{--            class="absolute right-3 top-1/2 -translate-y-1/2 bg-white/70 hover:bg-white p-2 rounded-full shadow">--}}
-    {{--        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">--}}
-    {{--            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>--}}
-    {{--        </svg>--}}
-    {{--    </button>--}}
 
     <!-- Dots -->
     <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2">
