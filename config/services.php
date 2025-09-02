@@ -30,4 +30,10 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'firebase' => [
+        'url' => env('FIREBASE_URL', 'https://firestore.googleapis.com/v1/projects/jippymart-27c08/databases/(default)/documents'),
+        'api_key' => env('FIREBASE_API_KEY'),
+        'project_id' => env('FIREBASE_PROJECT_ID', 'jippymart-27c08'),
+    ],
+
 ];

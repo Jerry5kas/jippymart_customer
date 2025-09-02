@@ -982,11 +982,12 @@ Route::get('/test-complete-delivery-flow', function () {
 // routes/web.php
 
 Route::prefix('mart')->group(function () {
-    Route::get('/', function () {
-        return view('mart.index');
-    });
+    Route::get('/', [App\Http\Controllers\MartController::class, 'index']);
 
     Route::get('/items-by-category', function () {
         return view('mart.item-by-category');
     });
+    
+    // Test route to verify data fetching
+    Route::get('/test-data', [App\Http\Controllers\MartController::class, 'testData']);
 });
