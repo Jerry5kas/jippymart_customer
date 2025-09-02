@@ -1,7 +1,7 @@
-<div x-data="{ active: 'All' }" class="w-full py-5">
+<div x-data="{ active: 'All' }" class="w-full pb-5 pt-16">
 
     <!-- Categories Navigation -->
-    <div class="w-full border-b bg-gradient-to-t from-slate-50 to-white">
+    <div class=" fixed z-30 w-full border-b bg-gradient-to-t from-slate-50 to-white">
         <div class="sm:w-[90%] mx-auto w-full px-4">
             <div class="flex items-center space-x-6 overflow-x-auto scrollbar-hide py-3">
                 <!-- Category Tabs -->
@@ -20,7 +20,7 @@
     </div>
 
     <!-- Category Items Scroll -->
-    <div class="w-full">
+    <div class="w-full pt-12">
         <div class="flex space-x-6 overflow-x-auto px-4 py-5 scrollbar-hide sm:w-[90%] mx-auto w-full text-xs">
 
             <!-- Category Card -->

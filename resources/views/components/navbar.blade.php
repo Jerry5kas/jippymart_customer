@@ -1,5 +1,5 @@
 <!-- Navbar -->
-<header class="w-full text-sm bg-gradient-to-b from-purple-100 to-white"
+<header class="fixed z-40 w-full text-sm bg-gradient-to-b from-purple-100 to-white"
         x-data="{ mobileMenu: false, cartOpen: false }">
 
     <div class="sm:w-[90%] mx-auto w-full px-4 sm:px-6 lg:px-8">
@@ -48,7 +48,7 @@
                            class="w-2/3 border border-gray-300 rounded-lg py-3 pl-12 pr-4 text-sm
                       focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500
                       transition-all duration-500"
-                           placeholder="Search here...">
+                           placeholder="">
 
                     <!-- Animated suggestion overlay -->
                     <div class="absolute left-12 top-3 text-gray-400 text-sm pointer-events-none select-none">
@@ -68,7 +68,7 @@
 
                     <!-- Search Icon -->
                     <svg xmlns="http://www.w3.org/2000/svg"
-                         class="w-4 h-4 absolute left-4 top-3 text-gray-400"
+                         class="w-4 h-4 absolute left-4 top-3.5 text-gray-400"
                          fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                               d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1010.5 18.5a7.5 7.5 0 006.15-3.35z"/>
@@ -77,27 +77,38 @@
             </div>
 
 
-
             <!-- Right section -->
-            <div class="hidden md:flex items-center space-x-6 text-sm text-gray-600 font-semibold">
-                <a href="#" class="flex items-center space-x-1 text-gray-800">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                         stroke="currentColor" class="size-4">
+            <div class="hidden md:flex  items-center space-x-6 text-sm text-gray-600 font-semibold">
+                <a href="#" class="flex flex-col items-center space-y-1.5 text-gray-800">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                         stroke="currentColor" class="size-6">
                         <path stroke-linecap="round" stroke-linejoin="round"
-                              d="M8.25 9V5.25A2.25 2.25 0 0 1 10.5 3h6a2.25 2.25 0 0 1 2.25 2.25v13.5A2.25 2.25 0 0 1 16.5 21h-6a2.25 2.25 0 0 1-2.25-2.25V15M12 9l3 3m0 0-3 3m3-3H2.25"/>
+                              d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
                     </svg>
-                    <span>Login</span>
+
+                    <span class="text-xs">Profile</span>
                 </a>
 
                 <!-- Cart Trigger -->
-                <button @click="cartOpen = true" class="flex items-center space-x-1 text-gray-800">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                         stroke="currentColor" class="size-4">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                              d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"/>
-                    </svg>
-                    <span>Cart</span>
-                </button>
+                <div x-data="{ cartCount: 1 }" class="relative">
+                    <!-- Cart Button -->
+                    <button @click="cartOpen = true" class="flex flex-col items-center text-gray-800 relative">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                             stroke-width="1.5" stroke="currentColor" class="w-7 h-7">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                  d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"/>
+                        </svg>
+                        <span class="text-xs">Cart</span>
+                    </button>
+
+                    <!-- Notification Badge -->
+                    <span x-show="cartCount > 0"
+                          x-text="cartCount"
+                          class="absolute -top-1 -right-1 bg-purple-600 text-white text-[10px] font-bold
+                 w-5 h-5 flex items-center justify-center rounded-full shadow-lg">
+    </span>
+                </div>
+
             </div>
 
             <!-- Hamburger for mobile -->
@@ -113,46 +124,5 @@
         </div>
     </div>
 
-    <!-- Slide-in Cart Drawer -->
-    <div x-show="cartOpen" class="fixed inset-0 z-50 flex justify-end"
-         x-transition:enter="transition ease-out duration-300"
-         x-transition:enter-start="opacity-0"
-         x-transition:enter-end="opacity-100"
-         x-transition:leave="transition ease-in duration-300"
-         x-transition:leave-start="opacity-100"
-         x-transition:leave-end="opacity-0"
-         style="display: none;">
-
-        <!-- Background overlay -->
-        <div class="absolute inset-0 bg-black bg-opacity-50" @click="cartOpen = false"></div>
-
-        <!-- Cart Panel -->
-        <div class="relative bg-white w-full sm:w-[400px] h-full shadow-lg z-50
-                    transform transition-transform duration-300 ease-in-out"
-             x-show="cartOpen"
-             x-transition:enter="translate-x-full"
-             x-transition:enter-end="translate-x-0"
-             x-transition:leave="translate-x-0"
-             x-transition:leave-end="translate-x-full">
-
-            <!-- Header -->
-            <div class="flex items-center justify-between p-4 border-b">
-                <h2 class="text-lg font-semibold">Your Cart</h2>
-                <button @click="cartOpen = false" class="text-gray-600 hover:text-black">
-                    ✕
-                </button>
-            </div>
-
-            <!-- Empty Cart State -->
-            <div class="flex flex-col items-center justify-center h-full text-gray-500">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                     stroke="currentColor" class="w-16 h-16 mb-4 text-gray-400">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                          d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"/>
-                </svg>
-                <p class="mb-4">Your cart is empty</p>
-                <button class="px-6 py-2 bg-black text-white rounded-lg">Browse Products</button>
-            </div>
-        </div>
-    </div>
+    <x-mart.cart/>
 </header>
