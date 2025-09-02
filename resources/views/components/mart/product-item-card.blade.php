@@ -14,12 +14,25 @@
         alt="product Image"
         class="rounded-xl w-full object-cover">
     <!-- Add Button -->
-    <button
-        @click="added = !added"
-        class="absolute bottom-2 right-2 px-4 py-1.5 rounded-xl border border-b-2 border-r-2 border-violet-500 text-violet-500 text-[9px] font-semibold bg-white hover:bg-violet-50 transition">
-        <span x-show="!added">ADD</span>
-        <span x-show="added">✔ Added </span>
-    </button>
+    <div x-data="{ qty: 0 }" class="relative inline-block p-2">
+
+        <!-- If not added yet, show ADD button -->
+        <button x-show="qty === 0"
+                @click="qty = 1"
+                class="px-4 py-1.5 rounded-xl border border-b-2 border-r-2 border-violet-500
+                   text-violet-500 text-[11px] font-semibold bg-white hover:bg-violet-50 transition">
+            ADD
+        </button>
+
+        <!-- If added, show increment/decrement -->
+        <div x-show="qty > 0" class="flex items-center gap-2 bg-violet-600 text-white px-3 py-1.5 rounded-xl text-sm font-semibold">
+            <button @click="if(qty > 0) qty--" class="px-2">−</button>
+            <span x-text="qty"></span>
+            <button @click="qty++" class="px-2">+</button>
+        </div>
+
+    </div>
+
 </div>
 <div class="mt-2">
     <div class="w-full flex items-center justify-between space-x-1">
@@ -41,7 +54,7 @@
     <p class="text-gray-500 text-[9px]">200g</p>
 </div>
 <h3 class="mt-1 text-xs font-medium font-semibold text-gray-600">{{$title}}</h3>
-<p class="mt-1 text-[9px] font-medium font-semibold line-clamp-2 text-gray-400">{{$description}}</p>
+{{--<p class="mt-1 text-[9px] font-medium font-semibold line-clamp-2 text-gray-400">{{$description}}</p>--}}
 <!-- Rating -->
 <div class="flex items-center justify-between space-x-1 my-1 text-[9px]">
                                     <span

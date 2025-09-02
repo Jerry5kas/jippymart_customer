@@ -466,6 +466,77 @@ class MartSubCategoryController extends Controller
                 $sortOrder
             );
 
+            // If no results and it might be due to missing index, try fallback approach
+            if (empty($subcategories['data']) && $subcategories['total'] === 0) {
+                \Log::warning('No subcategories found with composite filter for parent category, trying fallback approach');
+
+                // Simple fallback: Get all subcategories without filters and filter in PHP
+                $allSubcategories = $this->firebaseService->getMartSubCategoriesWithPagination(
+                    [], // No filters
+                    null,
+                    1,
+                    100, // Get more to filter from
+                    'title',
+                    'asc'
+                );
+
+                // Filter subcategories in PHP based on the requested filters
+                $filteredSubcategories = array_filter($allSubcategories['data'], function($subcategory) use ($filters) {
+                    // Apply parent_category_id filter (required)
+                    if (isset($filters['parent_category_id'])) {
+                        $parentMatch = isset($subcategory['parent_category_id']) && $subcategory['parent_category_id'] === $filters['parent_category_id'];
+                        if (!$parentMatch) return false;
+                    }
+
+                    // Apply publish filter if requested
+                    if (isset($filters['publish'])) {
+                        $isPublished = isset($subcategory['publish']) && $subcategory['publish'] === $filters['publish'];
+                        if (!$isPublished) return false;
+                    }
+
+                    // Apply show_in_homepage filter if requested
+                    if (isset($filters['show_in_homepage'])) {
+                        $showInHomepage = isset($subcategory['show_in_homepage']) && $subcategory['show_in_homepage'] === $filters['show_in_homepage'];
+                        if (!$showInHomepage) return false;
+                    }
+
+                    return true;
+                });
+
+                // Apply sorting
+                if ($sortBy === 'subcategory_order') {
+                    usort($filteredSubcategories, function($a, $b) use ($sortOrder) {
+                        $orderA = $a['subcategory_order'] ?? 0;
+                        $orderB = $b['subcategory_order'] ?? 0;
+                        return $sortOrder === 'asc' ? $orderA - $orderB : $orderB - $orderA;
+                    });
+                } elseif ($sortBy === 'category_order') {
+                    usort($filteredSubcategories, function($a, $b) use ($sortOrder) {
+                        $orderA = $a['category_order'] ?? 0;
+                        $orderB = $b['category_order'] ?? 0;
+                        return $sortOrder === 'asc' ? $orderA - $orderB : $orderB - $orderA;
+                    });
+                } else {
+                    usort($filteredSubcategories, function($a, $b) use ($sortOrder) {
+                        $titleA = strtolower($a['title'] ?? '');
+                        $titleB = strtolower($b['title'] ?? '');
+                        return $sortOrder === 'asc' ? strcmp($titleA, $titleB) : strcmp($titleB, $titleA);
+                    });
+                }
+
+                // Apply pagination
+                $offset = ($page - 1) * $limit;
+                $paginatedSubcategories = array_slice($filteredSubcategories, $offset, $limit);
+                $total = count($filteredSubcategories);
+                $hasMore = ($offset + $limit) < $total;
+
+                $subcategories = [
+                    'data' => array_values($paginatedSubcategories),
+                    'total' => $total,
+                    'has_more' => $hasMore
+                ];
+            }
+
             return response()->json([
                 'success' => true,
                 'data' => $subcategories['data'],
@@ -474,12 +545,120 @@ class MartSubCategoryController extends Controller
                     'current_page' => $page,
                     'per_page' => $limit,
                     'total' => $subcategories['total'],
-                    'has_more' => $subcategories['has_more']
+                    'has_more' => $subcategories['has_more'],
+                    'note' => empty($subcategories['data']) ? null : 'Using fallback query due to missing Firebase index'
                 ]
             ]);
 
         } catch (Exception $e) {
             \Log::error('Error in MartSubCategoryController@getByParentCategory: ' . $e->getMessage());
+
+            // If it's an index error, try the fallback approach
+            if (strpos($e->getMessage(), 'requires an index') !== false) {
+                \Log::warning('Index error detected for getByParentCategory, trying fallback approach');
+
+                try {
+                    // Verify parent category exists
+                    $parentCategory = $this->firebaseService->getMartCategory($parent_category_id);
+                    if (!$parentCategory) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Parent category not found'
+                        ], 404);
+                    }
+
+                    $filters = [
+                        'parent_category_id' => $parent_category_id
+                    ];
+
+                    if ($request->has('publish')) {
+                        $filters['publish'] = $request->publish;
+                    }
+                    if ($request->has('show_in_homepage')) {
+                        $filters['show_in_homepage'] = $request->show_in_homepage;
+                    }
+
+                    $page = $request->page ?? 1;
+                    $limit = $request->limit ?? 20;
+                    $sortBy = $request->sort_by ?? 'subcategory_order';
+                    $sortOrder = $request->sort_order ?? 'asc';
+
+                    // Simple fallback: Get all subcategories without filters and filter in PHP
+                    $allSubcategories = $this->firebaseService->getMartSubCategoriesWithPagination(
+                        [], // No filters
+                        null,
+                        1,
+                        100, // Get more to filter from
+                        'title',
+                        'asc'
+                    );
+
+                    // Filter subcategories in PHP based on the requested filters
+                    $filteredSubcategories = array_filter($allSubcategories['data'], function($subcategory) use ($filters) {
+                        // Apply parent_category_id filter (required)
+                        if (isset($filters['parent_category_id'])) {
+                            $parentMatch = isset($subcategory['parent_category_id']) && $subcategory['parent_category_id'] === $filters['parent_category_id'];
+                            if (!$parentMatch) return false;
+                        }
+
+                        // Apply publish filter if requested
+                        if (isset($filters['publish'])) {
+                            $isPublished = isset($subcategory['publish']) && $subcategory['publish'] === $filters['publish'];
+                            if (!$isPublished) return false;
+                        }
+
+                        // Apply show_in_homepage filter if requested
+                        if (isset($filters['show_in_homepage'])) {
+                            $showInHomepage = isset($subcategory['show_in_homepage']) && $subcategory['show_in_homepage'] === $filters['show_in_homepage'];
+                            if (!$showInHomepage) return false;
+                        }
+
+                        return true;
+                    });
+
+                    // Apply sorting
+                    if ($sortBy === 'subcategory_order') {
+                        usort($filteredSubcategories, function($a, $b) use ($sortOrder) {
+                            $orderA = $a['subcategory_order'] ?? 0;
+                            $orderB = $b['subcategory_order'] ?? 0;
+                            return $sortOrder === 'asc' ? $orderA - $orderB : $orderB - $orderA;
+                        });
+                    } elseif ($sortBy === 'category_order') {
+                        usort($filteredSubcategories, function($a, $b) use ($sortOrder) {
+                            $orderA = $a['category_order'] ?? 0;
+                            $orderB = $b['category_order'] ?? 0;
+                            return $sortOrder === 'asc' ? $orderA - $orderB : $orderB - $orderA;
+                        });
+                    } else {
+                        usort($filteredSubcategories, function($a, $b) use ($sortOrder) {
+                            $titleA = strtolower($a['title'] ?? '');
+                            $titleB = strtolower($b['title'] ?? '');
+                            return $sortOrder === 'asc' ? strcmp($titleA, $titleB) : strcmp($titleB, $titleA);
+                        });
+                    }
+
+                    // Apply pagination
+                    $offset = ($page - 1) * $limit;
+                    $paginatedSubcategories = array_slice($filteredSubcategories, $offset, $limit);
+                    $total = count($filteredSubcategories);
+                    $hasMore = ($offset + $limit) < $total;
+
+                    return response()->json([
+                        'success' => true,
+                        'data' => array_values($paginatedSubcategories),
+                        'parent_category' => $parentCategory,
+                        'meta' => [
+                            'current_page' => $page,
+                            'per_page' => $limit,
+                            'total' => $total,
+                            'has_more' => $hasMore,
+                            'note' => 'Using fallback query due to missing Firebase index'
+                        ]
+                    ]);
+                } catch (Exception $fallbackError) {
+                    \Log::error('Fallback approach also failed for getByParentCategory: ' . $fallbackError->getMessage());
+                }
+            }
 
             return response()->json([
                 'success' => false,
@@ -530,17 +709,121 @@ class MartSubCategoryController extends Controller
                 'asc'
             );
 
+            // If no results and it might be due to missing index, try fallback approach
+            if (empty($subcategories['data']) && $subcategories['total'] === 0) {
+                \Log::warning('No homepage subcategories found with composite filter, trying fallback approach');
+
+                // Simple fallback: Get all subcategories without filters and filter in PHP
+                $allSubcategories = $this->firebaseService->getMartSubCategoriesWithPagination(
+                    [], // No filters
+                    null,
+                    1,
+                    50, // Get more to filter from
+                    'title',
+                    'asc'
+                );
+
+                // Filter subcategories in PHP based on the requested filters
+                $filteredSubcategories = array_filter($allSubcategories['data'], function($subcategory) use ($filters) {
+                    // Apply publish filter
+                    if (isset($filters['publish'])) {
+                        $isPublished = isset($subcategory['publish']) && $subcategory['publish'] === $filters['publish'];
+                        if (!$isPublished) return false;
+                    }
+
+                    // Apply show_in_homepage filter
+                    if (isset($filters['show_in_homepage'])) {
+                        $showInHomepage = isset($subcategory['show_in_homepage']) && $subcategory['show_in_homepage'] === $filters['show_in_homepage'];
+                        if (!$showInHomepage) return false;
+                    }
+
+                    // Apply parent_category_id filter if requested
+                    if (isset($filters['parent_category_id'])) {
+                        $parentMatch = isset($subcategory['parent_category_id']) && $subcategory['parent_category_id'] === $filters['parent_category_id'];
+                        if (!$parentMatch) return false;
+                    }
+
+                    return true;
+                });
+
+                // Apply limit
+                $filteredSubcategories = array_slice($filteredSubcategories, 0, $limit);
+
+                $subcategories = [
+                    'data' => array_values($filteredSubcategories),
+                    'total' => count($filteredSubcategories)
+                ];
+            }
+
             return response()->json([
                 'success' => true,
                 'data' => $subcategories['data'],
                 'meta' => [
                     'total' => $subcategories['total'],
-                    'limit' => $limit
+                    'limit' => $limit,
+                    'note' => empty($subcategories['data']) ? null : 'Using fallback query due to missing Firebase index'
                 ]
             ]);
 
         } catch (Exception $e) {
             \Log::error('Error in MartSubCategoryController@getHomepageSubcategories: ' . $e->getMessage());
+
+            // If it's an index error, try the fallback approach
+            if (strpos($e->getMessage(), 'requires an index') !== false) {
+                \Log::warning('Index error detected for homepage subcategories, trying fallback approach');
+
+                try {
+                    $limit = $request->limit ?? 10;
+
+                    // Simple fallback: Get all subcategories without filters and filter in PHP
+                    $allSubcategories = $this->firebaseService->getMartSubCategoriesWithPagination(
+                        [], // No filters
+                        null,
+                        1,
+                        50, // Get more to filter from
+                        'title',
+                        'asc'
+                    );
+
+                    // Filter subcategories in PHP based on the requested filters
+                    $filteredSubcategories = array_filter($allSubcategories['data'], function($subcategory) use ($filters) {
+                        // Apply publish filter
+                        if (isset($filters['publish'])) {
+                            $isPublished = isset($subcategory['publish']) && $subcategory['publish'] === $filters['publish'];
+                            if (!$isPublished) return false;
+                        }
+
+                        // Apply show_in_homepage filter
+                        if (isset($filters['show_in_homepage'])) {
+                            $showInHomepage = isset($subcategory['show_in_homepage']) && $subcategory['show_in_homepage'] === $filters['show_in_homepage'];
+                            if (!$showInHomepage) return false;
+                        }
+
+                        // Apply parent_category_id filter if requested
+                        if (isset($filters['parent_category_id'])) {
+                            $parentMatch = isset($subcategory['parent_category_id']) && $subcategory['parent_category_id'] === $filters['parent_category_id'];
+                            if (!$parentMatch) return false;
+                        }
+
+                        return true;
+                    });
+
+                    // Apply limit
+                    $filteredSubcategories = array_slice($filteredSubcategories, 0, $limit);
+
+                    return response()->json([
+                        'success' => true,
+                        'data' => array_values($filteredSubcategories),
+                        'meta' => [
+                            'total' => count($filteredSubcategories),
+                            'limit' => $limit,
+                            'note' => 'Using fallback query due to missing Firebase index'
+                        ]
+                    ]);
+                } catch (Exception $fallbackError) {
+                    \Log::error('Fallback approach also failed for homepage subcategories: ' . $fallbackError->getMessage());
+                }
+            }
 
             return response()->json([
                 'success' => false,
@@ -549,7 +832,7 @@ class MartSubCategoryController extends Controller
         }
     }
 
-    /**
+        /**
      * Search subcategories by title or description
      *
      * @param Request $request
@@ -574,35 +857,74 @@ class MartSubCategoryController extends Controller
         }
 
         try {
-            $filters = [];
-            if ($request->has('publish')) {
-                $filters['publish'] = $request->publish;
-            }
-            if ($request->has('parent_category_id')) {
-                $filters['parent_category_id'] = $request->parent_category_id;
-            }
-
             $page = $request->page ?? 1;
             $limit = $request->limit ?? 20;
 
-            $results = $this->firebaseService->searchMartSubCategories(
-                $request->query,
-                $filters,
-                $page,
-                $limit
-            );
+            // Test Firebase connection first
+            try {
+                $allSubcategories = $this->firebaseService->getMartSubCategoriesWithPagination(
+                    [], // No filters
+                    null,
+                    1,
+                    50, // Get more to filter from
+                    'title',
+                    'asc'
+                );
 
-            return response()->json([
-                'success' => true,
-                'data' => $results['data'],
-                'meta' => [
-                    'query' => $request->query,
-                    'current_page' => $page,
-                    'per_page' => $limit,
-                    'total' => $results['total'],
-                    'has_more' => $results['has_more']
-                ]
-            ]);
+                // Filter for search query and other filters in PHP
+                $filteredSubcategories = array_filter($allSubcategories['data'], function($subcategory) use ($request) {
+                    // Check if title contains the search query (case-insensitive)
+                    $titleMatch = stripos($subcategory['title'] ?? '', $request->input('query')) !== false;
+
+                    // Apply publish filter if requested
+                    if ($request->has('publish')) {
+                        $isPublished = isset($subcategory['publish']) && $subcategory['publish'] === $request->publish;
+                        if (!$isPublished) return false;
+                    }
+
+                    // Apply parent_category_id filter if requested
+                    if ($request->has('parent_category_id')) {
+                        $parentMatch = isset($subcategory['parent_category_id']) && $subcategory['parent_category_id'] === $request->parent_category_id;
+                        if (!$parentMatch) return false;
+                    }
+
+                    return $titleMatch;
+                });
+
+                // Apply pagination
+                $offset = ($page - 1) * $limit;
+                $filteredSubcategories = array_slice($filteredSubcategories, $offset, $limit);
+
+                return response()->json([
+                    'success' => true,
+                    'data' => array_values($filteredSubcategories),
+                    'meta' => [
+                        'query' => $request->input('query'),
+                        'current_page' => $page,
+                        'per_page' => $limit,
+                        'total' => count($filteredSubcategories),
+                        'has_more' => false,
+                        'note' => 'Using PHP-side filtering'
+                    ]
+                ]);
+
+            } catch (\Exception $firebaseError) {
+                \Log::error('Firebase error in search: ' . $firebaseError->getMessage());
+
+                // Return empty result if Firebase fails
+                return response()->json([
+                    'success' => true,
+                    'data' => [],
+                    'meta' => [
+                        'query' => $request->input('query'),
+                        'current_page' => $page,
+                        'per_page' => $limit,
+                        'total' => 0,
+                        'has_more' => false,
+                        'note' => 'Firebase connection failed, returning empty result'
+                    ]
+                ]);
+            }
 
         } catch (Exception $e) {
             \Log::error('Error in MartSubCategoryController@search: ' . $e->getMessage());

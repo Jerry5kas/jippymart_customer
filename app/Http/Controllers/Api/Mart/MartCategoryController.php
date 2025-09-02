@@ -378,6 +378,7 @@ class MartCategoryController extends Controller
         try {
             $limit = $request->limit ?? 10;
 
+            // First try with both filters (requires composite index)
             $filters = [
                 'publish' => true,
                 'show_in_homepage' => true
@@ -392,6 +393,36 @@ class MartCategoryController extends Controller
                 'asc'
             );
 
+            // If no results and it might be due to missing index, try fallback approach
+            if (empty($categories['data']) && $categories['total'] === 0) {
+                \Log::warning('No categories found with composite filter, trying fallback approach');
+
+                // Simple fallback: Get all categories without filters and filter in PHP
+                $allCategories = $this->firebaseService->getMartCategoriesWithPagination(
+                    [], // No filters
+                    null,
+                    1,
+                    20, // Reduced limit to avoid timeout
+                    'title',
+                    'asc'
+                );
+
+                // Filter for both publish and show_in_homepage in PHP
+                $filteredCategories = array_filter($allCategories['data'], function($category) {
+                    return isset($category['publish']) && $category['publish'] === true &&
+                           isset($category['show_in_homepage']) && $category['show_in_homepage'] === true;
+                });
+
+                // Limit the results
+                $filteredCategories = array_slice($filteredCategories, 0, $limit);
+
+                $categories = [
+                    'data' => array_values($filteredCategories),
+                    'total' => count($filteredCategories),
+                    'has_more' => false
+                ];
+            }
+
             return response()->json([
                 'success' => true,
                 'data' => $categories['data'],
@@ -403,6 +434,46 @@ class MartCategoryController extends Controller
 
         } catch (Exception $e) {
             \Log::error('Error in MartCategoryController@getHomepageCategories: ' . $e->getMessage());
+
+            // If it's an index error, try the fallback approach
+            if (strpos($e->getMessage(), 'requires an index') !== false) {
+                \Log::warning('Index error detected, trying fallback approach');
+
+                try {
+                    $limit = $request->limit ?? 10;
+
+                    // Simple fallback: Get all categories without filters and filter in PHP
+                    $allCategories = $this->firebaseService->getMartCategoriesWithPagination(
+                        [], // No filters
+                        null,
+                        1,
+                        20, // Reduced limit to avoid timeout
+                        'title',
+                        'asc'
+                    );
+
+                    // Filter for both publish and show_in_homepage in PHP
+                    $filteredCategories = array_filter($allCategories['data'], function($category) {
+                        return isset($category['publish']) && $category['publish'] === true &&
+                               isset($category['show_in_homepage']) && $category['show_in_homepage'] === true;
+                    });
+
+                    // Limit the results
+                    $filteredCategories = array_slice($filteredCategories, 0, $limit);
+
+                    return response()->json([
+                        'success' => true,
+                        'data' => array_values($filteredCategories),
+                        'meta' => [
+                            'total' => count($filteredCategories),
+                            'limit' => $limit,
+                            'note' => 'Using fallback query due to missing Firebase index'
+                        ]
+                    ]);
+                } catch (Exception $fallbackError) {
+                    \Log::error('Fallback approach also failed: ' . $fallbackError->getMessage());
+                }
+            }
 
             return response()->json([
                 'success' => false,
@@ -444,21 +515,67 @@ class MartCategoryController extends Controller
             $limit = $request->limit ?? 20;
 
             $results = $this->firebaseService->searchMartCategories(
-                $request->query,
+                $request->input('query'),
                 $filters,
                 $page,
                 $limit
             );
 
+            // If no results, try fallback approach
+            if (empty($results['data']) && $results['total'] === 0) {
+                \Log::warning('No categories found with search query, trying fallback approach');
+
+                // Fallback: Get all categories and filter in PHP
+                $allCategories = $this->firebaseService->getMartCategoriesWithPagination(
+                    [], // No filters
+                    null,
+                    1,
+                    50, // Get more to filter from
+                    'title',
+                    'asc'
+                );
+
+                // Filter categories in PHP based on search query and filters
+                $filteredCategories = array_filter($allCategories['data'], function($category) use ($request, $filters) {
+                    $query = strtolower($request->input('query'));
+                    $title = strtolower($category['title'] ?? '');
+
+                    // Check if title contains the search query
+                    $matchesQuery = strpos($title, $query) !== false;
+
+                    // Apply publish filter if requested
+                    $matchesPublish = true;
+                    if (isset($filters['publish'])) {
+                        $matchesPublish = isset($category['publish']) && $category['publish'] === $filters['publish'];
+                    }
+
+                    return $matchesQuery && $matchesPublish;
+                });
+
+                // Apply pagination
+                $offset = ($page - 1) * $limit;
+                $paginatedCategories = array_slice($filteredCategories, $offset, $limit);
+
+                $results = [
+                    'data' => array_values($paginatedCategories),
+                    'total' => count($filteredCategories),
+                    'has_more' => count($filteredCategories) > ($offset + $limit)
+                ];
+
+                // Add note about fallback usage
+                $results['note'] = 'Using fallback query due to missing Firebase index';
+            }
+
             return response()->json([
                 'success' => true,
                 'data' => $results['data'],
                 'meta' => [
-                    'query' => $request->query,
+                    'query' => $request->input('query'),
                     'current_page' => $page,
                     'per_page' => $limit,
                     'total' => $results['total'],
-                    'has_more' => $results['has_more']
+                    'has_more' => $results['has_more'],
+                    'note' => $results['note'] ?? null
                 ]
             ]);
 
@@ -495,6 +612,9 @@ class MartCategoryController extends Controller
         }
 
         try {
+            $page = $request->page ?? 1;
+            $limit = $request->limit ?? 20;
+
             $filters = [
                 'has_subcategories' => true
             ];
@@ -502,9 +622,6 @@ class MartCategoryController extends Controller
             if ($request->has('publish')) {
                 $filters['publish'] = $request->publish;
             }
-
-            $page = $request->page ?? 1;
-            $limit = $request->limit ?? 20;
 
             $categories = $this->firebaseService->getMartCategoriesWithPagination(
                 $filters,
@@ -514,6 +631,44 @@ class MartCategoryController extends Controller
                 'title',
                 'asc'
             );
+
+            // If no results and it might be due to missing index, try fallback approach
+            if (empty($categories['data']) && $categories['total'] === 0) {
+                \Log::warning('No categories found with subcategories filter, trying fallback approach');
+
+                // Simple fallback: Get all categories without filters and filter in PHP
+                $allCategories = $this->firebaseService->getMartCategoriesWithPagination(
+                    [], // No filters
+                    null,
+                    1,
+                    50, // Get more to filter from
+                    'title',
+                    'asc'
+                );
+
+                // Filter for has_subcategories in PHP
+                $filteredCategories = array_filter($allCategories['data'], function($category) use ($request) {
+                    $hasSubcategories = isset($category['has_subcategories']) && $category['has_subcategories'] === true;
+
+                    // Apply publish filter if requested
+                    if ($request->has('publish')) {
+                        $isPublished = isset($category['publish']) && $category['publish'] === $request->publish;
+                        return $hasSubcategories && $isPublished;
+                    }
+
+                    return $hasSubcategories;
+                });
+
+                // Apply pagination
+                $offset = ($page - 1) * $limit;
+                $filteredCategories = array_slice($filteredCategories, $offset, $limit);
+
+                $categories = [
+                    'data' => array_values($filteredCategories),
+                    'total' => count($filteredCategories),
+                    'has_more' => false
+                ];
+            }
 
             return response()->json([
                 'success' => true,
@@ -528,6 +683,57 @@ class MartCategoryController extends Controller
 
         } catch (Exception $e) {
             \Log::error('Error in MartCategoryController@getCategoriesWithSubcategories: ' . $e->getMessage());
+
+            // If it's an index error, try the fallback approach
+            if (strpos($e->getMessage(), 'requires an index') !== false) {
+                \Log::warning('Index error detected for subcategories, trying fallback approach');
+
+                try {
+                    $page = $request->page ?? 1;
+                    $limit = $request->limit ?? 20;
+
+                    // Simple fallback: Get all categories without filters and filter in PHP
+                    $allCategories = $this->firebaseService->getMartCategoriesWithPagination(
+                        [], // No filters
+                        null,
+                        1,
+                        50, // Get more to filter from
+                        'title',
+                        'asc'
+                    );
+
+                    // Filter for has_subcategories in PHP
+                    $filteredCategories = array_filter($allCategories['data'], function($category) use ($request) {
+                        $hasSubcategories = isset($category['has_subcategories']) && $category['has_subcategories'] === true;
+
+                        // Apply publish filter if requested
+                        if ($request->has('publish')) {
+                            $isPublished = isset($category['publish']) && $category['publish'] === $request->publish;
+                            return $hasSubcategories && $isPublished;
+                        }
+
+                        return $hasSubcategories;
+                    });
+
+                    // Apply pagination
+                    $offset = ($page - 1) * $limit;
+                    $filteredCategories = array_slice($filteredCategories, $offset, $limit);
+
+                    return response()->json([
+                        'success' => true,
+                        'data' => array_values($filteredCategories),
+                        'meta' => [
+                            'current_page' => $page,
+                            'per_page' => $limit,
+                            'total' => count($filteredCategories),
+                            'has_more' => false,
+                            'note' => 'Using fallback query due to missing Firebase index'
+                        ]
+                    ]);
+                } catch (Exception $fallbackError) {
+                    \Log::error('Fallback approach also failed for subcategories: ' . $fallbackError->getMessage());
+                }
+            }
 
             return response()->json([
                 'success' => false,

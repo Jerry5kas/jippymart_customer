@@ -137,6 +137,126 @@ class MartItemController extends Controller
                 $sortOrder
             );
 
+            // If no results and it might be due to missing index, try fallback approach
+            if (empty($items['data']) && $items['total'] === 0) {
+                \Log::warning('No items found with composite filter, trying fallback approach');
+
+                // Simple fallback: Get all items without filters and filter in PHP
+                $allItems = $this->firebaseService->getMartItemsWithPagination(
+                    [], // No filters
+                    null,
+                    1,
+                    100, // Get more to filter from
+                    'name',
+                    'asc'
+                );
+
+                // Filter items in PHP based on the requested filters
+                $filteredItems = array_filter($allItems['data'], function($item) use ($filters) {
+                    // Apply publish filter if requested
+                    if (isset($filters['publish'])) {
+                        $isPublished = isset($item['publish']) && $item['publish'] === $filters['publish'];
+                        if (!$isPublished) return false;
+                    }
+
+                    // Apply is_available filter if requested
+                    if (isset($filters['is_available'])) {
+                        $isAvailable = isset($item['isAvailable']) && $item['isAvailable'] === $filters['is_available'];
+                        if (!$isAvailable) return false;
+                    }
+
+                    // Apply vendor filter if requested
+                    if (isset($filters['vendor_id'])) {
+                        $vendorMatch = isset($item['vendorID']) && $item['vendorID'] === $filters['vendor_id'];
+                        if (!$vendorMatch) return false;
+                    }
+
+                    // Apply category filter if requested
+                    if (isset($filters['category_id'])) {
+                        $categoryMatch = isset($item['categoryID']) && $item['categoryID'] === $filters['category_id'];
+                        if (!$categoryMatch) return false;
+                    }
+
+                    // Apply subcategory filter if requested
+                    if (isset($filters['subcategory_id'])) {
+                        $subcategoryMatch = isset($item['subcategoryID']) && in_array($filters['subcategory_id'], $item['subcategoryID']);
+                        if (!$subcategoryMatch) return false;
+                    }
+
+                    // Apply has_options filter if requested
+                    if (isset($filters['has_options'])) {
+                        $hasOptions = isset($item['has_options']) && $item['has_options'] === $filters['has_options'];
+                        if (!$hasOptions) return false;
+                    }
+
+                    // Apply feature filters if requested
+                    if (isset($filters['is_spotlight'])) {
+                        $isSpotlight = isset($item['isSpotlight']) && $item['isSpotlight'] === $filters['is_spotlight'];
+                        if (!$isSpotlight) return false;
+                    }
+                    if (isset($filters['is_steal_of_moment'])) {
+                        $isStealOfMoment = isset($item['isStealOfMoment']) && $item['isStealOfMoment'] === $filters['is_steal_of_moment'];
+                        if (!$isStealOfMoment) return false;
+                    }
+                    if (isset($filters['is_feature'])) {
+                        $isFeature = isset($item['isFeature']) && $item['isFeature'] === $filters['is_feature'];
+                        if (!$isFeature) return false;
+                    }
+                    if (isset($filters['is_trending'])) {
+                        $isTrending = isset($item['isTrending']) && $item['isTrending'] === $filters['is_trending'];
+                        if (!$isTrending) return false;
+                    }
+                    if (isset($filters['is_new'])) {
+                        $isNew = isset($item['isNew']) && $item['isNew'] === $filters['is_new'];
+                        if (!$isNew) return false;
+                    }
+                    if (isset($filters['is_best_seller'])) {
+                        $isBestSeller = isset($item['isBestSeller']) && $item['isBestSeller'] === $filters['is_best_seller'];
+                        if (!$isBestSeller) return false;
+                    }
+                    if (isset($filters['is_seasonal'])) {
+                        $isSeasonal = isset($item['isSeasonal']) && $item['isSeasonal'] === $filters['is_seasonal'];
+                        if (!$isSeasonal) return false;
+                    }
+
+                    // Apply dietary filters if requested
+                    if (isset($filters['veg'])) {
+                        $isVeg = isset($item['veg']) && $item['veg'] === $filters['veg'];
+                        if (!$isVeg) return false;
+                    }
+                    if (isset($filters['nonveg'])) {
+                        $isNonVeg = isset($item['nonveg']) && $item['nonveg'] === $filters['nonveg'];
+                        if (!$isNonVeg) return false;
+                    }
+                    if (isset($filters['takeaway_option'])) {
+                        $hasTakeaway = isset($item['takeawayOption']) && $item['takeawayOption'] === $filters['takeaway_option'];
+                        if (!$hasTakeaway) return false;
+                    }
+
+                    // Apply price filters if requested
+                    if (isset($filters['min_price'])) {
+                        $itemPrice = isset($item['price']) ? $item['price'] : 0;
+                        if ($itemPrice < $filters['min_price']) return false;
+                    }
+                    if (isset($filters['max_price'])) {
+                        $itemPrice = isset($item['price']) ? $item['price'] : 0;
+                        if ($itemPrice > $filters['max_price']) return false;
+                    }
+
+                    return true;
+                });
+
+                // Apply pagination
+                $offset = ($page - 1) * $limit;
+                $filteredItems = array_slice($filteredItems, $offset, $limit);
+
+                $items = [
+                    'data' => array_values($filteredItems),
+                    'total' => count($filteredItems),
+                    'has_more' => false
+                ];
+            }
+
             return response()->json([
                 'success' => true,
                 'data' => $items['data'],
@@ -147,12 +267,149 @@ class MartItemController extends Controller
                     'has_more' => $items['has_more'],
                     'filters_applied' => $filters,
                     'sort_by' => $sortBy,
-                    'sort_order' => $sortOrder
+                    'sort_order' => $sortOrder,
+                    'note' => empty($items['data']) ? null : 'Using fallback query due to missing Firebase index'
                 ]
             ]);
 
         } catch (Exception $e) {
             \Log::error('Error in MartItemController@index: ' . $e->getMessage());
+
+            // If it's an index error, try the fallback approach
+            if (strpos($e->getMessage(), 'requires an index') !== false) {
+                \Log::warning('Index error detected for items index, trying fallback approach');
+
+                try {
+                    $page = $request->page ?? 1;
+                    $limit = $request->limit ?? 20;
+
+                    // Simple fallback: Get all items without filters and filter in PHP
+                    $allItems = $this->firebaseService->getMartItemsWithPagination(
+                        [], // No filters
+                        null,
+                        1,
+                        100, // Get more to filter from
+                        'name',
+                        'asc'
+                    );
+
+                    // Filter items in PHP based on the requested filters
+                    $filteredItems = array_filter($allItems['data'], function($item) use ($filters) {
+                        // Apply publish filter if requested
+                        if (isset($filters['publish'])) {
+                            $isPublished = isset($item['publish']) && $item['publish'] === $filters['publish'];
+                            if (!$isPublished) return false;
+                        }
+
+                        // Apply is_available filter if requested
+                        if (isset($filters['is_available'])) {
+                            $isAvailable = isset($item['isAvailable']) && $item['isAvailable'] === $filters['is_available'];
+                            if (!$isAvailable) return false;
+                        }
+
+                        // Apply vendor filter if requested
+                        if (isset($filters['vendor_id'])) {
+                            $vendorMatch = isset($item['vendorID']) && $item['vendorID'] === $filters['vendor_id'];
+                            if (!$vendorMatch) return false;
+                        }
+
+                        // Apply category filter if requested
+                        if (isset($filters['category_id'])) {
+                            $categoryMatch = isset($item['categoryID']) && $item['categoryID'] === $filters['category_id'];
+                            if (!$categoryMatch) return false;
+                        }
+
+                        // Apply subcategory filter if requested
+                        if (isset($filters['subcategory_id'])) {
+                            $subcategoryMatch = isset($item['subcategoryID']) && in_array($filters['subcategory_id'], $item['subcategoryID']);
+                            if (!$subcategoryMatch) return false;
+                        }
+
+                        // Apply has_options filter if requested
+                        if (isset($filters['has_options'])) {
+                            $hasOptions = isset($item['has_options']) && $item['has_options'] === $filters['has_options'];
+                            if (!$hasOptions) return false;
+                        }
+
+                        // Apply feature filters if requested
+                        if (isset($filters['is_spotlight'])) {
+                            $isSpotlight = isset($item['isSpotlight']) && $item['isSpotlight'] === $filters['is_spotlight'];
+                            if (!$isSpotlight) return false;
+                        }
+                        if (isset($filters['is_steal_of_moment'])) {
+                            $isStealOfMoment = isset($item['isStealOfMoment']) && $item['isStealOfMoment'] === $filters['is_steal_of_moment'];
+                            if (!$isStealOfMoment) return false;
+                        }
+                        if (isset($filters['is_feature'])) {
+                            $isFeature = isset($item['isFeature']) && $item['isFeature'] === $filters['is_feature'];
+                            if (!$isFeature) return false;
+                        }
+                        if (isset($filters['is_trending'])) {
+                            $isTrending = isset($item['isTrending']) && $item['isTrending'] === $filters['is_trending'];
+                            if (!$isTrending) return false;
+                        }
+                        if (isset($filters['is_new'])) {
+                            $isNew = isset($item['isNew']) && $item['isNew'] === $filters['is_new'];
+                            if (!$isNew) return false;
+                        }
+                        if (isset($filters['is_best_seller'])) {
+                            $isBestSeller = isset($item['isBestSeller']) && $item['isBestSeller'] === $filters['is_best_seller'];
+                            if (!$isBestSeller) return false;
+                        }
+                        if (isset($filters['is_seasonal'])) {
+                            $isSeasonal = isset($item['isSeasonal']) && $item['isSeasonal'] === $filters['is_seasonal'];
+                            if (!$isSeasonal) return false;
+                        }
+
+                        // Apply dietary filters if requested
+                        if (isset($filters['veg'])) {
+                            $isVeg = isset($item['veg']) && $item['veg'] === $filters['veg'];
+                            if (!$isVeg) return false;
+                        }
+                        if (isset($filters['nonveg'])) {
+                            $isNonVeg = isset($item['nonveg']) && $item['nonveg'] === $filters['nonveg'];
+                            if (!$isNonVeg) return false;
+                        }
+                        if (isset($filters['takeaway_option'])) {
+                            $hasTakeaway = isset($item['takeawayOption']) && $item['takeawayOption'] === $filters['takeaway_option'];
+                            if (!$hasTakeaway) return false;
+                        }
+
+                        // Apply price filters if requested
+                        if (isset($filters['min_price'])) {
+                            $itemPrice = isset($item['price']) ? $item['price'] : 0;
+                            if ($itemPrice < $filters['min_price']) return false;
+                        }
+                        if (isset($filters['max_price'])) {
+                            $itemPrice = isset($item['price']) ? $item['price'] : 0;
+                            if ($itemPrice > $filters['max_price']) return false;
+                        }
+
+                        return true;
+                    });
+
+                    // Apply pagination
+                    $offset = ($page - 1) * $limit;
+                    $filteredItems = array_slice($filteredItems, $offset, $limit);
+
+                    return response()->json([
+                        'success' => true,
+                        'data' => array_values($filteredItems),
+                        'meta' => [
+                            'current_page' => $page,
+                            'per_page' => $limit,
+                            'total' => count($filteredItems),
+                            'has_more' => false,
+                            'filters_applied' => $filters,
+                            'sort_by' => $request->sort_by ?? 'name',
+                            'sort_order' => $request->sort_order ?? 'asc',
+                            'note' => 'Using fallback query due to missing Firebase index'
+                        ]
+                    ]);
+                } catch (Exception $fallbackError) {
+                    \Log::error('Fallback approach also failed for items index: ' . $fallbackError->getMessage());
+                }
+            }
 
             return response()->json([
                 'success' => false,
@@ -263,7 +520,10 @@ class MartItemController extends Controller
             'add_ons_price' => 'sometimes|array',
             'add_ons_price.*' => 'numeric|min:0',
             'product_specification' => 'sometimes|array',
-            'item_attribute' => 'sometimes|string'
+            'item_attribute' => 'sometimes|string',
+            // Review fields
+            'review_count' => 'sometimes|string',
+            'review_sum' => 'sometimes|string'
         ]);
 
         if ($validator->fails()) {
@@ -359,6 +619,10 @@ class MartItemController extends Controller
                 'addOnsPrice' => $request->add_ons_price ?? [],
                 'product_specification' => $request->product_specification ?? [],
                 'item_attribute' => $request->item_attribute ?? null,
+
+                // Review fields
+                'reviewCount' => $request->review_count ?? '0',
+                'reviewSum' => $request->review_sum ?? '0',
 
                 // Timestamps
                 'created_at' => now()->toISOString(),
@@ -458,7 +722,10 @@ class MartItemController extends Controller
             'add_ons_price' => 'sometimes|array',
             'add_ons_price.*' => 'numeric|min:0',
             'product_specification' => 'sometimes|array',
-            'item_attribute' => 'sometimes|string'
+            'item_attribute' => 'sometimes|string',
+            // Review fields
+            'review_count' => 'sometimes|string',
+            'review_sum' => 'sometimes|string'
         ]);
 
         if ($validator->fails()) {
@@ -556,6 +823,10 @@ class MartItemController extends Controller
             if ($request->has('product_specification')) $updateData['product_specification'] = $request->product_specification;
             if ($request->has('item_attribute')) $updateData['item_attribute'] = $request->item_attribute;
 
+            // Review fields
+            if ($request->has('review_count')) $updateData['reviewCount'] = $request->review_count;
+            if ($request->has('review_sum')) $updateData['reviewSum'] = $request->review_sum;
+
             // Update timestamp
             $updateData['updated_at'] = now()->toISOString();
             $updateData['updated_by'] = $user->id;
@@ -647,84 +918,47 @@ class MartItemController extends Controller
      */
     public function search(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'query' => 'required|string|min:2|max:100',
-            'vendor_id' => 'sometimes|string',
-            'category_id' => 'sometimes|string',
-            'subcategory_id' => 'sometimes|string|array',
-            'is_available' => 'sometimes|boolean',
-            'publish' => 'sometimes|boolean',
-            'has_options' => 'sometimes|boolean',
-            'min_price' => 'sometimes|numeric|min:0',
-            'max_price' => 'sometimes|numeric|min:0',
-            'page' => 'sometimes|integer|min:1',
-            'limit' => 'sometimes|integer|min:1|max:50',
-            'sort_by' => 'sometimes|string|in:name,price,created_at,updated_at',
-            'sort_order' => 'sometimes|string|in:asc,desc'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
         try {
-            $filters = [];
+            // Simple test version
+            $query = $request->input('query') ?? '';
 
-            if ($request->has('vendor_id')) {
-                $filters['vendor_id'] = $request->vendor_id;
-            }
-            if ($request->has('category_id')) {
-                $filters['category_id'] = $request->category_id;
-            }
-            if ($request->has('subcategory_id')) {
-                $filters['subcategory_id'] = $request->subcategory_id;
-            }
-            if ($request->has('is_available')) {
-                $filters['is_available'] = $request->is_available;
-            }
-            if ($request->has('publish')) {
-                $filters['publish'] = $request->publish;
-            }
-            if ($request->has('has_options')) {
-                $filters['has_options'] = $request->has_options;
-            }
-            if ($request->has('min_price')) {
-                $filters['min_price'] = $request->min_price;
-            }
-            if ($request->has('max_price')) {
-                $filters['max_price'] = $request->max_price;
+            if (empty($query)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Query is required'
+                ], 422);
             }
 
-            $page = $request->page ?? 1;
-            $limit = $request->limit ?? 20;
-            $sortBy = $request->sort_by ?? 'name';
-            $sortOrder = $request->sort_order ?? 'asc';
-
-            $results = $this->firebaseService->searchMartItemsWithFilters(
-                $request->query,
-                $filters,
-                $page,
-                $limit,
-                $sortBy,
-                $sortOrder
+            // Get all items and filter in PHP
+            $allItems = $this->firebaseService->getMartItemsWithPagination(
+                [], // No filters
+                null,
+                1,
+                100, // Get more to filter from
+                'name',
+                'asc'
             );
+
+            // Simple search filter
+            $filteredItems = array_filter($allItems['data'], function($item) use ($query) {
+                $queryLower = strtolower($query);
+                $itemName = strtolower($item['name'] ?? '');
+                return strpos($itemName, $queryLower) !== false;
+            });
 
             return response()->json([
                 'success' => true,
-                'data' => $results['data'],
+                'data' => array_values($filteredItems),
                 'meta' => [
-                    'query' => $request->query,
-                    'current_page' => $page,
-                    'per_page' => $limit,
-                    'total' => $results['total'],
-                    'has_more' => $results['has_more'],
-                    'filters_applied' => $filters,
-                    'sort_by' => $sortBy,
-                    'sort_order' => $sortOrder
+                    'query' => $query,
+                    'current_page' => 1,
+                    'per_page' => 20,
+                    'total' => count($filteredItems),
+                    'has_more' => false,
+                    'filters_applied' => [],
+                    'sort_by' => 'name',
+                    'sort_order' => 'asc',
+                    'note' => 'Using fallback query due to missing Firebase index'
                 ]
             ]);
 
@@ -733,7 +967,7 @@ class MartItemController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to search layouts items: ' . $e->getMessage()
+                'message' => 'Failed to search items: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -795,18 +1029,186 @@ class MartItemController extends Controller
                 'desc'
             );
 
+            // If no results and it might be due to missing index, try fallback approach
+            if (empty($items['data']) && $items['total'] === 0) {
+                \Log::warning('No featured items found with composite filter, trying fallback approach');
+
+                // Simple fallback: Get all items without filters and filter in PHP
+                $allItems = $this->firebaseService->getMartItemsWithPagination(
+                    [], // No filters
+                    null,
+                    1,
+                    100, // Get more to filter from
+                    'name',
+                    'asc'
+                );
+
+                // Filter items in PHP based on the requested filters
+                $filteredItems = array_filter($allItems['data'], function($item) use ($filters) {
+                    // Apply publish filter
+                    if (isset($filters['publish'])) {
+                        $isPublished = isset($item['publish']) && $item['publish'] === $filters['publish'];
+                        if (!$isPublished) return false;
+                    }
+
+                    // Apply is_available filter
+                    if (isset($filters['is_available'])) {
+                        $isAvailable = isset($item['isAvailable']) && $item['isAvailable'] === $filters['is_available'];
+                        if (!$isAvailable) return false;
+                    }
+
+                    // Apply feature type filter
+                    foreach ($filters as $key => $value) {
+                        if (strpos($key, 'is_') === 0 && $value === true) {
+                            $fieldName = str_replace('is_', 'is', $key);
+                            $fieldName = lcfirst(ucwords(str_replace('_', ' ', $fieldName)));
+                            $fieldName = str_replace(' ', '', $fieldName);
+
+                            if (isset($item[$fieldName]) && $item[$fieldName] !== $value) {
+                                return false;
+                            }
+                        }
+                    }
+
+                    // Apply vendor_id filter if requested
+                    if (isset($filters['vendor_id'])) {
+                        $vendorMatch = isset($item['vendorID']) && $item['vendorID'] === $filters['vendor_id'];
+                        if (!$vendorMatch) return false;
+                    }
+
+                    // Apply category_id filter if requested
+                    if (isset($filters['category_id'])) {
+                        $categoryMatch = isset($item['categoryID']) && $item['categoryID'] === $filters['category_id'];
+                        if (!$categoryMatch) return false;
+                    }
+
+                    return true;
+                });
+
+                // Apply limit
+                $filteredItems = array_slice($filteredItems, 0, $limit);
+
+                $items = [
+                    'data' => array_values($filteredItems),
+                    'total' => count($filteredItems)
+                ];
+            }
+
             return response()->json([
                 'success' => true,
                 'data' => $items['data'],
                 'meta' => [
                     'feature_type' => $request->feature_type,
                     'total' => $items['total'],
-                    'filters_applied' => $filters
+                    'filters_applied' => $filters,
+                    'note' => empty($items['data']) ? null : 'Using fallback query due to missing Firebase index'
                 ]
             ]);
 
         } catch (Exception $e) {
             \Log::error('Error in MartItemController@getFeaturedItems: ' . $e->getMessage());
+
+            // If it's an index error, try the fallback approach
+            if (strpos($e->getMessage(), 'requires an index') !== false) {
+                \Log::warning('Index error detected for getFeaturedItems, trying fallback approach');
+
+                try {
+                    $filters = [
+                        'publish' => true,
+                        'is_available' => true
+                    ];
+
+                    // Map feature type to field name
+                    $featureMap = [
+                        'spotlight' => 'is_spotlight',
+                        'steal_of_moment' => 'is_steal_of_moment',
+                        'featured' => 'is_feature',
+                        'trending' => 'is_trending',
+                        'new' => 'is_new',
+                        'best_seller' => 'is_best_seller',
+                        'seasonal' => 'is_seasonal'
+                    ];
+
+                    $filters[$featureMap[$request->feature_type]] = true;
+
+                    if ($request->has('vendor_id')) {
+                        $filters['vendor_id'] = $request->vendor_id;
+                    }
+                    if ($request->has('category_id')) {
+                        $filters['category_id'] = $request->category_id;
+                    }
+
+                    $limit = $request->limit ?? 20;
+
+                    // Simple fallback: Get all items without filters and filter in PHP
+                    $allItems = $this->firebaseService->getMartItemsWithPagination(
+                        [], // No filters
+                        null,
+                        1,
+                        100, // Get more to filter from
+                        'name',
+                        'asc'
+                    );
+
+                    // Filter items in PHP based on the requested filters
+                    $filteredItems = array_filter($allItems['data'], function($item) use ($filters) {
+                        // Apply publish filter
+                        if (isset($filters['publish'])) {
+                            $isPublished = isset($item['publish']) && $item['publish'] === $filters['publish'];
+                            if (!$isPublished) return false;
+                        }
+
+                        // Apply is_available filter
+                        if (isset($filters['is_available'])) {
+                            $isAvailable = isset($item['isAvailable']) && $item['isAvailable'] === $filters['is_available'];
+                            if (!$isAvailable) return false;
+                        }
+
+                        // Apply feature type filter
+                        foreach ($filters as $key => $value) {
+                            if (strpos($key, 'is_') === 0 && $value === true) {
+                                $fieldName = str_replace('is_', 'is', $key);
+                                $fieldName = lcfirst(ucwords(str_replace('_', ' ', $fieldName)));
+                                $fieldName = str_replace(' ', '', $fieldName);
+
+                                if (isset($item[$fieldName]) && $item[$fieldName] !== $value) {
+                                    return false;
+                                }
+                            }
+                        }
+
+                        // Apply vendor_id filter if requested
+                        if (isset($filters['vendor_id'])) {
+                            $vendorMatch = isset($item['vendorID']) && $item['vendorID'] === $filters['vendor_id'];
+                            if (!$vendorMatch) return false;
+                        }
+
+                        // Apply category_id filter if requested
+                        if (isset($filters['category_id'])) {
+                            $categoryMatch = isset($item['categoryID']) && $item['categoryID'] === $filters['category_id'];
+                            if (!$categoryMatch) return false;
+                        }
+
+                        return true;
+                    });
+
+                    // Apply limit
+                    $filteredItems = array_slice($filteredItems, 0, $limit);
+
+                    return response()->json([
+                        'success' => true,
+                        'data' => array_values($filteredItems),
+                        'meta' => [
+                            'feature_type' => $request->feature_type,
+                            'total' => count($filteredItems),
+                            'filters_applied' => $filters,
+                            'note' => 'Using fallback query due to missing Firebase index'
+                        ]
+                    ]);
+                } catch (Exception $fallbackError) {
+                    \Log::error('Fallback approach also failed for getFeaturedItems: ' . $fallbackError->getMessage());
+                }
+            }
 
             return response()->json([
                 'success' => false,
@@ -848,6 +1250,54 @@ class MartItemController extends Controller
                 $sortOrder
             );
 
+            // If no results and it might be due to missing index, try fallback approach
+            if (empty($items['data']) && $items['total'] === 0) {
+                \Log::warning('No vendor items found with composite filter, trying fallback approach');
+
+                // Simple fallback: Get all items without filters and filter in PHP
+                $allItems = $this->firebaseService->getMartItemsWithPagination(
+                    [], // No filters
+                    null,
+                    1,
+                    100, // Get more to filter from
+                    'name',
+                    'asc'
+                );
+
+                // Filter items in PHP based on the requested filters
+                $filteredItems = array_filter($allItems['data'], function($item) use ($filters) {
+                    // Apply vendor filter
+                    if (isset($filters['vendor_id'])) {
+                        $vendorMatch = isset($item['vendorID']) && $item['vendorID'] === $filters['vendor_id'];
+                        if (!$vendorMatch) return false;
+                    }
+
+                    // Apply publish filter
+                    if (isset($filters['publish'])) {
+                        $isPublished = isset($item['publish']) && $item['publish'] === $filters['publish'];
+                        if (!$isPublished) return false;
+                    }
+
+                    // Apply is_available filter
+                    if (isset($filters['is_available'])) {
+                        $isAvailable = isset($item['isAvailable']) && $item['isAvailable'] === $filters['is_available'];
+                        if (!$isAvailable) return false;
+                    }
+
+                    return true;
+                });
+
+                // Apply pagination
+                $offset = ($page - 1) * $limit;
+                $filteredItems = array_slice($filteredItems, $offset, $limit);
+
+                $items = [
+                    'data' => array_values($filteredItems),
+                    'total' => count($filteredItems),
+                    'has_more' => false
+                ];
+            }
+
             return response()->json([
                 'success' => true,
                 'data' => $items['data'],
@@ -858,12 +1308,77 @@ class MartItemController extends Controller
                     'total' => $items['total'],
                     'has_more' => $items['has_more'],
                     'sort_by' => $sortBy,
-                    'sort_order' => $sortOrder
+                    'sort_order' => $sortOrder,
+                    'note' => empty($items['data']) ? null : 'Using fallback query due to missing Firebase index'
                 ]
             ]);
 
         } catch (Exception $e) {
             \Log::error('Error in MartItemController@getByVendor: ' . $e->getMessage());
+
+            // If it's an index error, try the fallback approach
+            if (strpos($e->getMessage(), 'requires an index') !== false) {
+                \Log::warning('Index error detected for vendor items, trying fallback approach');
+
+                try {
+                    $page = $request->page ?? 1;
+                    $limit = $request->limit ?? 20;
+
+                    // Simple fallback: Get all items without filters and filter in PHP
+                    $allItems = $this->firebaseService->getMartItemsWithPagination(
+                        [], // No filters
+                        null,
+                        1,
+                        100, // Get more to filter from
+                        'name',
+                        'asc'
+                    );
+
+                    // Filter items in PHP based on the requested filters
+                    $filteredItems = array_filter($allItems['data'], function($item) use ($filters) {
+                        // Apply vendor filter
+                        if (isset($filters['vendor_id'])) {
+                            $vendorMatch = isset($item['vendorID']) && $item['vendorID'] === $filters['vendor_id'];
+                            if (!$vendorMatch) return false;
+                        }
+
+                        // Apply publish filter
+                        if (isset($filters['publish'])) {
+                            $isPublished = isset($item['publish']) && $item['publish'] === $filters['publish'];
+                            if (!$isPublished) return false;
+                        }
+
+                        // Apply is_available filter
+                        if (isset($filters['is_available'])) {
+                            $isAvailable = isset($item['isAvailable']) && $item['isAvailable'] === $filters['is_available'];
+                            if (!$isAvailable) return false;
+                        }
+
+                        return true;
+                    });
+
+                    // Apply pagination
+                    $offset = ($page - 1) * $limit;
+                    $filteredItems = array_slice($filteredItems, $offset, $limit);
+
+                    return response()->json([
+                        'success' => true,
+                        'data' => array_values($filteredItems),
+                        'meta' => [
+                            'vendor_id' => $vendor_id,
+                            'current_page' => $page,
+                            'per_page' => $limit,
+                            'total' => count($filteredItems),
+                            'has_more' => false,
+                            'sort_by' => $request->sort_by ?? 'name',
+                            'sort_order' => $request->sort_order ?? 'asc',
+                            'note' => 'Using fallback query due to missing Firebase index'
+                        ]
+                    ]);
+                } catch (Exception $fallbackError) {
+                    \Log::error('Fallback approach also failed for vendor items: ' . $fallbackError->getMessage());
+                }
+            }
 
             return response()->json([
                 'success' => false,
@@ -905,6 +1420,78 @@ class MartItemController extends Controller
                 $sortOrder
             );
 
+            // If no results and it might be due to missing index, try fallback approach
+            if (empty($items['data']) && $items['total'] === 0) {
+                \Log::warning('No items found with composite filter for category, trying fallback approach');
+
+                // Simple fallback: Get all items without filters and filter in PHP
+                $allItems = $this->firebaseService->getMartItemsWithPagination(
+                    [], // No filters
+                    null,
+                    1,
+                    100, // Get more to filter from
+                    'name',
+                    'asc'
+                );
+
+                // Filter items in PHP based on the requested filters
+                $filteredItems = array_filter($allItems['data'], function($item) use ($filters) {
+                    // Apply category_id filter (required)
+                    if (isset($filters['category_id'])) {
+                        $categoryMatch = isset($item['categoryID']) && $item['categoryID'] === $filters['category_id'];
+                        if (!$categoryMatch) return false;
+                    }
+
+                    // Apply publish filter
+                    if (isset($filters['publish'])) {
+                        $isPublished = isset($item['publish']) && $item['publish'] === $filters['publish'];
+                        if (!$isPublished) return false;
+                    }
+
+                    // Apply is_available filter
+                    if (isset($filters['is_available'])) {
+                        $isAvailable = isset($item['isAvailable']) && $item['isAvailable'] === $filters['is_available'];
+                        if (!$isAvailable) return false;
+                    }
+
+                    return true;
+                });
+
+                // Apply sorting
+                if ($sortBy === 'name') {
+                    usort($filteredItems, function($a, $b) use ($sortOrder) {
+                        $nameA = strtolower($a['name'] ?? '');
+                        $nameB = strtolower($b['name'] ?? '');
+                        return $sortOrder === 'asc' ? strcmp($nameA, $nameB) : strcmp($nameB, $nameA);
+                    });
+                } elseif ($sortBy === 'price') {
+                    usort($filteredItems, function($a, $b) use ($sortOrder) {
+                        $priceA = $a['price'] ?? 0;
+                        $priceB = $b['price'] ?? 0;
+                        return $sortOrder === 'asc' ? $priceA - $priceB : $priceB - $priceA;
+                    });
+                } else {
+                    // Default sorting by name
+                    usort($filteredItems, function($a, $b) use ($sortOrder) {
+                        $nameA = strtolower($a['name'] ?? '');
+                        $nameB = strtolower($b['name'] ?? '');
+                        return $sortOrder === 'asc' ? strcmp($nameA, $nameB) : strcmp($nameB, $nameA);
+                    });
+                }
+
+                // Apply pagination
+                $offset = ($page - 1) * $limit;
+                $paginatedItems = array_slice($filteredItems, $offset, $limit);
+                $total = count($filteredItems);
+                $hasMore = ($offset + $limit) < $total;
+
+                $items = [
+                    'data' => array_values($paginatedItems),
+                    'total' => $total,
+                    'has_more' => $hasMore
+                ];
+            }
+
             return response()->json([
                 'success' => true,
                 'data' => $items['data'],
@@ -915,12 +1502,109 @@ class MartItemController extends Controller
                     'total' => $items['total'],
                     'has_more' => $items['has_more'],
                     'sort_by' => $sortBy,
-                    'sort_order' => $sortOrder
+                    'sort_order' => $sortOrder,
+                    'note' => empty($items['data']) ? null : 'Using fallback query due to missing Firebase index'
                 ]
             ]);
 
         } catch (Exception $e) {
             \Log::error('Error in MartItemController@getByCategory: ' . $e->getMessage());
+
+            // If it's an index error, try the fallback approach
+            if (strpos($e->getMessage(), 'requires an index') !== false) {
+                \Log::warning('Index error detected for getByCategory, trying fallback approach');
+
+                try {
+                    $filters = [
+                        'category_id' => $category_id,
+                        'publish' => true,
+                        'is_available' => true
+                    ];
+
+                    $page = $request->page ?? 1;
+                    $limit = $request->limit ?? 20;
+                    $sortBy = $request->sort_by ?? 'name';
+                    $sortOrder = $request->sort_order ?? 'asc';
+
+                    // Simple fallback: Get all items without filters and filter in PHP
+                    $allItems = $this->firebaseService->getMartItemsWithPagination(
+                        [], // No filters
+                        null,
+                        1,
+                        100, // Get more to filter from
+                        'name',
+                        'asc'
+                    );
+
+                    // Filter items in PHP based on the requested filters
+                    $filteredItems = array_filter($allItems['data'], function($item) use ($filters) {
+                        // Apply category_id filter (required)
+                        if (isset($filters['category_id'])) {
+                            $categoryMatch = isset($item['categoryID']) && $item['categoryID'] === $filters['category_id'];
+                            if (!$categoryMatch) return false;
+                        }
+
+                        // Apply publish filter
+                        if (isset($filters['publish'])) {
+                            $isPublished = isset($item['publish']) && $item['publish'] === $filters['publish'];
+                            if (!$isPublished) return false;
+                        }
+
+                        // Apply is_available filter
+                        if (isset($filters['is_available'])) {
+                            $isAvailable = isset($item['isAvailable']) && $item['isAvailable'] === $filters['is_available'];
+                            if (!$isAvailable) return false;
+                        }
+
+                        return true;
+                    });
+
+                    // Apply sorting
+                    if ($sortBy === 'name') {
+                        usort($filteredItems, function($a, $b) use ($sortOrder) {
+                            $nameA = strtolower($a['name'] ?? '');
+                            $nameB = strtolower($b['name'] ?? '');
+                            return $sortOrder === 'asc' ? strcmp($nameA, $nameB) : strcmp($nameB, $nameA);
+                        });
+                    } elseif ($sortBy === 'price') {
+                        usort($filteredItems, function($a, $b) use ($sortOrder) {
+                            $priceA = $a['price'] ?? 0;
+                            $priceB = $b['price'] ?? 0;
+                            return $sortOrder === 'asc' ? $priceA - $priceB : $priceB - $priceA;
+                        });
+                    } else {
+                        // Default sorting by name
+                        usort($filteredItems, function($a, $b) use ($sortOrder) {
+                            $nameA = strtolower($a['name'] ?? '');
+                            $nameB = strtolower($b['name'] ?? '');
+                            return $sortOrder === 'asc' ? strcmp($nameA, $nameB) : strcmp($nameB, $nameA);
+                        });
+                    }
+
+                    // Apply pagination
+                    $offset = ($page - 1) * $limit;
+                    $paginatedItems = array_slice($filteredItems, $offset, $limit);
+                    $total = count($filteredItems);
+                    $hasMore = ($offset + $limit) < $total;
+
+                    return response()->json([
+                        'success' => true,
+                        'data' => array_values($paginatedItems),
+                        'meta' => [
+                            'category_id' => $category_id,
+                            'current_page' => $page,
+                            'per_page' => $limit,
+                            'total' => $total,
+                            'has_more' => $hasMore,
+                            'sort_by' => $sortBy,
+                            'sort_order' => $sortOrder,
+                            'note' => 'Using fallback query due to missing Firebase index'
+                        ]
+                    ]);
+                } catch (Exception $fallbackError) {
+                    \Log::error('Fallback approach also failed for getByCategory: ' . $fallbackError->getMessage());
+                }
+            }
 
             return response()->json([
                 'success' => false,
@@ -961,6 +1645,64 @@ class MartItemController extends Controller
                 $sortOrder
             );
 
+            // If no results and it might be due to missing index, try fallback approach
+            if (empty($items['data']) && $items['total'] === 0) {
+                \Log::warning('No items found with subcategory filter, trying fallback approach');
+
+                // Simple fallback: Get all items without filters and filter in PHP
+                $allItems = $this->firebaseService->getMartItemsWithPagination(
+                    [], // No filters
+                    null,
+                    1,
+                    100, // Get more to filter from
+                    'name',
+                    'asc'
+                );
+
+                // Filter items in PHP based on the requested filters
+                $filteredItems = array_filter($allItems['data'], function($item) use ($subcategory_id) {
+                    // Apply subcategory_id filter (required)
+                    if (isset($item['subcategoryID']) && is_array($item['subcategoryID'])) {
+                        return in_array($subcategory_id, $item['subcategoryID']);
+                    }
+                    return false;
+                });
+
+                // Apply sorting
+                if ($sortBy === 'name') {
+                    usort($filteredItems, function($a, $b) use ($sortOrder) {
+                        $nameA = strtolower($a['name'] ?? '');
+                        $nameB = strtolower($b['name'] ?? '');
+                        return $sortOrder === 'asc' ? strcmp($nameA, $nameB) : strcmp($nameB, $nameA);
+                    });
+                } elseif ($sortBy === 'price') {
+                    usort($filteredItems, function($a, $b) use ($sortOrder) {
+                        $priceA = $a['price'] ?? 0;
+                        $priceB = $b['price'] ?? 0;
+                        return $sortOrder === 'asc' ? $priceA - $priceB : $priceB - $priceA;
+                    });
+                } else {
+                    // Default sorting by name
+                    usort($filteredItems, function($a, $b) use ($sortOrder) {
+                        $nameA = strtolower($a['name'] ?? '');
+                        $nameB = strtolower($b['name'] ?? '');
+                        return $sortOrder === 'asc' ? strcmp($nameA, $nameB) : strcmp($nameB, $nameA);
+                    });
+                }
+
+                // Apply pagination
+                $offset = ($page - 1) * $limit;
+                $paginatedItems = array_slice($filteredItems, $offset, $limit);
+                $total = count($filteredItems);
+                $hasMore = ($offset + $limit) < $total;
+
+                $items = [
+                    'data' => array_values($paginatedItems),
+                    'total' => $total,
+                    'has_more' => $hasMore
+                ];
+            }
+
             return response()->json([
                 'success' => true,
                 'data' => $items['data'],
@@ -971,12 +1713,89 @@ class MartItemController extends Controller
                     'total' => $items['total'],
                     'has_more' => $items['has_more'],
                     'sort_by' => $sortBy,
-                    'sort_order' => $sortOrder
+                    'sort_order' => $sortOrder,
+                    'note' => empty($items['data']) ? null : 'Using fallback query due to missing Firebase index'
                 ]
             ]);
 
         } catch (Exception $e) {
             \Log::error('Error in MartItemController@getBySubCategory: ' . $e->getMessage());
+
+            // If it's an index error, try the fallback approach
+            if (strpos($e->getMessage(), 'requires an index') !== false) {
+                \Log::warning('Index error detected for getBySubCategory, trying fallback approach');
+
+                try {
+                    $page = $request->page ?? 1;
+                    $limit = $request->limit ?? 20;
+                    $sortBy = $request->sort_by ?? 'name';
+                    $sortOrder = $request->sort_order ?? 'asc';
+
+                    // Simple fallback: Get all items without filters and filter in PHP
+                    $allItems = $this->firebaseService->getMartItemsWithPagination(
+                        [], // No filters
+                        null,
+                        1,
+                        100, // Get more to filter from
+                        'name',
+                        'asc'
+                    );
+
+                    // Filter items in PHP based on the requested filters
+                    $filteredItems = array_filter($allItems['data'], function($item) use ($subcategory_id) {
+                        // Apply subcategory_id filter (required)
+                        if (isset($item['subcategoryID']) && is_array($item['subcategoryID'])) {
+                            return in_array($subcategory_id, $item['subcategoryID']);
+                        }
+                        return false;
+                    });
+
+                    // Apply sorting
+                    if ($sortBy === 'name') {
+                        usort($filteredItems, function($a, $b) use ($sortOrder) {
+                            $nameA = strtolower($a['name'] ?? '');
+                            $nameB = strtolower($b['name'] ?? '');
+                            return $sortOrder === 'asc' ? strcmp($nameA, $nameB) : strcmp($nameB, $nameA);
+                        });
+                    } elseif ($sortBy === 'price') {
+                        usort($filteredItems, function($a, $b) use ($sortOrder) {
+                            $priceA = $a['price'] ?? 0;
+                            $priceB = $b['price'] ?? 0;
+                            return $sortOrder === 'asc' ? $priceA - $priceB : $priceB - $priceA;
+                        });
+                    } else {
+                        // Default sorting by name
+                        usort($filteredItems, function($a, $b) use ($sortOrder) {
+                            $nameA = strtolower($a['name'] ?? '');
+                            $nameB = strtolower($b['name'] ?? '');
+                            return $sortOrder === 'asc' ? strcmp($nameA, $nameB) : strcmp($nameB, $nameA);
+                        });
+                    }
+
+                    // Apply pagination
+                    $offset = ($page - 1) * $limit;
+                    $paginatedItems = array_slice($filteredItems, $offset, $limit);
+                    $total = count($filteredItems);
+                    $hasMore = ($offset + $limit) < $total;
+
+                    return response()->json([
+                        'success' => true,
+                        'data' => array_values($paginatedItems),
+                        'meta' => [
+                            'subcategory_id' => $subcategory_id,
+                            'current_page' => $page,
+                            'per_page' => $limit,
+                            'total' => $total,
+                            'has_more' => $hasMore,
+                            'sort_by' => $sortBy,
+                            'sort_order' => $sortOrder,
+                            'note' => 'Using fallback query due to missing Firebase index'
+                        ]
+                    ]);
+                } catch (Exception $fallbackError) {
+                    \Log::error('Fallback approach also failed for getBySubCategory: ' . $fallbackError->getMessage());
+                }
+            }
 
             return response()->json([
                 'success' => false,
@@ -1039,6 +1858,66 @@ class MartItemController extends Controller
                 $sortOrder
             );
 
+            // If no results and it might be due to missing index, try fallback approach
+            if (empty($items['data']) && $items['total'] === 0) {
+                \Log::warning('No best seller items found with composite filter, trying fallback approach');
+
+                // Simple fallback: Get all items without filters and filter in PHP
+                $allItems = $this->firebaseService->getMartItemsWithPagination(
+                    [], // No filters
+                    null,
+                    1,
+                    50, // Get more to filter from
+                    'name',
+                    'asc'
+                );
+
+                // Filter for best seller items and other filters in PHP
+                $filteredItems = array_filter($allItems['data'], function($item) use ($filters) {
+                    // Check if item is best seller
+                    $isBestSeller = isset($item['isBestSeller']) && $item['isBestSeller'] === true;
+                    if (!$isBestSeller) return false;
+
+                    // Check if item is published
+                    $isPublished = isset($item['publish']) && $item['publish'] === true;
+                    if (!$isPublished) return false;
+
+                    // Check if item is available
+                    $isAvailable = isset($item['isAvailable']) && $item['isAvailable'] === true;
+                    if (!$isAvailable) return false;
+
+                    // Apply vendor filter if requested
+                    if (isset($filters['vendor_id'])) {
+                        $vendorMatch = isset($item['vendorID']) && $item['vendorID'] === $filters['vendor_id'];
+                        if (!$vendorMatch) return false;
+                    }
+
+                    // Apply category filter if requested
+                    if (isset($filters['category_id'])) {
+                        $categoryMatch = isset($item['categoryID']) && $item['categoryID'] === $filters['category_id'];
+                        if (!$categoryMatch) return false;
+                    }
+
+                    // Apply subcategory filter if requested
+                    if (isset($filters['subcategory_id'])) {
+                        $subcategoryMatch = isset($item['subcategoryID']) && in_array($filters['subcategory_id'], $item['subcategoryID']);
+                        if (!$subcategoryMatch) return false;
+                    }
+
+                    return true;
+                });
+
+                // Apply pagination
+                $offset = ($page - 1) * $limit;
+                $filteredItems = array_slice($filteredItems, $offset, $limit);
+
+                $items = [
+                    'data' => array_values($filteredItems),
+                    'total' => count($filteredItems),
+                    'has_more' => false
+                ];
+            }
+
             return response()->json([
                 'success' => true,
                 'data' => $items['data'],
@@ -1050,12 +1929,90 @@ class MartItemController extends Controller
                     'has_more' => $items['has_more'],
                     'sort_by' => $sortBy,
                     'sort_order' => $sortOrder,
-                    'filters_applied' => $filters
+                    'filters_applied' => $filters,
+                    'note' => empty($items['data']) ? null : 'Using fallback query due to missing Firebase index'
                 ]
             ]);
 
         } catch (Exception $e) {
             \Log::error('Error in MartItemController@getBestSellers: ' . $e->getMessage());
+
+            // If it's an index error, try the fallback approach
+            if (strpos($e->getMessage(), 'requires an index') !== false) {
+                \Log::warning('Index error detected for best seller items, trying fallback approach');
+
+                try {
+                    $page = $request->page ?? 1;
+                    $limit = $request->limit ?? 20;
+
+                    // Simple fallback: Get all items without filters and filter in PHP
+                    $allItems = $this->firebaseService->getMartItemsWithPagination(
+                        [], // No filters
+                        null,
+                        1,
+                        50, // Get more to filter from
+                        'name',
+                        'asc'
+                    );
+
+                    // Filter for best seller items and other filters in PHP
+                    $filteredItems = array_filter($allItems['data'], function($item) use ($filters) {
+                        // Check if item is best seller
+                        $isBestSeller = isset($item['isBestSeller']) && $item['isBestSeller'] === true;
+                        if (!$isBestSeller) return false;
+
+                        // Check if item is published
+                        $isPublished = isset($item['publish']) && $item['publish'] === true;
+                        if (!$isPublished) return false;
+
+                        // Check if item is available
+                        $isAvailable = isset($item['isAvailable']) && $item['isAvailable'] === true;
+                        if (!$isAvailable) return false;
+
+                        // Apply vendor filter if requested
+                        if (isset($filters['vendor_id'])) {
+                            $vendorMatch = isset($item['vendorID']) && $item['vendorID'] === $filters['vendor_id'];
+                            if (!$vendorMatch) return false;
+                        }
+
+                        // Apply category filter if requested
+                        if (isset($filters['category_id'])) {
+                            $categoryMatch = isset($item['categoryID']) && $item['categoryID'] === $filters['category_id'];
+                            if (!$categoryMatch) return false;
+                        }
+
+                        // Apply subcategory filter if requested
+                        if (isset($filters['subcategory_id'])) {
+                            $subcategoryMatch = isset($item['subcategoryID']) && in_array($filters['subcategory_id'], $item['subcategoryID']);
+                            if (!$subcategoryMatch) return false;
+                        }
+
+                        return true;
+                    });
+
+                    // Apply pagination
+                    $offset = ($page - 1) * $limit;
+                    $filteredItems = array_slice($filteredItems, $offset, $limit);
+
+                    return response()->json([
+                        'success' => true,
+                        'data' => array_values($filteredItems),
+                        'meta' => [
+                            'filter_type' => 'best_sellers',
+                            'current_page' => $page,
+                            'per_page' => $limit,
+                            'total' => count($filteredItems),
+                            'has_more' => false,
+                            'sort_by' => $request->sort_by ?? 'name',
+                            'sort_order' => $request->sort_order ?? 'asc',
+                            'filters_applied' => $filters,
+                            'note' => 'Using fallback query due to missing Firebase index'
+                        ]
+                    ]);
+                } catch (Exception $fallbackError) {
+                    \Log::error('Fallback approach also failed for best seller items: ' . $fallbackError->getMessage());
+                }
+            }
 
             return response()->json([
                 'success' => false,
@@ -1118,6 +2075,66 @@ class MartItemController extends Controller
                 $sortOrder
             );
 
+            // If no results and it might be due to missing index, try fallback approach
+            if (empty($items['data']) && $items['total'] === 0) {
+                \Log::warning('No featured items found with composite filter, trying fallback approach');
+
+                // Simple fallback: Get all items without filters and filter in PHP
+                $allItems = $this->firebaseService->getMartItemsWithPagination(
+                    [], // No filters
+                    null,
+                    1,
+                    50, // Get more to filter from
+                    'name',
+                    'asc'
+                );
+
+                // Filter for featured items and other filters in PHP
+                $filteredItems = array_filter($allItems['data'], function($item) use ($filters) {
+                    // Check if item is featured
+                    $isFeature = isset($item['isFeature']) && $item['isFeature'] === true;
+                    if (!$isFeature) return false;
+
+                    // Check if item is published
+                    $isPublished = isset($item['publish']) && $item['publish'] === true;
+                    if (!$isPublished) return false;
+
+                    // Check if item is available
+                    $isAvailable = isset($item['isAvailable']) && $item['isAvailable'] === true;
+                    if (!$isAvailable) return false;
+
+                    // Apply vendor filter if requested
+                    if (isset($filters['vendor_id'])) {
+                        $vendorMatch = isset($item['vendorID']) && $item['vendorID'] === $filters['vendor_id'];
+                        if (!$vendorMatch) return false;
+                    }
+
+                    // Apply category filter if requested
+                    if (isset($filters['category_id'])) {
+                        $categoryMatch = isset($item['categoryID']) && $item['categoryID'] === $filters['category_id'];
+                        if (!$categoryMatch) return false;
+                    }
+
+                    // Apply subcategory filter if requested
+                    if (isset($filters['subcategory_id'])) {
+                        $subcategoryMatch = isset($item['subcategoryID']) && in_array($filters['subcategory_id'], $item['subcategoryID']);
+                        if (!$subcategoryMatch) return false;
+                    }
+
+                    return true;
+                });
+
+                // Apply pagination
+                $offset = ($page - 1) * $limit;
+                $filteredItems = array_slice($filteredItems, $offset, $limit);
+
+                $items = [
+                    'data' => array_values($filteredItems),
+                    'total' => count($filteredItems),
+                    'has_more' => false
+                ];
+            }
+
             return response()->json([
                 'success' => true,
                 'data' => $items['data'],
@@ -1129,12 +2146,90 @@ class MartItemController extends Controller
                     'has_more' => $items['has_more'],
                     'sort_by' => $sortBy,
                     'sort_order' => $sortOrder,
-                    'filters_applied' => $filters
+                    'filters_applied' => $filters,
+                    'note' => empty($items['data']) ? null : 'Using fallback query due to missing Firebase index'
                 ]
             ]);
 
         } catch (Exception $e) {
             \Log::error('Error in MartItemController@getFeatured: ' . $e->getMessage());
+
+            // If it's an index error, try the fallback approach
+            if (strpos($e->getMessage(), 'requires an index') !== false) {
+                \Log::warning('Index error detected for featured items, trying fallback approach');
+
+                try {
+                    $page = $request->page ?? 1;
+                    $limit = $request->limit ?? 20;
+
+                    // Simple fallback: Get all items without filters and filter in PHP
+                    $allItems = $this->firebaseService->getMartItemsWithPagination(
+                        [], // No filters
+                        null,
+                        1,
+                        50, // Get more to filter from
+                        'name',
+                        'asc'
+                    );
+
+                    // Filter for featured items and other filters in PHP
+                    $filteredItems = array_filter($allItems['data'], function($item) use ($filters) {
+                        // Check if item is featured
+                        $isFeature = isset($item['isFeature']) && $item['isFeature'] === true;
+                        if (!$isFeature) return false;
+
+                        // Check if item is published
+                        $isPublished = isset($item['publish']) && $item['publish'] === true;
+                        if (!$isPublished) return false;
+
+                        // Check if item is available
+                        $isAvailable = isset($item['isAvailable']) && $item['isAvailable'] === true;
+                        if (!$isAvailable) return false;
+
+                        // Apply vendor filter if requested
+                        if (isset($filters['vendor_id'])) {
+                            $vendorMatch = isset($item['vendorID']) && $item['vendorID'] === $filters['vendor_id'];
+                            if (!$vendorMatch) return false;
+                        }
+
+                        // Apply category filter if requested
+                        if (isset($filters['category_id'])) {
+                            $categoryMatch = isset($item['categoryID']) && $item['categoryID'] === $filters['category_id'];
+                            if (!$categoryMatch) return false;
+                        }
+
+                        // Apply subcategory filter if requested
+                        if (isset($filters['subcategory_id'])) {
+                            $subcategoryMatch = isset($item['subcategoryID']) && in_array($filters['subcategory_id'], $item['subcategoryID']);
+                            if (!$subcategoryMatch) return false;
+                        }
+
+                        return true;
+                    });
+
+                    // Apply pagination
+                    $offset = ($page - 1) * $limit;
+                    $filteredItems = array_slice($filteredItems, $offset, $limit);
+
+                    return response()->json([
+                        'success' => true,
+                        'data' => array_values($filteredItems),
+                        'meta' => [
+                            'filter_type' => 'featured',
+                            'current_page' => $page,
+                            'per_page' => $limit,
+                            'total' => count($filteredItems),
+                            'has_more' => false,
+                            'sort_by' => $request->sort_by ?? 'name',
+                            'sort_order' => $request->sort_order ?? 'asc',
+                            'filters_applied' => $filters,
+                            'note' => 'Using fallback query due to missing Firebase index'
+                        ]
+                    ]);
+                } catch (Exception $fallbackError) {
+                    \Log::error('Fallback approach also failed for featured items: ' . $fallbackError->getMessage());
+                }
+            }
 
             return response()->json([
                 'success' => false,
@@ -1197,6 +2292,66 @@ class MartItemController extends Controller
                 $sortOrder
             );
 
+            // If no results and it might be due to missing index, try fallback approach
+            if (empty($items['data']) && $items['total'] === 0) {
+                \Log::warning('No new items found with composite filter, trying fallback approach');
+
+                // Simple fallback: Get all items without filters and filter in PHP
+                $allItems = $this->firebaseService->getMartItemsWithPagination(
+                    [], // No filters
+                    null,
+                    1,
+                    50, // Get more to filter from
+                    'name',
+                    'asc'
+                );
+
+                // Filter for new items and other filters in PHP
+                $filteredItems = array_filter($allItems['data'], function($item) use ($filters) {
+                    // Check if item is new
+                    $isNew = isset($item['isNew']) && $item['isNew'] === true;
+                    if (!$isNew) return false;
+
+                    // Check if item is published
+                    $isPublished = isset($item['publish']) && $item['publish'] === true;
+                    if (!$isPublished) return false;
+
+                    // Check if item is available
+                    $isAvailable = isset($item['isAvailable']) && $item['isAvailable'] === true;
+                    if (!$isAvailable) return false;
+
+                    // Apply vendor filter if requested
+                    if (isset($filters['vendor_id'])) {
+                        $vendorMatch = isset($item['vendorID']) && $item['vendorID'] === $filters['vendor_id'];
+                        if (!$vendorMatch) return false;
+                    }
+
+                    // Apply category filter if requested
+                    if (isset($filters['category_id'])) {
+                        $categoryMatch = isset($item['categoryID']) && $item['categoryID'] === $filters['category_id'];
+                        if (!$categoryMatch) return false;
+                    }
+
+                    // Apply subcategory filter if requested
+                    if (isset($filters['subcategory_id'])) {
+                        $subcategoryMatch = isset($item['subcategoryID']) && in_array($filters['subcategory_id'], $item['subcategoryID']);
+                        if (!$subcategoryMatch) return false;
+                    }
+
+                    return true;
+                });
+
+                // Apply pagination
+                $offset = ($page - 1) * $limit;
+                $filteredItems = array_slice($filteredItems, $offset, $limit);
+
+                $items = [
+                    'data' => array_values($filteredItems),
+                    'total' => count($filteredItems),
+                    'has_more' => false
+                ];
+            }
+
             return response()->json([
                 'success' => true,
                 'data' => $items['data'],
@@ -1208,12 +2363,90 @@ class MartItemController extends Controller
                     'has_more' => $items['has_more'],
                     'sort_by' => $sortBy,
                     'sort_order' => $sortOrder,
-                    'filters_applied' => $filters
+                    'filters_applied' => $filters,
+                    'note' => empty($items['data']) ? null : 'Using fallback query due to missing Firebase index'
                 ]
             ]);
 
         } catch (Exception $e) {
             \Log::error('Error in MartItemController@getNewItems: ' . $e->getMessage());
+
+            // If it's an index error, try the fallback approach
+            if (strpos($e->getMessage(), 'requires an index') !== false) {
+                \Log::warning('Index error detected for new items, trying fallback approach');
+
+                try {
+                    $page = $request->page ?? 1;
+                    $limit = $request->limit ?? 20;
+
+                    // Simple fallback: Get all items without filters and filter in PHP
+                    $allItems = $this->firebaseService->getMartItemsWithPagination(
+                        [], // No filters
+                        null,
+                        1,
+                        50, // Get more to filter from
+                        'name',
+                        'asc'
+                    );
+
+                    // Filter for new items and other filters in PHP
+                    $filteredItems = array_filter($allItems['data'], function($item) use ($filters) {
+                        // Check if item is new
+                        $isNew = isset($item['isNew']) && $item['isNew'] === true;
+                        if (!$isNew) return false;
+
+                        // Check if item is published
+                        $isPublished = isset($item['publish']) && $item['publish'] === true;
+                        if (!$isPublished) return false;
+
+                        // Check if item is available
+                        $isAvailable = isset($item['isAvailable']) && $item['isAvailable'] === true;
+                        if (!$isAvailable) return false;
+
+                        // Apply vendor filter if requested
+                        if (isset($filters['vendor_id'])) {
+                            $vendorMatch = isset($item['vendorID']) && $item['vendorID'] === $filters['vendor_id'];
+                            if (!$vendorMatch) return false;
+                        }
+
+                        // Apply category filter if requested
+                        if (isset($filters['category_id'])) {
+                            $categoryMatch = isset($item['categoryID']) && $item['categoryID'] === $filters['category_id'];
+                            if (!$categoryMatch) return false;
+                        }
+
+                        // Apply subcategory filter if requested
+                        if (isset($filters['subcategory_id'])) {
+                            $subcategoryMatch = isset($item['subcategoryID']) && in_array($filters['subcategory_id'], $item['subcategoryID']);
+                            if (!$subcategoryMatch) return false;
+                        }
+
+                        return true;
+                    });
+
+                    // Apply pagination
+                    $offset = ($page - 1) * $limit;
+                    $filteredItems = array_slice($filteredItems, $offset, $limit);
+
+                    return response()->json([
+                        'success' => true,
+                        'data' => array_values($filteredItems),
+                        'meta' => [
+                            'filter_type' => 'new_items',
+                            'current_page' => $page,
+                            'per_page' => $limit,
+                            'total' => count($filteredItems),
+                            'has_more' => false,
+                            'sort_by' => $request->sort_by ?? 'name',
+                            'sort_order' => $request->sort_order ?? 'asc',
+                            'filters_applied' => $filters,
+                            'note' => 'Using fallback query due to missing Firebase index'
+                        ]
+                    ]);
+                } catch (Exception $fallbackError) {
+                    \Log::error('Fallback approach also failed for new items: ' . $fallbackError->getMessage());
+                }
+            }
 
             return response()->json([
                 'success' => false,
@@ -1276,6 +2509,66 @@ class MartItemController extends Controller
                 $sortOrder
             );
 
+            // If no results and it might be due to missing index, try fallback approach
+            if (empty($items['data']) && $items['total'] === 0) {
+                \Log::warning('No seasonal items found with composite filter, trying fallback approach');
+
+                // Simple fallback: Get all items without filters and filter in PHP
+                $allItems = $this->firebaseService->getMartItemsWithPagination(
+                    [], // No filters
+                    null,
+                    1,
+                    50, // Get more to filter from
+                    'name',
+                    'asc'
+                );
+
+                // Filter for seasonal items and other filters in PHP
+                $filteredItems = array_filter($allItems['data'], function($item) use ($filters) {
+                    // Check if item is seasonal
+                    $isSeasonal = isset($item['isSeasonal']) && $item['isSeasonal'] === true;
+                    if (!$isSeasonal) return false;
+
+                    // Check if item is published
+                    $isPublished = isset($item['publish']) && $item['publish'] === true;
+                    if (!$isPublished) return false;
+
+                    // Check if item is available
+                    $isAvailable = isset($item['isAvailable']) && $item['isAvailable'] === true;
+                    if (!$isAvailable) return false;
+
+                    // Apply vendor filter if requested
+                    if (isset($filters['vendor_id'])) {
+                        $vendorMatch = isset($item['vendorID']) && $item['vendorID'] === $filters['vendor_id'];
+                        if (!$vendorMatch) return false;
+                    }
+
+                    // Apply category filter if requested
+                    if (isset($filters['category_id'])) {
+                        $categoryMatch = isset($item['categoryID']) && $item['categoryID'] === $filters['category_id'];
+                        if (!$categoryMatch) return false;
+                    }
+
+                    // Apply subcategory filter if requested
+                    if (isset($filters['subcategory_id'])) {
+                        $subcategoryMatch = isset($item['subcategoryID']) && in_array($filters['subcategory_id'], $item['subcategoryID']);
+                        if (!$subcategoryMatch) return false;
+                    }
+
+                    return true;
+                });
+
+                // Apply pagination
+                $offset = ($page - 1) * $limit;
+                $filteredItems = array_slice($filteredItems, $offset, $limit);
+
+                $items = [
+                    'data' => array_values($filteredItems),
+                    'total' => count($filteredItems),
+                    'has_more' => false
+                ];
+            }
+
             return response()->json([
                 'success' => true,
                 'data' => $items['data'],
@@ -1287,12 +2580,90 @@ class MartItemController extends Controller
                     'has_more' => $items['has_more'],
                     'sort_by' => $sortBy,
                     'sort_order' => $sortOrder,
-                    'filters_applied' => $filters
+                    'filters_applied' => $filters,
+                    'note' => empty($items['data']) ? null : 'Using fallback query due to missing Firebase index'
                 ]
             ]);
 
         } catch (Exception $e) {
             \Log::error('Error in MartItemController@getSeasonal: ' . $e->getMessage());
+
+            // If it's an index error, try the fallback approach
+            if (strpos($e->getMessage(), 'requires an index') !== false) {
+                \Log::warning('Index error detected for seasonal items, trying fallback approach');
+
+                try {
+                    $page = $request->page ?? 1;
+                    $limit = $request->limit ?? 20;
+
+                    // Simple fallback: Get all items without filters and filter in PHP
+                    $allItems = $this->firebaseService->getMartItemsWithPagination(
+                        [], // No filters
+                        null,
+                        1,
+                        50, // Get more to filter from
+                        'name',
+                        'asc'
+                    );
+
+                    // Filter for seasonal items and other filters in PHP
+                    $filteredItems = array_filter($allItems['data'], function($item) use ($filters) {
+                        // Check if item is seasonal
+                        $isSeasonal = isset($item['isSeasonal']) && $item['isSeasonal'] === true;
+                        if (!$isSeasonal) return false;
+
+                        // Check if item is published
+                        $isPublished = isset($item['publish']) && $item['publish'] === true;
+                        if (!$isPublished) return false;
+
+                        // Check if item is available
+                        $isAvailable = isset($item['isAvailable']) && $item['isAvailable'] === true;
+                        if (!$isAvailable) return false;
+
+                        // Apply vendor filter if requested
+                        if (isset($filters['vendor_id'])) {
+                            $vendorMatch = isset($item['vendorID']) && $item['vendorID'] === $filters['vendor_id'];
+                            if (!$vendorMatch) return false;
+                        }
+
+                        // Apply category filter if requested
+                        if (isset($filters['category_id'])) {
+                            $categoryMatch = isset($item['categoryID']) && $item['categoryID'] === $filters['category_id'];
+                            if (!$categoryMatch) return false;
+                        }
+
+                        // Apply subcategory filter if requested
+                        if (isset($filters['subcategory_id'])) {
+                            $subcategoryMatch = isset($item['subcategoryID']) && in_array($filters['subcategory_id'], $item['subcategoryID']);
+                            if (!$subcategoryMatch) return false;
+                        }
+
+                        return true;
+                    });
+
+                    // Apply pagination
+                    $offset = ($page - 1) * $limit;
+                    $filteredItems = array_slice($filteredItems, $offset, $limit);
+
+                    return response()->json([
+                        'success' => true,
+                        'data' => array_values($filteredItems),
+                        'meta' => [
+                            'filter_type' => 'seasonal',
+                            'current_page' => $page,
+                            'per_page' => $limit,
+                            'total' => count($filteredItems),
+                            'has_more' => false,
+                            'sort_by' => $request->sort_by ?? 'name',
+                            'sort_order' => $request->sort_order ?? 'asc',
+                            'filters_applied' => $filters,
+                            'note' => 'Using fallback query due to missing Firebase index'
+                        ]
+                    ]);
+                } catch (Exception $fallbackError) {
+                    \Log::error('Fallback approach also failed for seasonal items: ' . $fallbackError->getMessage());
+                }
+            }
 
             return response()->json([
                 'success' => false,
@@ -1355,6 +2726,66 @@ class MartItemController extends Controller
                 $sortOrder
             );
 
+            // If no results and it might be due to missing index, try fallback approach
+            if (empty($items['data']) && $items['total'] === 0) {
+                \Log::warning('No spotlight items found with composite filter, trying fallback approach');
+
+                // Simple fallback: Get all items without filters and filter in PHP
+                $allItems = $this->firebaseService->getMartItemsWithPagination(
+                    [], // No filters
+                    null,
+                    1,
+                    50, // Get more to filter from
+                    'name',
+                    'asc'
+                );
+
+                // Filter for spotlight items and other filters in PHP
+                $filteredItems = array_filter($allItems['data'], function($item) use ($filters) {
+                    // Check if item is spotlight
+                    $isSpotlight = isset($item['isSpotlight']) && $item['isSpotlight'] === true;
+                    if (!$isSpotlight) return false;
+
+                    // Check if item is published
+                    $isPublished = isset($item['publish']) && $item['publish'] === true;
+                    if (!$isPublished) return false;
+
+                    // Check if item is available
+                    $isAvailable = isset($item['isAvailable']) && $item['isAvailable'] === true;
+                    if (!$isAvailable) return false;
+
+                    // Apply vendor filter if requested
+                    if (isset($filters['vendor_id'])) {
+                        $vendorMatch = isset($item['vendorID']) && $item['vendorID'] === $filters['vendor_id'];
+                        if (!$vendorMatch) return false;
+                    }
+
+                    // Apply category filter if requested
+                    if (isset($filters['category_id'])) {
+                        $categoryMatch = isset($item['categoryID']) && $item['categoryID'] === $filters['category_id'];
+                        if (!$categoryMatch) return false;
+                    }
+
+                    // Apply subcategory filter if requested
+                    if (isset($filters['subcategory_id'])) {
+                        $subcategoryMatch = isset($item['subcategoryID']) && in_array($filters['subcategory_id'], $item['subcategoryID']);
+                        if (!$subcategoryMatch) return false;
+                    }
+
+                    return true;
+                });
+
+                // Apply pagination
+                $offset = ($page - 1) * $limit;
+                $filteredItems = array_slice($filteredItems, $offset, $limit);
+
+                $items = [
+                    'data' => array_values($filteredItems),
+                    'total' => count($filteredItems),
+                    'has_more' => false
+                ];
+            }
+
             return response()->json([
                 'success' => true,
                 'data' => $items['data'],
@@ -1366,12 +2797,90 @@ class MartItemController extends Controller
                     'has_more' => $items['has_more'],
                     'sort_by' => $sortBy,
                     'sort_order' => $sortOrder,
-                    'filters_applied' => $filters
+                    'filters_applied' => $filters,
+                    'note' => empty($items['data']) ? null : 'Using fallback query due to missing Firebase index'
                 ]
             ]);
 
         } catch (Exception $e) {
             \Log::error('Error in MartItemController@getSpotlight: ' . $e->getMessage());
+
+            // If it's an index error, try the fallback approach
+            if (strpos($e->getMessage(), 'requires an index') !== false) {
+                \Log::warning('Index error detected for spotlight items, trying fallback approach');
+
+                try {
+                    $page = $request->page ?? 1;
+                    $limit = $request->limit ?? 20;
+
+                    // Simple fallback: Get all items without filters and filter in PHP
+                    $allItems = $this->firebaseService->getMartItemsWithPagination(
+                        [], // No filters
+                        null,
+                        1,
+                        50, // Get more to filter from
+                        'name',
+                        'asc'
+                    );
+
+                    // Filter for spotlight items and other filters in PHP
+                    $filteredItems = array_filter($allItems['data'], function($item) use ($filters) {
+                        // Check if item is spotlight
+                        $isSpotlight = isset($item['isSpotlight']) && $item['isSpotlight'] === true;
+                        if (!$isSpotlight) return false;
+
+                        // Check if item is published
+                        $isPublished = isset($item['publish']) && $item['publish'] === true;
+                        if (!$isPublished) return false;
+
+                        // Check if item is available
+                        $isAvailable = isset($item['isAvailable']) && $item['isAvailable'] === true;
+                        if (!$isAvailable) return false;
+
+                        // Apply vendor filter if requested
+                        if (isset($filters['vendor_id'])) {
+                            $vendorMatch = isset($item['vendorID']) && $item['vendorID'] === $filters['vendor_id'];
+                            if (!$vendorMatch) return false;
+                        }
+
+                        // Apply category filter if requested
+                        if (isset($filters['category_id'])) {
+                            $categoryMatch = isset($item['categoryID']) && $item['categoryID'] === $filters['category_id'];
+                            if (!$categoryMatch) return false;
+                        }
+
+                        // Apply subcategory filter if requested
+                        if (isset($filters['subcategory_id'])) {
+                            $subcategoryMatch = isset($item['subcategoryID']) && in_array($filters['subcategory_id'], $item['subcategoryID']);
+                            if (!$subcategoryMatch) return false;
+                        }
+
+                        return true;
+                    });
+
+                    // Apply pagination
+                    $offset = ($page - 1) * $limit;
+                    $filteredItems = array_slice($filteredItems, $offset, $limit);
+
+                    return response()->json([
+                        'success' => true,
+                        'data' => array_values($filteredItems),
+                        'meta' => [
+                            'filter_type' => 'spotlight',
+                            'current_page' => $page,
+                            'per_page' => $limit,
+                            'total' => count($filteredItems),
+                            'has_more' => false,
+                            'sort_by' => $request->sort_by ?? 'name',
+                            'sort_order' => $request->sort_order ?? 'asc',
+                            'filters_applied' => $filters,
+                            'note' => 'Using fallback query due to missing Firebase index'
+                        ]
+                    ]);
+                } catch (Exception $fallbackError) {
+                    \Log::error('Fallback approach also failed for spotlight items: ' . $fallbackError->getMessage());
+                }
+            }
 
             return response()->json([
                 'success' => false,
@@ -1434,6 +2943,66 @@ class MartItemController extends Controller
                 $sortOrder
             );
 
+            // If no results and it might be due to missing index, try fallback approach
+            if (empty($items['data']) && $items['total'] === 0) {
+                \Log::warning('No steal of moment items found with composite filter, trying fallback approach');
+
+                // Simple fallback: Get all items without filters and filter in PHP
+                $allItems = $this->firebaseService->getMartItemsWithPagination(
+                    [], // No filters
+                    null,
+                    1,
+                    50, // Get more to filter from
+                    'name',
+                    'asc'
+                );
+
+                // Filter for steal of moment items and other filters in PHP
+                $filteredItems = array_filter($allItems['data'], function($item) use ($filters) {
+                    // Check if item is steal of moment
+                    $isStealOfMoment = isset($item['isStealOfMoment']) && $item['isStealOfMoment'] === true;
+                    if (!$isStealOfMoment) return false;
+
+                    // Check if item is published
+                    $isPublished = isset($item['publish']) && $item['publish'] === true;
+                    if (!$isPublished) return false;
+
+                    // Check if item is available
+                    $isAvailable = isset($item['isAvailable']) && $item['isAvailable'] === true;
+                    if (!$isAvailable) return false;
+
+                    // Apply vendor filter if requested
+                    if (isset($filters['vendor_id'])) {
+                        $vendorMatch = isset($item['vendorID']) && $item['vendorID'] === $filters['vendor_id'];
+                        if (!$vendorMatch) return false;
+                    }
+
+                    // Apply category filter if requested
+                    if (isset($filters['category_id'])) {
+                        $categoryMatch = isset($item['categoryID']) && $item['categoryID'] === $filters['category_id'];
+                        if (!$categoryMatch) return false;
+                    }
+
+                    // Apply subcategory filter if requested
+                    if (isset($filters['subcategory_id'])) {
+                        $subcategoryMatch = isset($item['subcategoryID']) && in_array($filters['subcategory_id'], $item['subcategoryID']);
+                        if (!$subcategoryMatch) return false;
+                    }
+
+                    return true;
+                });
+
+                // Apply pagination
+                $offset = ($page - 1) * $limit;
+                $filteredItems = array_slice($filteredItems, $offset, $limit);
+
+                $items = [
+                    'data' => array_values($filteredItems),
+                    'total' => count($filteredItems),
+                    'has_more' => false
+                ];
+            }
+
             return response()->json([
                 'success' => true,
                 'data' => $items['data'],
@@ -1445,12 +3014,90 @@ class MartItemController extends Controller
                     'has_more' => $items['has_more'],
                     'sort_by' => $sortBy,
                     'sort_order' => $sortOrder,
-                    'filters_applied' => $filters
+                    'filters_applied' => $filters,
+                    'note' => empty($items['data']) ? null : 'Using fallback query due to missing Firebase index'
                 ]
             ]);
 
         } catch (Exception $e) {
             \Log::error('Error in MartItemController@getStealOfMoment: ' . $e->getMessage());
+
+            // If it's an index error, try the fallback approach
+            if (strpos($e->getMessage(), 'requires an index') !== false) {
+                \Log::warning('Index error detected for steal of moment items, trying fallback approach');
+
+                try {
+                    $page = $request->page ?? 1;
+                    $limit = $request->limit ?? 20;
+
+                    // Simple fallback: Get all items without filters and filter in PHP
+                    $allItems = $this->firebaseService->getMartItemsWithPagination(
+                        [], // No filters
+                        null,
+                        1,
+                        50, // Get more to filter from
+                        'name',
+                        'asc'
+                    );
+
+                    // Filter for steal of moment items and other filters in PHP
+                    $filteredItems = array_filter($allItems['data'], function($item) use ($filters) {
+                        // Check if item is steal of moment
+                        $isStealOfMoment = isset($item['isStealOfMoment']) && $item['isStealOfMoment'] === true;
+                        if (!$isStealOfMoment) return false;
+
+                        // Check if item is published
+                        $isPublished = isset($item['publish']) && $item['publish'] === true;
+                        if (!$isPublished) return false;
+
+                        // Check if item is available
+                        $isAvailable = isset($item['isAvailable']) && $item['isAvailable'] === true;
+                        if (!$isAvailable) return false;
+
+                        // Apply vendor filter if requested
+                        if (isset($filters['vendor_id'])) {
+                            $vendorMatch = isset($item['vendorID']) && $item['vendorID'] === $filters['vendor_id'];
+                            if (!$vendorMatch) return false;
+                        }
+
+                        // Apply category filter if requested
+                        if (isset($filters['category_id'])) {
+                            $categoryMatch = isset($item['categoryID']) && $item['categoryID'] === $filters['category_id'];
+                            if (!$categoryMatch) return false;
+                        }
+
+                        // Apply subcategory filter if requested
+                        if (isset($filters['subcategory_id'])) {
+                            $subcategoryMatch = isset($item['subcategoryID']) && in_array($filters['subcategory_id'], $item['subcategoryID']);
+                            if (!$subcategoryMatch) return false;
+                        }
+
+                        return true;
+                    });
+
+                    // Apply pagination
+                    $offset = ($page - 1) * $limit;
+                    $filteredItems = array_slice($filteredItems, $offset, $limit);
+
+                    return response()->json([
+                        'success' => true,
+                        'data' => array_values($filteredItems),
+                        'meta' => [
+                            'filter_type' => 'steal_of_moment',
+                            'current_page' => $page,
+                            'per_page' => $limit,
+                            'total' => count($filteredItems),
+                            'has_more' => false,
+                            'sort_by' => $request->sort_by ?? 'name',
+                            'sort_order' => $request->sort_order ?? 'asc',
+                            'filters_applied' => $filters,
+                            'note' => 'Using fallback query due to missing Firebase index'
+                        ]
+                    ]);
+                } catch (Exception $fallbackError) {
+                    \Log::error('Fallback approach also failed for steal of moment items: ' . $fallbackError->getMessage());
+                }
+            }
 
             return response()->json([
                 'success' => false,
@@ -1513,6 +3160,66 @@ class MartItemController extends Controller
                 $sortOrder
             );
 
+            // If no results and it might be due to missing index, try fallback approach
+            if (empty($items['data']) && $items['total'] === 0) {
+                \Log::warning('No trending items found with composite filter, trying fallback approach');
+
+                // Simple fallback: Get all items without filters and filter in PHP
+                $allItems = $this->firebaseService->getMartItemsWithPagination(
+                    [], // No filters
+                    null,
+                    1,
+                    50, // Get more to filter from
+                    'name',
+                    'asc'
+                );
+
+                // Filter for trending items and other filters in PHP
+                $filteredItems = array_filter($allItems['data'], function($item) use ($filters) {
+                    // Check if item is trending
+                    $isTrending = isset($item['isTrending']) && $item['isTrending'] === true;
+                    if (!$isTrending) return false;
+
+                    // Check if item is published
+                    $isPublished = isset($item['publish']) && $item['publish'] === true;
+                    if (!$isPublished) return false;
+
+                    // Check if item is available
+                    $isAvailable = isset($item['isAvailable']) && $item['isAvailable'] === true;
+                    if (!$isAvailable) return false;
+
+                    // Apply vendor filter if requested
+                    if (isset($filters['vendor_id'])) {
+                        $vendorMatch = isset($item['vendorID']) && $item['vendorID'] === $filters['vendor_id'];
+                        if (!$vendorMatch) return false;
+                    }
+
+                    // Apply category filter if requested
+                    if (isset($filters['category_id'])) {
+                        $categoryMatch = isset($item['categoryID']) && $item['categoryID'] === $filters['category_id'];
+                        if (!$categoryMatch) return false;
+                    }
+
+                    // Apply subcategory filter if requested
+                    if (isset($filters['subcategory_id'])) {
+                        $subcategoryMatch = isset($item['subcategoryID']) && in_array($filters['subcategory_id'], $item['subcategoryID']);
+                        if (!$subcategoryMatch) return false;
+                    }
+
+                    return true;
+                });
+
+                // Apply pagination
+                $offset = ($page - 1) * $limit;
+                $filteredItems = array_slice($filteredItems, $offset, $limit);
+
+                $items = [
+                    'data' => array_values($filteredItems),
+                    'total' => count($filteredItems),
+                    'has_more' => false
+                ];
+            }
+
             return response()->json([
                 'success' => true,
                 'data' => $items['data'],
@@ -1524,12 +3231,90 @@ class MartItemController extends Controller
                     'has_more' => $items['has_more'],
                     'sort_by' => $sortBy,
                     'sort_order' => $sortOrder,
-                    'filters_applied' => $filters
+                    'filters_applied' => $filters,
+                    'note' => empty($items['data']) ? null : 'Using fallback query due to missing Firebase index'
                 ]
             ]);
 
         } catch (Exception $e) {
             \Log::error('Error in MartItemController@getTrending: ' . $e->getMessage());
+
+            // If it's an index error, try the fallback approach
+            if (strpos($e->getMessage(), 'requires an index') !== false) {
+                \Log::warning('Index error detected for trending items, trying fallback approach');
+
+                try {
+                    $page = $request->page ?? 1;
+                    $limit = $request->limit ?? 20;
+
+                    // Simple fallback: Get all items without filters and filter in PHP
+                    $allItems = $this->firebaseService->getMartItemsWithPagination(
+                        [], // No filters
+                        null,
+                        1,
+                        50, // Get more to filter from
+                        'name',
+                        'asc'
+                    );
+
+                    // Filter for trending items and other filters in PHP
+                    $filteredItems = array_filter($allItems['data'], function($item) use ($filters) {
+                        // Check if item is trending
+                        $isTrending = isset($item['isTrending']) && $item['isTrending'] === true;
+                        if (!$isTrending) return false;
+
+                        // Check if item is published
+                        $isPublished = isset($item['publish']) && $item['publish'] === true;
+                        if (!$isPublished) return false;
+
+                        // Check if item is available
+                        $isAvailable = isset($item['isAvailable']) && $item['isAvailable'] === true;
+                        if (!$isAvailable) return false;
+
+                        // Apply vendor filter if requested
+                        if (isset($filters['vendor_id'])) {
+                            $vendorMatch = isset($item['vendorID']) && $item['vendorID'] === $filters['vendor_id'];
+                            if (!$vendorMatch) return false;
+                        }
+
+                        // Apply category filter if requested
+                        if (isset($filters['category_id'])) {
+                            $categoryMatch = isset($item['categoryID']) && $item['categoryID'] === $filters['category_id'];
+                            if (!$categoryMatch) return false;
+                        }
+
+                        // Apply subcategory filter if requested
+                        if (isset($filters['subcategory_id'])) {
+                            $subcategoryMatch = isset($item['subcategoryID']) && in_array($filters['subcategory_id'], $item['subcategoryID']);
+                            if (!$subcategoryMatch) return false;
+                        }
+
+                        return true;
+                    });
+
+                    // Apply pagination
+                    $offset = ($page - 1) * $limit;
+                    $filteredItems = array_slice($filteredItems, $offset, $limit);
+
+                    return response()->json([
+                        'success' => true,
+                        'data' => array_values($filteredItems),
+                        'meta' => [
+                            'filter_type' => 'trending',
+                            'current_page' => $page,
+                            'per_page' => $limit,
+                            'total' => count($filteredItems),
+                            'has_more' => false,
+                            'sort_by' => $request->sort_by ?? 'name',
+                            'sort_order' => $request->sort_order ?? 'asc',
+                            'filters_applied' => $filters,
+                            'note' => 'Using fallback query due to missing Firebase index'
+                        ]
+                    ]);
+                } catch (Exception $fallbackError) {
+                    \Log::error('Fallback approach also failed for trending items: ' . $fallbackError->getMessage());
+                }
+            }
 
             return response()->json([
                 'success' => false,

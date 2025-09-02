@@ -59,33 +59,33 @@ Route::prefix('razorpay')->group(function () {
     });
 });
 
-// Mart API Routes
-Route::prefix('marts')->group(function () {
-    // Public routes (no authentication required)
-    Route::get('/categories', [App\Http\Controllers\Api\MartController::class, 'getMartCategories']);
-    Route::get('/items', [App\Http\Controllers\Api\MartController::class, 'getMartItems']);
-    Route::post('/item-details', [App\Http\Controllers\Api\MartController::class, 'getItemDetails']);
-    Route::post('/search-items', [App\Http\Controllers\Api\MartController::class, 'searchItems']);
-    Route::get('/vendors', [App\Http\Controllers\Api\MartController::class, 'getAllMartVendors']);
-    Route::get('/vendor-details/{vendor_id}', [App\Http\Controllers\Api\MartController::class, 'getVendorDetails']);
-    Route::post('/nearby-vendors', [App\Http\Controllers\Api\MartController::class, 'getNearbyVendors']);
-    Route::post('/vendor-working-hours', [App\Http\Controllers\Api\MartController::class, 'getVendorWorkingHours']);
-    Route::post('/vendor-special-discounts', [App\Http\Controllers\Api\MartController::class, 'getVendorSpecialDiscounts']);
-    Route::post('/vendor-items-by-category', [App\Http\Controllers\Api\MartController::class, 'getVendorItemsByCategory']);
+// // Mart API Routes
+// Route::prefix('marts')->group(function () {
+//     // Public routes (no authentication required)
+//     Route::get('/categories', [App\Http\Controllers\Api\MartController::class, 'getMartCategories']);
+//     Route::get('/items', [App\Http\Controllers\Api\MartController::class, 'getMartItems']);
+//     Route::post('/item-details', [App\Http\Controllers\Api\MartController::class, 'getItemDetails']);
+//     Route::post('/search-items', [App\Http\Controllers\Api\MartController::class, 'searchItems']);
+//     Route::get('/vendors', [App\Http\Controllers\Api\MartController::class, 'getAllMartVendors']);
+//     Route::get('/vendor-details/{vendor_id}', [App\Http\Controllers\Api\MartController::class, 'getVendorDetails']);
+//     Route::post('/nearby-vendors', [App\Http\Controllers\Api\MartController::class, 'getNearbyVendors']);
+//     Route::post('/vendor-working-hours', [App\Http\Controllers\Api\MartController::class, 'getVendorWorkingHours']);
+//     Route::post('/vendor-special-discounts', [App\Http\Controllers\Api\MartController::class, 'getVendorSpecialDiscounts']);
+//     Route::post('/vendor-items-by-category', [App\Http\Controllers\Api\MartController::class, 'getVendorItemsByCategory']);
 
-    // Protected routes (authentication required)
-    Route::middleware('auth:sanctum')->group(function () {
-        Route::get('/user-profile', [App\Http\Controllers\Api\MartController::class, 'getUserProfile']);
-        Route::post('/update-user-profile', [App\Http\Controllers\Api\MartController::class, 'updateUserProfile']);
-    });
-});
+//     // Protected routes (authentication required)
+//     Route::middleware('auth:sanctum')->group(function () {
+//         Route::get('/user-profile', [App\Http\Controllers\Api\MartController::class, 'getUserProfile']);
+//         Route::post('/update-user-profile', [App\Http\Controllers\Api\MartController::class, 'updateUserProfile']);
+//     });
+// });
 
 // Mart Categories API Routes (Enhanced)
-Route::prefix('marts/categories')->group(function () {
+Route::prefix('mart/categories')->group(function () {
     // Public routes (no authentication required)
     Route::get('/', [App\Http\Controllers\Api\Mart\MartCategoryController::class, 'index']);
     Route::get('/homepage', [App\Http\Controllers\Api\Mart\MartCategoryController::class, 'getHomepageCategories']);
-    Route::get('/with-subcategories', [App\Http\Controllers\Api\Mart\MartCategoryController::class, 'getCategoriesWithSubcategories']);
+    // Route::get('/with-subcategories', [App\Http\Controllers\Api\Mart\MartCategoryController::class, 'getCategoriesWithSubcategories']);
     Route::post('/search', [App\Http\Controllers\Api\Mart\MartCategoryController::class, 'search']);
     Route::get('/{category_id}', [App\Http\Controllers\Api\Mart\MartCategoryController::class, 'show']);
 
@@ -99,7 +99,7 @@ Route::prefix('marts/categories')->group(function () {
 });
 
 // Mart Sub Categories API Routes (Enhanced)
-Route::prefix('marts/subcategories')->group(function () {
+Route::prefix('mart/subcategories')->group(function () {
     // Public routes (no authentication required)
     Route::get('/', [App\Http\Controllers\Api\Mart\MartSubCategoryController::class, 'index']);
     Route::get('/homepage', [App\Http\Controllers\Api\Mart\MartSubCategoryController::class, 'getHomepageSubcategories']);
@@ -117,7 +117,7 @@ Route::prefix('marts/subcategories')->group(function () {
 });
 
 // Mart Items API Routes (Enhanced)
-Route::prefix('marts/items')->group(function () {
+Route::prefix('mart/items')->group(function () {
     // Public routes (no authentication required)
     Route::get('/', [App\Http\Controllers\Api\Mart\MartItemController::class, 'index']);
     Route::get('/featured', [App\Http\Controllers\Api\Mart\MartItemController::class, 'getFeaturedItems']);
@@ -141,4 +141,21 @@ Route::prefix('marts/items')->group(function () {
         Route::delete('/{item_id}', [App\Http\Controllers\Api\Mart\MartItemController::class, 'destroy']);
         Route::post('/bulk-update', [App\Http\Controllers\Api\Mart\MartItemController::class, 'bulkUpdate']);
     });
+});
+
+// Mart Vendors API Routes (Enhanced)
+Route::prefix('mart/vendors')->group(function () {
+    // Public routes (no authentication required)
+    Route::get('/', [App\Http\Controllers\Api\Mart\MartVendorController::class, 'index']);
+    Route::post('/by-category', [App\Http\Controllers\Api\Mart\MartVendorController::class, 'getByCategory']);
+    Route::post('/nearby', [App\Http\Controllers\Api\Mart\MartVendorController::class, 'getNearbyVendors']);
+    Route::post('/working-hours', [App\Http\Controllers\Api\Mart\MartVendorController::class, 'getWorkingHours']);
+    Route::post('/special-discounts', [App\Http\Controllers\Api\Mart\MartVendorController::class, 'getSpecialDiscounts']);
+    Route::post('/search', [App\Http\Controllers\Api\Mart\MartVendorController::class, 'search']);
+    Route::get('/{vendor_id}', [App\Http\Controllers\Api\Mart\MartVendorController::class, 'show']);
+});
+
+// Global Search API Route (NEW)
+Route::prefix('mart')->group(function () {
+    Route::post('/all-search', [App\Http\Controllers\Api\Mart\MartAllSearchController::class, 'search']);
 });

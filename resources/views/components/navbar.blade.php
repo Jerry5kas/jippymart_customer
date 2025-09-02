@@ -1,5 +1,5 @@
 <!-- Navbar -->
-<header class="w-full text-sm bg-gradient-to-b from-purple-100 to-white"
+<header class="fixed z-40 w-full text-sm bg-gradient-to-b from-purple-100 to-white"
         x-data="{ mobileMenu: false, cartOpen: false }">
 
     <div class="sm:w-[90%] mx-auto w-full px-4 sm:px-6 lg:px-8">
@@ -26,108 +26,89 @@
                 </button>
             </div>
 
-            <div x-data="{ openFilter: false }" class="relative">
+            <!-- Search bar with animated rotating placeholder -->
+            <div class="flex-1 mx-6 hidden md:block"
+                 x-data="{
+        items: [
+          'milk','bread','cheese slices','butter','biscuits','apples','oranges',
+          'sweets','beverages','chocolate','chips','cookies','candies',
+          'grains','juices','juice mix','juice concentrates','rice',
+          'pasta','sauces','seasonings','spices','syrups'
+        ],
+        index: 0,
+        init() {
+            setInterval(() => {
+                this.index = (this.index + 1) % this.items.length;
+            }, 2500); // change every 2.5s
+        }
+     }">
 
-                <!-- Filter Button -->
-                <button @click="openFilter = !openFilter"
-                        class="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-full shadow-md hover:bg-violet-700 transition">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div class="relative">
+                    <input type="text"
+                           class="w-2/3 border border-gray-300 rounded-lg py-3 pl-12 pr-4 text-sm
+                      focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500
+                      transition-all duration-500"
+                           placeholder="">
+
+                    <!-- Animated suggestion overlay -->
+                    <div class="absolute left-12 top-3 text-gray-400 text-sm pointer-events-none select-none">
+                        <template x-for="(item, i) in items" :key="i">
+                <span x-show="index === i"
+                      x-transition:enter="transition ease-out duration-500"
+                      x-transition:enter-start="opacity-0 translate-y-2"
+                      x-transition:enter-end="opacity-100 translate-y-0"
+                      x-transition:leave="transition ease-in duration-500 absolute"
+                      x-transition:leave-start="opacity-100 translate-y-0"
+                      x-transition:leave-end="opacity-0 -translate-y-2"
+                      class="whitespace-nowrap">
+                    Search for '<span x-text="item"></span>'
+                </span>
+                        </template>
+                    </div>
+
+                    <!-- Search Icon -->
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         class="w-4 h-4 absolute left-4 top-3.5 text-gray-400"
+                         fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L15 14.414V20a1 1 0 01-1.447.894l-4-2A1 1 0 019 18v-3.586L3.293 6.707A1 1 0 013 6V4z"/>
+                              d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1010.5 18.5a7.5 7.5 0 006.15-3.35z"/>
                     </svg>
-                    Filters
-                </button>
-
-                <!-- Dropdown Panel -->
-                <div x-show="openFilter" @click.away="openFilter = false"
-                     x-transition
-                     class="absolute top-12 left-0 w-72 bg-white shadow-2xl rounded-xl border border-gray-200 p-4 space-y-6 z-50">
-
-                    <!-- Category Filter -->
-                    <div x-data="{ openCategory: true }">
-                        <button @click="openCategory = !openCategory"
-                                class="flex justify-between items-center w-full text-left font-semibold">
-                            Category
-                            <svg :class="{ 'rotate-180': openCategory }" class="w-4 h-4 transition-transform"
-                                 fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                      d="M19 9l-7 7-7-7"/>
-                            </svg>
-                        </button>
-                        <div x-show="openCategory" x-collapse class="mt-2 space-y-1">
-                            <label class="flex items-center space-x-2 text-sm"><input type="checkbox"> <span>Beverages</span></label>
-                            <label class="flex items-center space-x-2 text-sm"><input type="checkbox"> <span>Snacks</span></label>
-                            <label class="flex items-center space-x-2 text-sm"><input type="checkbox"> <span>Dairy</span></label>
-                        </div>
-                    </div>
-
-                    <!-- Price Filter -->
-                    <div x-data="{ openPrice: false }">
-                        <button @click="openPrice = !openPrice"
-                                class="flex justify-between items-center w-full text-left font-semibold">
-                            Price
-                            <svg :class="{ 'rotate-180': openPrice }" class="w-4 h-4 transition-transform"
-                                 fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                      d="M19 9l-7 7-7-7"/>
-                            </svg>
-                        </button>
-                        <div x-show="openPrice" x-collapse class="mt-2">
-                            <input type="range" min="10" max="1000" class="w-full accent-violet-600">
-                            <div class="flex justify-between text-xs text-gray-600">
-                                <span>₹10</span>
-                                <span>₹1000</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Brand Filter -->
-                    <div x-data="{ openBrand: false }">
-                        <button @click="openBrand = !openBrand"
-                                class="flex justify-between items-center w-full text-left font-semibold">
-                            Brand
-                            <svg :class="{ 'rotate-180': openBrand }" class="w-4 h-4 transition-transform"
-                                 fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                      d="M19 9l-7 7-7-7"/>
-                            </svg>
-                        </button>
-                        <div x-show="openBrand" x-collapse class="mt-2 space-y-1">
-                            <label class="flex items-center space-x-2 text-sm"><input type="checkbox"> <span>Nestle</span></label>
-                            <label class="flex items-center space-x-2 text-sm"><input type="checkbox"> <span>Amul</span></label>
-                            <label class="flex items-center space-x-2 text-sm"><input type="checkbox"> <span>PepsiCo</span></label>
-                        </div>
-                    </div>
-
-                    <!-- Apply / Reset Buttons -->
-                    <div class="flex justify-between pt-3 border-t border-gray-100">
-                        <button class="px-3 py-1 text-sm text-gray-600 hover:text-gray-800">Reset</button>
-                        <button class="px-4 py-1.5 bg-violet-600 text-white rounded-lg hover:bg-violet-700 text-sm">Apply</button>
-                    </div>
                 </div>
             </div>
 
 
             <!-- Right section -->
-            <div class="hidden md:flex items-center space-x-6 text-sm text-gray-600 font-semibold">
-                <a href="#" class="flex items-center space-x-1 text-gray-800">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                         stroke="currentColor" class="size-4">
+            <div class="hidden md:flex  items-center space-x-6 text-sm text-gray-600 font-semibold">
+                <a href="#" class="flex flex-col items-center space-y-1.5 text-gray-800">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                         stroke="currentColor" class="size-6">
                         <path stroke-linecap="round" stroke-linejoin="round"
-                              d="M8.25 9V5.25A2.25 2.25 0 0 1 10.5 3h6a2.25 2.25 0 0 1 2.25 2.25v13.5A2.25 2.25 0 0 1 16.5 21h-6a2.25 2.25 0 0 1-2.25-2.25V15M12 9l3 3m0 0-3 3m3-3H2.25"/>
+                              d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
                     </svg>
-                    <span>Login</span>
+
+                    <span class="text-xs">Profile</span>
                 </a>
 
                 <!-- Cart Trigger -->
-                <button @click="cartOpen = true" class="flex items-center space-x-1 text-gray-800">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                         stroke="currentColor" class="size-4">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                              d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"/>
-                    </svg>
-                    <span>Cart</span>
-                </button>
+                <div x-data="{ cartCount: 1 }" class="relative">
+                    <!-- Cart Button -->
+                    <button @click="cartOpen = true" class="flex flex-col items-center text-gray-800 relative">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                             stroke-width="1.5" stroke="currentColor" class="w-7 h-7">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                  d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"/>
+                        </svg>
+                        <span class="text-xs">Cart</span>
+                    </button>
+
+                    <!-- Notification Badge -->
+                    <span x-show="cartCount > 0"
+                          x-text="cartCount"
+                          class="absolute -top-1 -right-1 bg-purple-600 text-white text-[10px] font-bold
+                 w-5 h-5 flex items-center justify-center rounded-full shadow-lg">
+    </span>
+                </div>
+
             </div>
 
             <!-- Hamburger for mobile -->
@@ -143,46 +124,5 @@
         </div>
     </div>
 
-    <!-- Slide-in Cart Drawer -->
-    <div x-show="cartOpen" class="fixed inset-0 z-50 flex justify-end"
-         x-transition:enter="transition ease-out duration-300"
-         x-transition:enter-start="opacity-0"
-         x-transition:enter-end="opacity-100"
-         x-transition:leave="transition ease-in duration-300"
-         x-transition:leave-start="opacity-100"
-         x-transition:leave-end="opacity-0"
-         style="display: none;">
-
-        <!-- Background overlay -->
-        <div class="absolute inset-0 bg-black bg-opacity-50" @click="cartOpen = false"></div>
-
-        <!-- Cart Panel -->
-        <div class="relative bg-white w-full sm:w-[400px] h-full shadow-lg z-50
-                    transform transition-transform duration-300 ease-in-out"
-             x-show="cartOpen"
-             x-transition:enter="translate-x-full"
-             x-transition:enter-end="translate-x-0"
-             x-transition:leave="translate-x-0"
-             x-transition:leave-end="translate-x-full">
-
-            <!-- Header -->
-            <div class="flex items-center justify-between p-4 border-b">
-                <h2 class="text-lg font-semibold">Your Cart</h2>
-                <button @click="cartOpen = false" class="text-gray-600 hover:text-black">
-                    ✕
-                </button>
-            </div>
-
-            <!-- Empty Cart State -->
-            <div class="flex flex-col items-center justify-center h-full text-gray-500">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                     stroke="currentColor" class="w-16 h-16 mb-4 text-gray-400">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                          d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"/>
-                </svg>
-                <p class="mb-4">Your cart is empty</p>
-                <button class="px-6 py-2 bg-black text-white rounded-lg">Browse Products</button>
-            </div>
-        </div>
-    </div>
+    <x-mart.cart/>
 </header>

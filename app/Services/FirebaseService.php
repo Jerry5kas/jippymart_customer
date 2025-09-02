@@ -341,6 +341,16 @@ class FirebaseService
                 'has_more' => $hasMore
             ];
         } catch (\Exception $e) {
+            // Check if it's an index error
+            if (strpos($e->getMessage(), 'requires an index') !== false) {
+                \Log::error('Firebase index error in getMartCategoriesWithPagination: ' . $e->getMessage());
+                \Log::error('Filters applied: ' . json_encode($filters));
+                \Log::error('This query requires a composite index. Please create the index using the URL in the error message.');
+
+                // Throw a specific exception for index errors
+                throw new \Exception('Firebase index required for this query: ' . $e->getMessage());
+            }
+
             \Log::error('Error fetching layouts categories with pagination: ' . $e->getMessage());
             return [
                 'data' => [],
@@ -436,14 +446,17 @@ class FirebaseService
      * @param int $limit
      * @return array
      */
-    public function searchMartCategories(string $query, array $filters = [], int $page = 1, int $limit = 20)
+    public function searchMartCategories(string $query, int $page = 1, int $limit = 20, ?bool $publish = null, ?bool $showInHomepage = null)
     {
         try {
             $searchQuery = $this->firestore->collection('mart_categories');
 
             // Apply filters first
-            if (isset($filters['publish'])) {
-                $searchQuery = $searchQuery->where('publish', '==', $filters['publish']);
+            if ($publish !== null) {
+                $searchQuery = $searchQuery->where('publish', '==', $publish);
+            }
+            if ($showInHomepage !== null) {
+                $searchQuery = $searchQuery->where('show_in_homepage', '==', $showInHomepage);
             }
 
             // Apply search
@@ -472,7 +485,7 @@ class FirebaseService
                 'has_more' => $hasMore
             ];
         } catch (\Exception $e) {
-            \Log::error('Error searching layouts categories: ' . $e->getMessage());
+            \Log::error('Error searching mart categories: ' . $e->getMessage());
             return [
                 'data' => [],
                 'total' => 0,
@@ -622,17 +635,23 @@ class FirebaseService
      * @param int $limit
      * @return array
      */
-    public function searchMartItems(string $query, array $filters = [], int $page = 1, int $limit = 20)
+    public function searchMartItems(string $query, int $page = 1, int $limit = 20, ?bool $publish = null, ?bool $isAvailable = null, ?string $categoryId = null, ?string $vendorId = null)
     {
         try {
             $searchQuery = $this->firestore->collection('mart_items');
 
             // Apply filters first
-            if (isset($filters['vendor_id'])) {
-                $searchQuery = $searchQuery->where('vendorID', '==', $filters['vendor_id']);
+            if ($publish !== null) {
+                $searchQuery = $searchQuery->where('publish', '==', $publish);
             }
-            if (isset($filters['category_id'])) {
-                $searchQuery = $searchQuery->where('categoryID', '==', $filters['category_id']);
+            if ($isAvailable !== null) {
+                $searchQuery = $searchQuery->where('isAvailable', '==', $isAvailable);
+            }
+            if ($vendorId) {
+                $searchQuery = $searchQuery->where('vendorID', '==', $vendorId);
+            }
+            if ($categoryId) {
+                $searchQuery = $searchQuery->where('categoryID', '==', $categoryId);
             }
 
             // Apply search
@@ -660,7 +679,7 @@ class FirebaseService
                 'has_more' => $hasMore
             ];
         } catch (\Exception $e) {
-            \Log::error('Error searching layouts items: ' . $e->getMessage());
+            \Log::error('Error searching mart items: ' . $e->getMessage());
             return [
                 'data' => [],
                 'total' => 0,
@@ -809,7 +828,7 @@ class FirebaseService
     }
 
     /**
-     * Get all layouts vendors with filters and pagination
+     * Get all mart vendors with filters and pagination
      *
      * @param array $filters
      * @param string|null $search
@@ -817,15 +836,22 @@ class FirebaseService
      * @param int $limit
      * @return array
      */
-    public function getAllMartVendors(array $filters = [], ?string $search = null, int $page = 1, int $limit = 20)
+    public function getAllMartVendors(array $filters = [], ?string $search = null, int $page = 1, int $limit = 20, string $sortBy = 'title', string $sortOrder = 'asc')
     {
         try {
             $query = $this->firestore->collection('vendors');
 
-            // Always filter by vType = 'layouts'
-            $query = $query->where('vType', '==', 'layouts');
+            // Apply vType filter if provided, otherwise default to 'mart'
+            if (isset($filters['vType'])) {
+                $query = $query->where('vType', '==', $filters['vType']);
+            } else {
+                $query = $query->where('vType', '==', 'mart');
+            }
 
             // Apply additional filters
+            if (isset($filters['publish'])) {
+                $query = $query->where('publish', '==', $filters['publish']);
+            }
             if (isset($filters['isOpen'])) {
                 $query = $query->where('isOpen', '==', $filters['isOpen']);
             }
@@ -835,11 +861,19 @@ class FirebaseService
             if (isset($filters['categoryID'])) {
                 $query = $query->where('categoryID', 'array-contains', $filters['categoryID']);
             }
+            if (isset($filters['zoneId'])) {
+                $query = $query->where('zoneId', '==', $filters['zoneId']);
+            }
 
             // Apply search if provided
             if ($search) {
                 $query = $query->where('title', '>=', $search)
                               ->where('title', '<=', $search . '\uf8ff');
+            }
+
+            // Apply sorting
+            if ($sortBy && $sortOrder) {
+                $query = $query->orderBy($sortBy, $sortOrder);
             }
 
             // Apply pagination
@@ -882,7 +916,47 @@ class FirebaseService
 
             return $result;
         } catch (\Exception $e) {
-            \Log::error('Error fetching all layouts vendors: ' . $e->getMessage());
+            \Log::error('Error fetching all mart vendors: ' . $e->getMessage());
+            return [
+                'data' => [],
+                'total' => 0,
+                'has_more' => false
+            ];
+        }
+    }
+
+    /**
+     * Simple fallback method to get all vendors by vType only (no complex filters)
+     * Used when the main getAllMartVendors method fails due to missing indexes
+     *
+     * @param string $vType
+     * @param int $limit
+     * @return array
+     */
+    public function getVendorsByTypeSimple(string $vType, int $limit = 50)
+    {
+        try {
+            $query = $this->firestore->collection('vendors')
+                                    ->where('vType', '==', $vType)
+                                    ->limit($limit);
+
+            $documents = $query->documents();
+            $vendors = [];
+
+            foreach ($documents as $document) {
+                $vendorData = $document->data();
+                $vendorData['id'] = $document->id();
+                $vendorData = $this->sanitizeData($vendorData);
+                $vendors[] = $vendorData;
+            }
+
+            return [
+                'data' => $vendors,
+                'total' => count($vendors),
+                'has_more' => count($vendors) === $limit
+            ];
+        } catch (\Exception $e) {
+            \Log::error('Error in getVendorsByTypeSimple: ' . $e->getMessage());
             return [
                 'data' => [],
                 'total' => 0,
@@ -1058,17 +1132,20 @@ class FirebaseService
      * @param int $limit
      * @return array
      */
-    public function searchMartSubCategories(string $query, array $filters = [], int $page = 1, int $limit = 20)
+    public function searchMartSubcategories(string $query, int $page = 1, int $limit = 20, ?bool $publish = null, ?bool $showInHomepage = null, ?string $categoryId = null)
     {
         try {
             $searchQuery = $this->firestore->collection('mart_subcategories');
 
             // Apply filters first
-            if (isset($filters['publish'])) {
-                $searchQuery = $searchQuery->where('publish', '==', $filters['publish']);
+            if ($publish !== null) {
+                $searchQuery = $searchQuery->where('publish', '==', $publish);
             }
-            if (isset($filters['parent_category_id'])) {
-                $searchQuery = $searchQuery->where('parent_category_id', '==', $filters['parent_category_id']);
+            if ($showInHomepage !== null) {
+                $searchQuery = $searchQuery->where('show_in_homepage', '==', $showInHomepage);
+            }
+            if ($categoryId) {
+                $searchQuery = $searchQuery->where('parent_category_id', '==', $categoryId);
             }
 
             // Apply search
@@ -1097,7 +1174,7 @@ class FirebaseService
                 'has_more' => $hasMore
             ];
         } catch (\Exception $e) {
-            \Log::error('Error searching layouts subcategories: ' . $e->getMessage());
+            \Log::error('Error searching mart subcategories: ' . $e->getMessage());
             return [
                 'data' => [],
                 'total' => 0,
@@ -1353,10 +1430,10 @@ class FirebaseService
             // Remove subcategory_id from filters since we'll handle it separately
             $queryFilters = $filters;
             unset($queryFilters['subcategory_id']);
-            
+
             // Get all items first (without subcategory filter)
             $allItems = $this->getMartItemsWithPagination($queryFilters, null, 1, 1000, $sortBy, $sortOrder);
-            
+
             // Filter by subcategory in PHP
             $filteredItems = [];
             foreach ($allItems['data'] as $item) {
@@ -1364,13 +1441,13 @@ class FirebaseService
                     $filteredItems[] = $item;
                 }
             }
-            
+
             // Apply pagination
             $offset = ($page - 1) * $limit;
             $paginatedItems = array_slice($filteredItems, $offset, $limit);
-            
+
             $hasMore = count($filteredItems) > ($offset + $limit);
-            
+
             return [
                 'data' => $paginatedItems,
                 'total' => count($filteredItems),
@@ -1626,4 +1703,64 @@ class FirebaseService
             'updated_by' => ''
         ], $itemData);
     }
+
+    /**
+     * Search mart vendors with filters
+     *
+     * @param string $query
+     * @param int $page
+     * @param int $limit
+     * @param bool|null $publish
+     * @param string|null $categoryId
+     * @return array
+     */
+    public function searchMartVendors(string $query, int $page = 1, int $limit = 20, ?bool $publish = null, ?string $categoryId = null)
+    {
+        try {
+            $searchQuery = $this->firestore->collection('vendors')
+                                         ->where('vType', '==', 'mart');
+
+            // Apply filters
+            if ($publish !== null) {
+                $searchQuery = $searchQuery->where('publish', '==', $publish);
+            }
+            if ($categoryId) {
+                $searchQuery = $searchQuery->where('categoryID', 'array-contains', $categoryId);
+            }
+
+            // Apply search on title
+            $searchQuery = $searchQuery->where('title', '>=', $query)
+                                     ->where('title', '<=', $query . '\uf8ff');
+
+            // Apply pagination
+            $offset = ($page - 1) * $limit;
+            $searchQuery = $searchQuery->limit($limit)->offset($offset);
+
+            $documents = $searchQuery->documents();
+            $vendors = [];
+
+            foreach ($documents as $document) {
+                $vendorData = $document->data();
+                $vendorData['id'] = $document->id();
+                $vendors[] = $vendorData;
+            }
+
+            $hasMore = count($vendors) === $limit;
+
+            return [
+                'data' => $vendors,
+                'total' => count($vendors) + ($page - 1) * $limit,
+                'has_more' => $hasMore
+            ];
+        } catch (\Exception $e) {
+            \Log::error('Error searching mart vendors: ' . $e->getMessage());
+            return [
+                'data' => [],
+                'total' => 0,
+                'has_more' => false
+            ];
+        }
+    }
+
+
 }
