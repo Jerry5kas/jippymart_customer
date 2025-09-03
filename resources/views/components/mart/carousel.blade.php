@@ -33,7 +33,7 @@
             autoplay() {
                 setInterval(() => {
                     this.next();
-                }, 6000);
+                }, 10000); // Changed from 6s to 10s to reduce server load
             },
             init() {
                 this.autoplay();

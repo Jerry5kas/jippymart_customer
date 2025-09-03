@@ -1261,29 +1261,62 @@
             $('.highlights-section').addClass('d-none');
         }
 
-        myInterval = setInterval(callStore, 1000);
+        // Replace constant polling with event-driven updates
+        // This prevents the server from hitting process limits
+        initializeEfficientStoreUpdates();
     });
 
-    // Function to load categories into filter dropdown
-    async function loadCategoriesForFilter() {
-        try {
-            const categoriesSnapshot = await database.collection('vendor_categories')
-                .where('publish', '==', true)
-                .get();
+    // Function to initialize efficient store updates instead of constant polling
+    function initializeEfficientStoreUpdates() {
+        let updateTimeout = null;
+        let lastUpdateTime = 0;
+        const MIN_UPDATE_INTERVAL = 30000; // Minimum 30 seconds between updates
+        
+        // Update store data when page becomes visible
+        document.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'visible') {
+                // Debounce rapid visibility changes
+                if (updateTimeout) clearTimeout(updateTimeout);
+                updateTimeout = setTimeout(() => {
+                    const now = Date.now();
+                    if (now - lastUpdateTime > MIN_UPDATE_INTERVAL) {
+                        callStore();
+                        lastUpdateTime = now;
+                    }
+                }, 1000);
+            }
+        });
 
-            const categorySelect = $('#restaurant-category');
-
-            categoriesSnapshot.docs.forEach(doc => {
-                const category = doc.data();
-                categorySelect.append(`<option value="${doc.id}">${category.title}</option>`);
+        // Update when user location changes (if you have location change detection)
+        if (typeof window.addEventListener === 'function') {
+            window.addEventListener('locationChanged', function() {
+                const now = Date.now();
+                if (now - lastUpdateTime > MIN_UPDATE_INTERVAL) {
+                    callStore();
+                    lastUpdateTime = now;
+                }
             });
-        } catch (error) {
-            console.error('Error loading categories:', error);
         }
+
+        // Initial call with delay to prevent immediate resource spike
+        setTimeout(() => {
+            callStore();
+            lastUpdateTime = Date.now();
+        }, 2000);
+
+        // Fallback update every 5 minutes (much better than every 1 second)
+        setInterval(() => {
+            const now = Date.now();
+            if (now - lastUpdateTime > MIN_UPDATE_INTERVAL) {
+                callStore();
+                lastUpdateTime = now;
+            }
+        }, 300000); // 5 minutes instead of 1 second
     }
 
     function myStopTimer() {
-        clearInterval(myInterval);
+        // No longer needed with new approach, but keeping for compatibility
+        console.log('Timer stopped - using efficient updates now');
     }
 
     async function callStore() {
@@ -1309,13 +1342,31 @@
                 return false;
             }
             priceData = await fetchVendorPriceData();
-            myStopTimer();
+            // No need to stop timer anymore - using efficient updates
             getItemCategories();
             // getHomepageCategory();
             getMostPopularStores();
             getAllStore();
 
         })
+    }
+
+    // Function to load categories into filter dropdown
+    async function loadCategoriesForFilter() {
+        try {
+            const categoriesSnapshot = await database.collection('vendor_categories')
+                .where('publish', '==', true)
+                .get();
+
+            const categorySelect = $('#restaurant-category');
+
+            categoriesSnapshot.docs.forEach(doc => {
+                const category = doc.data();
+                categorySelect.append(`<option value="${doc.id}">${category.title}</option>`);
+            });
+        } catch (error) {
+            console.error('Error loading categories:', error);
+        }
     }
 
     function slickcatCarousel() {
@@ -1541,13 +1592,13 @@
     $(document).ready(async function() {
         // ... existing ready handler code ...
 
-        // Preload vendor data after initial data is loaded
+        // Preload vendor data after initial data is loaded - increased interval to reduce server load
         const checkDataInterval = setInterval(() => {
             if (window.vendorsData) {
                 clearInterval(checkDataInterval);
                 preloadVendorData();
             }
-        }, 100);
+        }, 1000); // Changed from 100ms to 1000ms to reduce server load
     });
 
     // Optimized function to get minimum prices for all vendors at once
@@ -2192,7 +2243,7 @@
             }
             html = html + '<div class="member-plan position-absolute"><span class="badge badge-dark ' +
                 statusclass + '">' + status + '</span></div><a href="' + view_vendor_details +
-                '"><img onerror="this.onerror=null;this.src=\'' + placeholderImage + '\'"  alt="#" src="' +
+                '"><img onerror="this.onerror=null;this.src=\'' + placeholderImage + '\'" alt="#" src="' +
                 photo + '" class="img-fluid item-img w-100"></a></div>';
             html = html + '</div>';
             html = html + '</div></div></div>';

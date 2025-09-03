@@ -872,7 +872,7 @@
                             clearInterval(checkZone);
                             resolve();
                         }
-                    }, 1000);
+                    }, 2000); // Changed from 1000ms to 2000ms to further reduce server load
                 });
             }
             console.log('Using zone ID:', user_zone_id);
