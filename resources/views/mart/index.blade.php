@@ -1,5 +1,5 @@
 <x-layouts.app>
-    <x-mart.top-cat-items/>
+    <x-mart.top-cat-items :categories="$categories"/>
     <x-mart.carousel/>
     <x-mart.banner-card/>
     <x-mart.categories/>

@@ -2,11 +2,36 @@
     <!-- Slides -->
     <div class="relative flex transition-transform duration-700 ease-in-out"
          :style="`transform: translateX(-${active * 100}%);`">
-        <x-mart.slide/>
+
+        <!-- Idea 1: Everyday Essentials -->
         <x-mart.slide
-            src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT14yDUeoaf-N-53xpJnSwVvsVEeR9ofHYcfA&s"/>
+            src="https://images.unsplash.com/photo-1581579186919-4c16e6d27ec0?auto=format&fit=crop&w=1200&q=80"
+            text1="✨ Everyday Essentials"
+            text2="Your Daily Needs, Delivered Fast"
+            text3="Up to"
+            text4="50% OFF on Groceries"
+            button="🛒 Shop Now"
+        />
+
+        <!-- Idea 2: Fresh & Quick -->
         <x-mart.slide
-            src="https://static.vecteezy.com/system/resources/thumbnails/005/715/816/small/banner-abstract-background-board-for-text-and-message-design-modern-free-vector.jpg"/>
+            src="https://images.unsplash.com/photo-1606788075761-8a90d99ba3a2?auto=format&fit=crop&w=1200&q=80"
+            text1="🥬 Fresh & Quick"
+            text2="Fresh Picks. 🚀 Lightning Fast Delivery."
+            text3="Get Fruits & Veggies"
+            text4="Best Prices"
+            button="🍎 Order Now"
+        />
+
+        <!-- Idea 3: Big Savings -->
+        <x-mart.slide
+            src="https://images.unsplash.com/photo-1606788075761-8a90d99ba3a2?auto=format&fit=crop&w=1200&q=80"
+            text1="💰 Big Savings"
+            text2="Save More Every Day"
+            text3="Mart Fest Deals – Up to"
+            text4="70% OFF"
+            button="⚡ Grab the Offer"
+        />
     </div>
 
     <!-- Dots -->
@@ -18,6 +43,7 @@
         </template>
     </div>
 </div>
+
 
 <script>
     function carousel() {
