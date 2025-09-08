@@ -251,7 +251,7 @@ Route::post('remove-coupon', [App\Http\Controllers\ProductController::class, 're
 Route::get('/debug-delivery', function () {
     $cart = session()->get('cart', []);
     $deliveryChargeService = new \App\Services\DeliveryChargeService();
-    
+
     $debug = [
         'new_system_enabled' => $deliveryChargeService->shouldUseNewDeliverySystem(),
         'cart_exists' => !empty($cart),
@@ -268,7 +268,7 @@ Route::get('/debug-delivery', function () {
             'restaurant_longitude' => $_COOKIE['restaurant_longitude'] ?? 'NOT SET',
         ]
     ];
-    
+
     if (isset($cart['delivery_charge_calculation'])) {
         $calculation = $cart['delivery_charge_calculation'];
         $debug['calculation'] = [
@@ -280,7 +280,7 @@ Route::get('/debug-delivery', function () {
             'ui_main_text' => $calculation['ui_components']['main_text'] ?? 'NOT SET'
         ];
     }
-    
+
     // Calculate item total
     $itemTotal = 0;
     if (isset($cart['item']) && is_array($cart['item'])) {
@@ -296,28 +296,28 @@ Route::get('/debug-delivery', function () {
         }
     }
     $debug['item_total'] = $itemTotal;
-    
+
     // Calculate distance if coordinates are available
-    if (isset($_COOKIE['address_lat']) && isset($_COOKIE['address_lng']) && isset($_COOKIE['restaurant_latitude']) && isset($_COOKIE['restaurant_longitude']) && 
+    if (isset($_COOKIE['address_lat']) && isset($_COOKIE['address_lng']) && isset($_COOKIE['restaurant_latitude']) && isset($_COOKIE['restaurant_longitude']) &&
         $_COOKIE['address_lat'] && $_COOKIE['address_lng'] && $_COOKIE['restaurant_latitude'] && $_COOKIE['restaurant_longitude']) {
         $lat1 = floatval($_COOKIE['address_lat']);
         $lon1 = floatval($_COOKIE['address_lng']);
         $lat2 = floatval($_COOKIE['restaurant_latitude']);
         $lon2 = floatval($_COOKIE['restaurant_longitude']);
-        
+
         $theta = $lon1 - $lon2;
         $dist = sin(deg2rad($lat1)) * sin(deg2rad($lat2)) + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * cos(deg2rad($theta));
         $dist = acos($dist);
         $dist = rad2deg($dist);
         $miles = $dist * 60 * 1.1515;
         $km = $miles * 1.609344;
-        
+
         $debug['calculated_distance'] = round($km, 2);
         $debug['coordinates'] = [
             'address' => [$lat1, $lon1],
             'restaurant' => [$lat2, $lon2]
         ];
-        
+
         // Test calculation
         $testCalculation = $deliveryChargeService->calculateDeliveryCharge($itemTotal, $km);
         $debug['test_calculation'] = [
@@ -327,7 +327,7 @@ Route::get('/debug-delivery', function () {
             'ui_type' => $testCalculation['ui_components']['type'],
             'ui_main_text' => $testCalculation['ui_components']['main_text']
         ];
-        
+
         // Business rules check
         $debug['business_rules'] = [
             'item_total_above_threshold' => $itemTotal >= 299,
@@ -337,14 +337,14 @@ Route::get('/debug-delivery', function () {
             'should_be_normal_charge' => ($itemTotal < 299)
         ];
     }
-    
+
     return response()->json($debug);
 });
 
 // Test route with real vendor ID from Firebase
 Route::get('/test-real-vendor', function () {
     $realVendorId = '0QcKVUa4aqJVYQ0957kz'; // From your Firebase document
-    
+
     return response()->json([
         'message' => 'Test with real vendor ID',
         'vendor_id' => $realVendorId,
@@ -370,28 +370,28 @@ Route::get('/test-coordinates-setup', function () {
     setcookie('address_lng', '80.0499408', time() + 3600, '/');
     setcookie('restaurant_latitude', '15.490739', time() + 3600, '/');
     setcookie('restaurant_longitude', '80.048471', time() + 3600, '/');
-    
+
     // Calculate actual distance between coordinates
     $lat1 = 15.4865041; // User location
     $lon1 = 80.0499408;
     $lat2 = 15.490739;  // Restaurant location
     $lon2 = 80.048471;
-    
+
     $theta = $lon1 - $lon2;
     $dist = sin(deg2rad($lat1)) * sin(deg2rad($lat2)) + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * cos(deg2rad($theta));
     $dist = acos($dist);
     $dist = rad2deg($dist);
     $miles = $dist * 60 * 1.1515;
     $actualDistance = $miles * 1.609344;
-    
+
     $deliveryChargeService = new \App\Services\DeliveryChargeService();
-    
+
     // Test different item totals
     $testScenarios = [
         ['item_total' => 180, 'description' => 'Below threshold (< 299)'],
         ['item_total' => 350, 'description' => 'Above threshold (≥ 299)']
     ];
-    
+
     $results = [];
     foreach ($testScenarios as $scenario) {
         $calculation = $deliveryChargeService->calculateDeliveryCharge($scenario['item_total'], $actualDistance);
@@ -408,7 +408,7 @@ Route::get('/test-coordinates-setup', function () {
             ]
         ];
     }
-    
+
     return response()->json([
         'message' => 'Coordinates setup and delivery charge test',
         'coordinates' => [
@@ -436,7 +436,7 @@ Route::get('/test-coordinates-setup', function () {
 // Comprehensive test route for delivery charge system with real coordinates
 Route::get('/test-delivery-system-complete', function () {
     $deliveryChargeService = new \App\Services\DeliveryChargeService();
-    
+
     // Test scenarios with different coordinates and distances
     $testScenarios = [
         [
@@ -490,34 +490,34 @@ Route::get('/test-delivery-system-complete', function () {
             'expected_fee' => 24
         ]
     ];
-    
+
     $results = [];
-    
+
     foreach ($testScenarios as $scenario) {
         // Calculate actual distance
         $lat1 = floatval($scenario['user_lat']);
         $lon1 = floatval($scenario['user_lng']);
         $lat2 = floatval($scenario['restaurant_lat']);
         $lon2 = floatval($scenario['restaurant_lng']);
-        
+
         $theta = $lon1 - $lon2;
         $dist = sin(deg2rad($lat1)) * sin(deg2rad($lat2)) + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * cos(deg2rad($theta));
         $dist = acos($dist);
         $dist = rad2deg($dist);
         $miles = $dist * 60 * 1.1515;
         $actualDistance = $miles * 1.609344;
-        
+
         // Calculate delivery charge
         $calculation = $deliveryChargeService->calculateDeliveryCharge($scenario['item_total'], $actualDistance);
-        
+
         // Validate coordinates
         $validation = $deliveryChargeService->validateCoordinates(
-            $scenario['user_lat'], 
-            $scenario['user_lng'], 
-            $scenario['restaurant_lat'], 
+            $scenario['user_lat'],
+            $scenario['user_lng'],
+            $scenario['restaurant_lat'],
             $scenario['restaurant_lng']
         );
-        
+
         $results[$scenario['name']] = [
             'scenario' => $scenario,
             'actual_distance' => round($actualDistance, 2),
@@ -527,7 +527,7 @@ Route::get('/test-delivery-system-complete', function () {
             'pass' => ($calculation['actual_fee'] == $scenario['expected_fee'])
         ];
     }
-    
+
     return response()->json([
         'message' => 'Complete delivery charge system test',
         'test_scenarios' => $results,
@@ -570,7 +570,7 @@ Route::get('/debug-vendor-coordinates/{vendorId}', function ($vendorId) {
         'restaurant_slug' => 'mastan-hotel-nonveg-chicken-dum-biriyani',
         'zone_slug' => 'ongole'
     ];
-    
+
     return response()->json([
         'message' => 'Vendor data structure for testing',
         'vendor_data' => $vendorData,
@@ -601,32 +601,32 @@ Route::get('/debug-vendor-coordinates/{vendorId}', function ($vendorId) {
 Route::get('/test-complete-workflow', function () {
     $realVendorId = '0QcKVUa4aqJVYQ0957kz';
     $deliveryChargeService = new \App\Services\DeliveryChargeService();
-    
+
     // Set test coordinates (different from restaurant to test distance calculation)
     setcookie('address_lat', '15.4865041', time() + 3600, '/');
     setcookie('address_lng', '80.0499408', time() + 3600, '/');
     setcookie('restaurant_latitude', '15.490739', time() + 3600, '/');
     setcookie('restaurant_longitude', '80.048471', time() + 3600, '/');
-    
+
     // Calculate actual distance between coordinates
     $lat1 = 15.4865041; // User location
     $lon1 = 80.0499408;
     $lat2 = 15.490739;  // Restaurant location
     $lon2 = 80.048471;
-    
+
     $theta = $lon1 - $lon2;
     $dist = sin(deg2rad($lat1)) * sin(deg2rad($lat2)) + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * cos(deg2rad($theta));
     $dist = acos($dist);
     $dist = rad2deg($dist);
     $miles = $dist * 60 * 1.1515;
     $actualDistance = $miles * 1.609344;
-    
+
     // Test different item totals
     $testScenarios = [
         ['item_total' => 180, 'description' => 'Below threshold (< 299)'],
         ['item_total' => 350, 'description' => 'Above threshold (≥ 299)']
     ];
-    
+
     $results = [];
     foreach ($testScenarios as $scenario) {
         $calculation = $deliveryChargeService->calculateDeliveryCharge($scenario['item_total'], $actualDistance);
@@ -643,7 +643,7 @@ Route::get('/test-complete-workflow', function () {
             ]
         ];
     }
-    
+
     return response()->json([
         'message' => 'Complete delivery charge workflow test',
         'vendor_id' => $realVendorId,
@@ -672,7 +672,7 @@ Route::get('/test-complete-workflow', function () {
 // Test route for new tax calculation
 Route::get('/test-tax-calculation', function () {
     $cart = session()->get('cart', []);
-    
+
     // Create a test cart with items
     $testCart = [
         'item' => [
@@ -692,7 +692,7 @@ Route::get('/test-tax-calculation', function () {
         'deliverycharge' => 23, // Base delivery charge
         'deliverychargemain' => 23
     ];
-    
+
     // Calculate item total
     $itemTotal = 0;
     foreach ($testCart['item'] as $restaurantItems) {
@@ -703,16 +703,16 @@ Route::get('/test-tax-calculation', function () {
             $itemTotal += ($basePrice + $extraPrice) * $quantity;
         }
     }
-    
+
     // Calculate SGST (5% on item total before discounts)
     $sgst = ($itemTotal * 5) / 100;
-    
+
     // Calculate GST (18% on delivery charge)
     $gst = ($testCart['deliverycharge'] * 18) / 100;
-    
+
     // Total tax
     $totalTax = $sgst + $gst;
-    
+
     $result = [
         'item_total_before_discount' => $itemTotal,
         'delivery_charge' => $testCart['deliverycharge'],
@@ -728,14 +728,14 @@ Route::get('/test-tax-calculation', function () {
             'total_tax_calculation' => '21 + 4.14 = 25.14'
         ]
     ];
-    
+
     return response()->json($result);
 });
 
 // Test route for billing calculations
 Route::get('/test-billing-calculations', function () {
     $cart = session()->get('cart', []);
-    
+
     // Create a test cart with items
     $testCart = [
         'item' => [
@@ -757,7 +757,7 @@ Route::get('/test-billing-calculations', function () {
         'tip_amount' => 5,
         'decimal_degits' => 2
     ];
-    
+
     // Calculate item total
     $itemTotal = 0;
     foreach ($testCart['item'] as $restaurantItems) {
@@ -768,19 +768,19 @@ Route::get('/test-billing-calculations', function () {
             $itemTotal += ($basePrice + $extraPrice) * $quantity;
         }
     }
-    
+
     // Calculate SGST (5% on item total before discounts)
     $sgst = ($itemTotal * 5) / 100;
-    
+
     // Calculate GST (18% on delivery charge)
     $gst = ($testCart['deliverycharge'] * 18) / 100;
-    
+
     // Total tax
     $totalTax = $sgst + $gst;
-    
+
     // Calculate final total
     $finalTotal = $itemTotal + $testCart['deliverycharge'] + $totalTax + $testCart['tip_amount'];
-    
+
     $result = [
         'item_total' => $itemTotal,
         'delivery_charge' => $testCart['deliverycharge'],
@@ -801,14 +801,14 @@ Route::get('/test-billing-calculations', function () {
             'final_total_calculation' => '420 + 23 + 25.14 + 5 = 473.14'
         ]
     ];
-    
+
     return response()->json($result);
 });
 
 // Test route for delivery charge inclusion
 Route::get('/test-delivery-inclusion', function () {
     $cart = session()->get('cart', []);
-    
+
     // Create a test cart with delivery charge
     $testCart = [
         'item' => [
@@ -826,7 +826,7 @@ Route::get('/test-delivery-inclusion', function () {
         'tip_amount' => 5,
         'decimal_degits' => 2
     ];
-    
+
     // Calculate item total
     $itemTotal = 0;
     foreach ($testCart['item'] as $restaurantItems) {
@@ -837,10 +837,10 @@ Route::get('/test-delivery-inclusion', function () {
             $itemTotal += ($basePrice + $extraPrice) * $quantity;
         }
     }
-    
+
     // Calculate total including delivery charge
     $totalWithDelivery = $itemTotal + $testCart['deliverycharge'] + $testCart['tax'] + $testCart['tip_amount'];
-    
+
     $result = [
         'item_total' => $itemTotal,
         'delivery_charge' => $testCart['deliverycharge'],
@@ -860,14 +860,14 @@ Route::get('/test-delivery-inclusion', function () {
             'delivery_charge' => 'NOT SET'
         ]
     ];
-    
+
     return response()->json($result);
 });
 
 // Debug route to check session delivery charge data
 Route::get('/debug-session-delivery', function () {
     $cart = session()->get('cart', []);
-    
+
     $result = [
         'session_cart' => $cart,
         'delivery_variables' => [
@@ -879,7 +879,7 @@ Route::get('/debug-session-delivery', function () {
         'item_total' => 0,
         'calculated_total' => 0
     ];
-    
+
     // Calculate item total if items exist
     if (isset($cart['item']) && !empty($cart['item'])) {
         $itemTotal = 0;
@@ -894,14 +894,14 @@ Route::get('/debug-session-delivery', function () {
         $result['item_total'] = $itemTotal;
         $result['calculated_total'] = $itemTotal + floatval($cart['deliverycharge'] ?? 0) + floatval($cart['tax'] ?? 0) + floatval($cart['tip_amount'] ?? 0);
     }
-    
+
     return response()->json($result);
 });
 
 // Comprehensive test for delivery charge flow
 Route::get('/test-complete-delivery-flow', function () {
     $deliveryChargeService = new \App\Services\DeliveryChargeService();
-    
+
     // Create a test cart with items
     $testCart = [
         'item' => [
@@ -921,10 +921,10 @@ Route::get('/test-complete-delivery-flow', function () {
         'deliverykm' => 5, // 5km distance
         'decimal_degits' => 2
     ];
-    
+
     // Calculate delivery charge using the service
     $updatedCart = $deliveryChargeService->updateCartDeliveryCharge($testCart);
-    
+
     // Calculate item total
     $itemTotal = 0;
     foreach ($testCart['item'] as $restaurantItems) {
@@ -935,15 +935,15 @@ Route::get('/test-complete-delivery-flow', function () {
             $itemTotal += ($basePrice + $extraPrice) * $quantity;
         }
     }
-    
+
     // Calculate tax (SGST + GST)
     $sgst = ($itemTotal * 5) / 100;
     $gst = ($updatedCart['deliverycharge'] * 18) / 100;
     $totalTax = $sgst + $gst;
-    
+
     // Calculate final total
     $finalTotal = $itemTotal + $updatedCart['deliverycharge'] + $totalTax;
-    
+
     $result = [
         'original_cart' => $testCart,
         'updated_cart' => $updatedCart,
@@ -974,6 +974,15 @@ Route::get('/test-complete-delivery-flow', function () {
             'final_total_calculation' => '420 + 23 + 25.14 = 468.14'
         ]
     ];
-    
+
     return response()->json($result);
+});
+
+
+// routes/web.php
+
+Route::prefix('mart')->group(function () {
+    Route::get('/', function () {
+        return view('mart.index');
+    });
 });
