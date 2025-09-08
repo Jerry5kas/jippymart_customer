@@ -1,47 +1,74 @@
 <!-- Navbar -->
-<header class="w-full text-sm bg-gradient-to-b from-purple-100 to-white">
+<header class="fixed z-40 w-full text-sm bg-gradient-to-b from-purple-100 to-white"
+        x-data="{ mobileMenu: false, cartOpen: false }">
+
     <div class="sm:w-[90%] mx-auto w-full px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center py-4">
 
             <!-- Left section -->
             <div class="flex items-center space-x-4">
-                <!-- Logo -->
-                <span class="text-2xl font-extrabold text-purple-600">Mart</span>
-
-                <!-- Super Saver Toggle -->
-                {{--                <div class="flex items-center">--}}
-                {{--                    <label class="relative inline-flex items-center cursor-pointer">--}}
-                {{--                        <input type="checkbox" value="" class="sr-only peer">--}}
-                {{--                        <div class="w-28 h-10 bg-gray-200 rounded-full peer peer-checked:bg-purple-600 transition"></div>--}}
-                {{--                        <span class="absolute left-1 top-1 bg-white w-8 h-8 rounded-full peer-checked:translate-x-[72px] transition-transform"></span>--}}
-                {{--                        <span class="absolute inset-0 flex justify-center items-center text-xs font-bold text-gray-700 peer-checked:text-white">Mart</span>--}}
-                {{--                    </label>--}}
-                {{--                </div>--}}
+                <a href="/mart" class="text-2xl font-extrabold text-purple-600">Mart</a>
 
                 <!-- Location -->
-                <button class="hidden md:flex items-center space-x-1 text-gray-900 font-medium">
+                <button class="hidden md:flex items-center space-x-1 font-medium">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                         stroke="currentColor" class="size-6">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
+                         stroke="currentColor" class="size-4 text-gray-600 font-semibold">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
                         <path stroke-linecap="round" stroke-linejoin="round"
                               d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"/>
                     </svg>
-                    <span>Select Location</span>
-                    <!-- Heroicon: Chevron Down -->
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
-                         stroke="currentColor">
+                    <span class="font-semibold text-gray-600">Select Location</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-600" fill="none"
+                         viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                     </svg>
                 </button>
             </div>
 
-            <!-- Search bar -->
-            <div class="flex-1 mx-6 hidden md:block">
+            <!-- Search bar with animated rotating placeholder -->
+            <div class="flex-1 mx-6 hidden md:block"
+                 x-data="{
+        items: [
+          'milk','bread','cheese slices','butter','biscuits','apples','oranges',
+          'sweets','beverages','chocolate','chips','cookies','candies',
+          'grains','juices','juice mix','juice concentrates','rice',
+          'pasta','sauces','seasonings','spices','syrups'
+        ],
+        index: 0,
+        init() {
+            setInterval(() => {
+                this.index = (this.index + 1) % this.items.length;
+            }, 5000); // Changed from 2.5s to 5s to reduce server load
+        }
+     }">
+
                 <div class="relative">
-                    <input type="text" placeholder='Search for "cheese slices"'
-                           class="w-full border border-gray-300 rounded-lg py-2 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
-                    <!-- Heroicon: Search -->
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 absolute left-3 top-2.5 text-gray-400"
+                    <input type="text"
+                           class="w-2/3 border border-gray-300 rounded-lg py-3 pl-12 pr-4 text-sm
+                      focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500
+                      transition-all duration-500"
+                           placeholder="">
+
+                    <!-- Animated suggestion overlay -->
+                    <div class="absolute left-12 top-3 text-gray-400 text-sm pointer-events-none select-none">
+                        <template x-for="(item, i) in items" :key="i">
+                <span x-show="index === i"
+                      x-transition:enter="transition ease-out duration-500"
+                      x-transition:enter-start="opacity-0 translate-y-2"
+                      x-transition:enter-end="opacity-100 translate-y-0"
+                      x-transition:leave="transition ease-in duration-500 absolute"
+                      x-transition:leave-start="opacity-100 translate-y-0"
+                      x-transition:leave-end="opacity-0 -translate-y-2"
+                      class="whitespace-nowrap">
+                    Search for '<span x-text="item"></span>'
+                </span>
+                        </template>
+                    </div>
+
+                    <!-- Search Icon -->
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         class="w-4 h-4 absolute left-4 top-3.5 text-gray-400"
                          fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                               d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1010.5 18.5a7.5 7.5 0 006.15-3.35z"/>
@@ -49,35 +76,44 @@
                 </div>
             </div>
 
+
             <!-- Right section -->
-            <div class="hidden md:flex items-center space-x-6">
-                <!-- Login -->
-                <a href="#" class="flex items-center space-x-1 text-gray-800">
-                    <!-- Heroicon: User -->
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+            <div class="hidden md:flex  items-center space-x-6 text-sm text-gray-600 font-semibold">
+                <a href="#" class="flex flex-col items-center space-y-1.5 text-gray-800">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
                          stroke="currentColor" class="size-6">
                         <path stroke-linecap="round" stroke-linejoin="round"
-                              d="M8.25 9V5.25A2.25 2.25 0 0 1 10.5 3h6a2.25 2.25 0 0 1 2.25 2.25v13.5A2.25 2.25 0 0 1 16.5 21h-6a2.25 2.25 0 0 1-2.25-2.25V15M12 9l3 3m0 0-3 3m3-3H2.25"/>
-                    </svg>
-                    <span>Login</span>
-                </a>
-                <!-- Cart -->
-                <a href="#" class="flex items-center space-x-1 text-gray-800">
-                    <!-- Heroicon: Shopping Cart -->
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                         stroke="currentColor" class="size-6">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                              d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"/>
+                              d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
                     </svg>
 
-                    <span>Cart</span>
+                    <span class="text-xs">Profile</span>
                 </a>
+
+                <!-- Cart Trigger -->
+                <div x-data="{ cartCount: 1 }" class="relative">
+                    <!-- Cart Button -->
+                    <button @click="cartOpen = true" class="flex flex-col items-center text-gray-800 relative">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                             stroke-width="1.5" stroke="currentColor" class="w-7 h-7">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                  d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"/>
+                        </svg>
+                        <span class="text-xs">Cart</span>
+                    </button>
+
+                    <!-- Notification Badge -->
+                    <span x-show="cartCount > 0"
+                          x-text="cartCount"
+                          class="absolute -top-1 -right-1 bg-purple-600 text-white text-[10px] font-bold
+                 w-5 h-5 flex items-center justify-center rounded-full shadow-lg">
+    </span>
+                </div>
+
             </div>
 
             <!-- Hamburger for mobile -->
             <div class="md:hidden">
                 <button @click="mobileMenu = !mobileMenu" class="text-gray-800 focus:outline-none">
-                    <!-- Heroicon: Menu -->
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7" fill="none" viewBox="0 0 24 24"
                          stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -88,47 +124,5 @@
         </div>
     </div>
 
-    <!-- Mobile Menu -->
-    <div x-show="mobileMenu" class="md:hidden bg-white border-t shadow-md">
-        <div class="px-4 py-3 space-y-3">
-            <!-- Search -->
-            <div class="relative">
-                <input type="text" placeholder='Search for "cheese slices"'
-                       class="w-full border border-gray-300 rounded-lg py-2 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
-                <!-- Heroicon: Search -->
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 absolute left-3 top-2.5 text-gray-400"
-                     fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1010.5 18.5a7.5 7.5 0 006.15-3.35z"/>
-                </svg>
-            </div>
-
-            <a href="#" class="flex items-center space-x-2 text-gray-800">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                     stroke="currentColor" class="size-4">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                          d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"/>
-                </svg>
-                <span>Select Location</span>
-
-            </a>
-            <a href="#" class="flex items-center space-x-2 text-gray-800">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                     stroke="currentColor" class="size-5">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                          d="M8.25 9V5.25A2.25 2.25 0 0 1 10.5 3h6a2.25 2.25 0 0 1 2.25 2.25v13.5A2.25 2.25 0 0 1 16.5 21h-6a2.25 2.25 0 0 1-2.25-2.25V15M12 9l3 3m0 0-3 3m3-3H2.25"/>
-                </svg>
-                <span>Login</span>
-            </a>
-            <a href="#" class="flex items-center space-x-2 text-gray-800">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                     stroke="currentColor" class="size-5">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                          d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"/>
-                </svg>
-                <span>Cart</span>
-            </a>
-        </div>
-    </div>
+    <x-mart.cart/>
 </header>

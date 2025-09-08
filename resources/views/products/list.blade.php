@@ -771,7 +771,7 @@
                         clearInterval(checkZone);
                         resolve();
                     }
-                }, 100);
+                }, 1000); // Changed from 100ms to 1000ms to reduce server load
             });
         }
         

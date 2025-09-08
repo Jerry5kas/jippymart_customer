@@ -7,6 +7,7 @@ use App\Http\Controllers\FavoritesController;
 
 use App\Http\Controllers\HomeController;
 
+use App\Http\Controllers\MartController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\PlayIntegrityController;
 use App\Http\Controllers\PrivacyController;
@@ -121,7 +122,7 @@ Route::post('reorder-add-to-cart', [App\Http\Controllers\ProductController::clas
 Route::get('products', [App\Http\Controllers\ProductController::class, 'productListAll'])->name('productlist.all');
 
 // Route::get('product/{id}', [App\Http\Controllers\ProductController::class, 'productDetail'])->name('productDetail');
-Route::get('product/{id}', function($id) {
+Route::get('product/{id}', function ($id) {
     return redirect('/')->with('message', 'Product detail page is not available.');
 })->name('productDetail');
 Route::get('product/{id}/restaurant-info', [App\Http\Controllers\ProductController::class, 'getRestaurantInfo'])
@@ -352,14 +353,14 @@ Route::get('/test-real-vendor', function () {
             'latitude' => 15.490739,
             'longitude' => 80.048471
         ],
-            'test_urls' => [
-        'debug_delivery' => "http://localhost:8000/debug-delivery"
-    ],
-    'instructions' => [
-        '1. Product detail page is now hidden',
-        '2. Focus on checkout functionality',
-        '3. Test delivery charge calculation directly'
-    ]
+        'test_urls' => [
+            'debug_delivery' => "http://localhost:8000/debug-delivery"
+        ],
+        'instructions' => [
+            '1. Product detail page is now hidden',
+            '2. Focus on checkout functionality',
+            '3. Test delivery charge calculation directly'
+        ]
     ]);
 });
 
@@ -533,8 +534,12 @@ Route::get('/test-delivery-system-complete', function () {
         'test_scenarios' => $results,
         'summary' => [
             'total_scenarios' => count($testScenarios),
-            'passed_scenarios' => count(array_filter($results, function($r) { return $r['pass']; })),
-            'failed_scenarios' => count(array_filter($results, function($r) { return !$r['pass']; }))
+            'passed_scenarios' => count(array_filter($results, function ($r) {
+                return $r['pass'];
+            })),
+            'failed_scenarios' => count(array_filter($results, function ($r) {
+                return !$r['pass'];
+            }))
         ]
     ]);
 });
@@ -982,7 +987,15 @@ Route::get('/test-complete-delivery-flow', function () {
 // routes/web.php
 
 Route::prefix('mart')->group(function () {
-    Route::get('/', function () {
-        return view('mart.index');
+//    Route::get('/', function () {
+//        return view('mart.index');
+//    });
+
+    Route::get('/', [MartController::class, 'index']);
+
+
+    Route::get('/items-by-category', function () {
+        return view('mart.item-by-category');
     });
+
 });

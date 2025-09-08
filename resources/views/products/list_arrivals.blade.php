@@ -53,8 +53,58 @@
         });
         // Fetch and render banners before initializing Slick
 
-        myInterval=setInterval(callStore,1000);
+        // Replace constant polling with event-driven updates
+        // This prevents the server from hitting process limits
+        initializeEfficientStoreUpdates();
     });
+
+    // Function to initialize efficient store updates instead of constant polling
+    function initializeEfficientStoreUpdates() {
+        let updateTimeout = null;
+        let lastUpdateTime = 0;
+        const MIN_UPDATE_INTERVAL = 30000; // Minimum 30 seconds between updates
+        
+        // Update store data when page becomes visible
+        document.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'visible') {
+                // Debounce rapid visibility changes
+                if (updateTimeout) clearTimeout(updateTimeout);
+                updateTimeout = setTimeout(() => {
+                    const now = Date.now();
+                    if (now - lastUpdateTime > MIN_UPDATE_INTERVAL) {
+                        callStore();
+                        lastUpdateTime = now;
+                    }
+                }, 1000);
+            }
+        });
+
+        // Update when user location changes (if you have location change detection)
+        if (typeof window.addEventListener === 'function') {
+            window.addEventListener('locationChanged', function() {
+                const now = Date.now();
+                if (now - lastUpdateTime > MIN_UPDATE_INTERVAL) {
+                    callStore();
+                    lastUpdateTime = now;
+                }
+            });
+        }
+
+        // Initial call with delay to prevent immediate resource spike
+        setTimeout(() => {
+            callStore();
+            lastUpdateTime = Date.now();
+        }, 2000);
+
+        // Fallback update every 5 minutes (much better than every 1 second)
+        setInterval(() => {
+            const now = Date.now();
+            if (now - lastUpdateTime > MIN_UPDATE_INTERVAL) {
+                callStore();
+                lastUpdateTime = now;
+            }
+        }, 300000); // 5 minutes instead of 1 second
+    }
 
     function myStopTimer() {
         clearInterval(myInterval);

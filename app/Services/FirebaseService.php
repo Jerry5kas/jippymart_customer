@@ -5,21 +5,33 @@ namespace App\Services;
 use Kreait\Firebase\Factory;
 use Kreait\Firebase\Auth as FirebaseAuth;
 use Google\Cloud\Firestore\FirestoreClient;
+use App\Services\CategoryCacheService;
+use App\Services\CircuitBreakerService;
 
 class FirebaseService
 {
     protected $auth;
     protected $firestore;
+    protected $cacheService;
+    protected $circuitBreaker;
 
-    public function __construct()
+    public function __construct(CategoryCacheService $cacheService, CircuitBreakerService $circuitBreaker)
     {
-        $factory = (new Factory)
-            ->withServiceAccount(storage_path('app/firebase/credentials.json'));
-        $this->auth = $factory->createAuth();
-        $this->firestore = new FirestoreClient([
-            'projectId' => env('FIREBASE_PROJECT_ID'),
-            'keyFilePath' => storage_path('app/firebase/credentials.json')
-        ]);
+        $this->cacheService = $cacheService;
+        $this->circuitBreaker = $circuitBreaker;
+        
+        try {
+            $factory = (new Factory)
+                ->withServiceAccount(storage_path('app/firebase/credentials.json'));
+            $this->auth = $factory->createAuth();
+            $this->firestore = new FirestoreClient([
+                'projectId' => env('FIREBASE_PROJECT_ID'),
+                'keyFilePath' => storage_path('app/firebase/credentials.json')
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Firebase initialization failed: ' . $e->getMessage());
+            $this->firestore = null;
+        }
     }
 
     /**
@@ -244,432 +256,6 @@ class FirebaseService
     }
 
     /**
-     * Get layouts categories
-     *
-     * @param array $filters
-     * @return array
-     */
-    public function getMartCategories(array $filters = [])
-    {
-        try {
-            $query = $this->firestore->collection('mart_categories');
-
-            // Apply filters
-            if (isset($filters['publish'])) {
-                $query = $query->where('publish', '==', $filters['publish']);
-            }
-
-            $documents = $query->documents();
-            $categories = [];
-
-            foreach ($documents as $document) {
-                $categoryData = $document->data();
-                $categoryData['id'] = $document->id();
-                $categoryData = $this->ensureCategoryFieldStructure($categoryData);
-                $categories[] = $categoryData;
-            }
-
-            return $categories;
-        } catch (\Exception $e) {
-            \Log::error('Error fetching layouts categories: ' . $e->getMessage());
-            return [];
-        }
-    }
-
-    /**
-     * Get layouts categories with pagination and enhanced filtering
-     *
-     * @param array $filters
-     * @param string|null $search
-     * @param int $page
-     * @param int $limit
-     * @param string $sortBy
-     * @param string $sortOrder
-     * @return array
-     */
-    public function getMartCategoriesWithPagination(array $filters = [], ?string $search = null, int $page = 1, int $limit = 20, string $sortBy = 'title', string $sortOrder = 'asc')
-    {
-        try {
-            $query = $this->firestore->collection('mart_categories');
-
-            // Apply filters
-            if (isset($filters['publish'])) {
-                $query = $query->where('publish', '==', $filters['publish']);
-            }
-            if (isset($filters['show_in_homepage'])) {
-                $query = $query->where('show_in_homepage', '==', $filters['show_in_homepage']);
-            }
-            if (isset($filters['has_subcategories'])) {
-                $query = $query->where('has_subcategories', '==', $filters['has_subcategories']);
-            }
-
-            // Apply search if provided
-            if ($search) {
-                $query = $query->where('title', '>=', $search)
-                              ->where('title', '<=', $search . '\uf8ff');
-            }
-
-            // Apply sorting
-            if ($sortBy === 'title') {
-                $query = $query->orderBy('title', $sortOrder);
-            } elseif ($sortBy === 'category_order') {
-                $query = $query->orderBy('category_order', $sortOrder);
-            } elseif ($sortBy === 'section_order') {
-                $query = $query->orderBy('section_order', $sortOrder);
-            }
-
-            // Apply pagination
-            $offset = ($page - 1) * $limit;
-            $query = $query->limit($limit)->offset($offset);
-
-            $documents = $query->documents();
-            $categories = [];
-
-            foreach ($documents as $document) {
-                $categoryData = $document->data();
-                $categoryData['id'] = $document->id();
-                $categoryData = $this->ensureCategoryFieldStructure($categoryData);
-                $categories[] = $categoryData;
-            }
-
-            // For simplicity, we'll assume there are more results if we got the full limit
-            $hasMore = count($categories) === $limit;
-
-            return [
-                'data' => $categories,
-                'total' => count($categories) + ($page - 1) * $limit,
-                'has_more' => $hasMore
-            ];
-        } catch (\Exception $e) {
-            \Log::error('Error fetching layouts categories with pagination: ' . $e->getMessage());
-            return [
-                'data' => [],
-                'total' => 0,
-                'has_more' => false
-            ];
-        }
-    }
-
-    /**
-     * Get specific layouts category by ID
-     *
-     * @param string $categoryId
-     * @return array|null
-     */
-    public function getMartCategory(string $categoryId)
-    {
-        try {
-            $document = $this->firestore->collection('mart_categories')->document($categoryId)->snapshot();
-
-            if ($document->exists()) {
-                $categoryData = $document->data();
-                $categoryData['id'] = $document->id();
-                $categoryData = $this->ensureCategoryFieldStructure($categoryData);
-                return $categoryData;
-            }
-
-            return null;
-        } catch (\Exception $e) {
-            \Log::error('Error fetching layouts category: ' . $e->getMessage());
-            return null;
-        }
-    }
-
-    /**
-     * Create a new layouts category
-     *
-     * @param array $categoryData
-     * @return string|false
-     */
-    public function createMartCategory(array $categoryData)
-    {
-        try {
-            $document = $this->firestore->collection('mart_categories')->add($categoryData);
-            return $document->id();
-        } catch (\Exception $e) {
-            \Log::error('Error creating layouts category: ' . $e->getMessage());
-            return false;
-        }
-    }
-
-    /**
-     * Update an existing layouts category
-     *
-     * @param string $categoryId
-     * @param array $updateData
-     * @return bool
-     */
-    public function updateMartCategory(string $categoryId, array $updateData)
-    {
-        try {
-            $this->firestore->collection('mart_categories')->document($categoryId)->set($updateData, ['merge' => true]);
-            return true;
-        } catch (\Exception $e) {
-            \Log::error('Error updating layouts category: ' . $e->getMessage());
-            return false;
-        }
-    }
-
-    /**
-     * Delete a layouts category
-     *
-     * @param string $categoryId
-     * @return bool
-     */
-    public function deleteMartCategory(string $categoryId)
-    {
-        try {
-            $this->firestore->collection('mart_categories')->document($categoryId)->delete();
-            return true;
-        } catch (\Exception $e) {
-            \Log::error('Error deleting layouts category: ' . $e->getMessage());
-            return false;
-        }
-    }
-
-    /**
-     * Search layouts categories
-     *
-     * @param string $query
-     * @param array $filters
-     * @param int $page
-     * @param int $limit
-     * @return array
-     */
-    public function searchMartCategories(string $query, array $filters = [], int $page = 1, int $limit = 20)
-    {
-        try {
-            $searchQuery = $this->firestore->collection('mart_categories');
-
-            // Apply filters first
-            if (isset($filters['publish'])) {
-                $searchQuery = $searchQuery->where('publish', '==', $filters['publish']);
-            }
-
-            // Apply search
-            $searchQuery = $searchQuery->where('title', '>=', $query)
-                                     ->where('title', '<=', $query . '\uf8ff');
-
-            // Apply pagination
-            $offset = ($page - 1) * $limit;
-            $searchQuery = $searchQuery->limit($limit)->offset($offset);
-
-            $documents = $searchQuery->documents();
-            $categories = [];
-
-            foreach ($documents as $document) {
-                $categoryData = $document->data();
-                $categoryData['id'] = $document->id();
-                $categoryData = $this->ensureCategoryFieldStructure($categoryData);
-                $categories[] = $categoryData;
-            }
-
-            $hasMore = count($categories) === $limit;
-
-            return [
-                'data' => $categories,
-                'total' => count($categories) + ($page - 1) * $limit,
-                'has_more' => $hasMore
-            ];
-        } catch (\Exception $e) {
-            \Log::error('Error searching layouts categories: ' . $e->getMessage());
-            return [
-                'data' => [],
-                'total' => 0,
-                'has_more' => false
-            ];
-        }
-    }
-
-    /**
-     * Bulk update layouts categories
-     *
-     * @param array $categoryIds
-     * @param array $updateData
-     * @return array
-     */
-    public function bulkUpdateMartCategories(array $categoryIds, array $updateData)
-    {
-        $results = [
-            'updated' => 0,
-            'failed' => 0,
-            'failed_ids' => []
-        ];
-
-        try {
-            $batch = $this->firestore->batch();
-
-            foreach ($categoryIds as $categoryId) {
-                try {
-                    $ref = $this->firestore->collection('mart_categories')->document($categoryId);
-                    $batch->update($ref, $updateData);
-                    $results['updated']++;
-                } catch (\Exception $e) {
-                    $results['failed']++;
-                    $results['failed_ids'][] = $categoryId;
-                    \Log::error("Error updating category {$categoryId}: " . $e->getMessage());
-                }
-            }
-
-            if ($results['updated'] > 0) {
-                $batch->commit();
-            }
-
-            return $results;
-        } catch (\Exception $e) {
-            \Log::error('Error in bulk update layouts categories: ' . $e->getMessage());
-            $results['failed'] = count($categoryIds);
-            $results['failed_ids'] = $categoryIds;
-            return $results;
-        }
-    }
-
-    /**
-     * Get layouts items with pagination and filters
-     *
-     * @param array $filters
-     * @param string|null $search
-     * @param int $page
-     * @param int $limit
-     * @return array
-     */
-    public function getMartItems(array $filters = [], ?string $search = null, int $page = 1, int $limit = 20)
-    {
-        try {
-            $query = $this->firestore->collection('mart_items');
-
-            // Apply filters
-            if (isset($filters['vendor_id'])) {
-                $query = $query->where('vendorID', '==', $filters['vendor_id']);
-            }
-            if (isset($filters['category_id'])) {
-                $query = $query->where('categoryID', '==', $filters['category_id']);
-            }
-            if (isset($filters['is_available'])) {
-                $query = $query->where('isAvailable', '==', $filters['is_available']);
-            }
-            if (isset($filters['publish'])) {
-                $query = $query->where('publish', '==', $filters['publish']);
-            }
-
-            // Apply search if provided
-            if ($search) {
-                $query = $query->where('name', '>=', $search)
-                              ->where('name', '<=', $search . '\uf8ff');
-            }
-
-            // Apply pagination
-            $offset = ($page - 1) * $limit;
-            $query = $query->limit($limit)->offset($offset);
-
-            $documents = $query->documents();
-            $items = [];
-
-            foreach ($documents as $document) {
-                $itemData = $document->data();
-                $itemData['id'] = $document->id();
-                $items[] = $itemData;
-            }
-
-            // For simplicity, we'll assume there are more results if we got the full limit
-            $hasMore = count($items) === $limit;
-
-            return [
-                'data' => $items,
-                'total' => count($items) + ($page - 1) * $limit,
-                'has_more' => $hasMore
-            ];
-        } catch (\Exception $e) {
-            \Log::error('Error fetching layouts items: ' . $e->getMessage());
-            return [
-                'data' => [],
-                'total' => 0,
-                'has_more' => false
-            ];
-        }
-    }
-
-    /**
-     * Get specific layouts item
-     *
-     * @param string $itemId
-     * @return array|null
-     */
-    public function getMartItem(string $itemId)
-    {
-        try {
-            $document = $this->firestore->collection('mart_items')->document($itemId)->snapshot();
-
-            if ($document->exists()) {
-                $itemData = $document->data();
-                $itemData['id'] = $document->id();
-                return $itemData;
-            }
-
-            return null;
-        } catch (\Exception $e) {
-            \Log::error('Error fetching layouts item: ' . $e->getMessage());
-            return null;
-        }
-    }
-
-    /**
-     * Search layouts items
-     *
-     * @param string $query
-     * @param array $filters
-     * @param int $page
-     * @param int $limit
-     * @return array
-     */
-    public function searchMartItems(string $query, array $filters = [], int $page = 1, int $limit = 20)
-    {
-        try {
-            $searchQuery = $this->firestore->collection('mart_items');
-
-            // Apply filters first
-            if (isset($filters['vendor_id'])) {
-                $searchQuery = $searchQuery->where('vendorID', '==', $filters['vendor_id']);
-            }
-            if (isset($filters['category_id'])) {
-                $searchQuery = $searchQuery->where('categoryID', '==', $filters['category_id']);
-            }
-
-            // Apply search
-            $searchQuery = $searchQuery->where('name', '>=', $query)
-                                     ->where('name', '<=', $query . '\uf8ff');
-
-            // Apply pagination
-            $offset = ($page - 1) * $limit;
-            $searchQuery = $searchQuery->limit($limit)->offset($offset);
-
-            $documents = $searchQuery->documents();
-            $items = [];
-
-            foreach ($documents as $document) {
-                $itemData = $document->data();
-                $itemData['id'] = $document->id();
-                $items[] = $itemData;
-            }
-
-            $hasMore = count($items) === $limit;
-
-            return [
-                'data' => $items,
-                'total' => count($items) + ($page - 1) * $limit,
-                'has_more' => $hasMore
-            ];
-        } catch (\Exception $e) {
-            \Log::error('Error searching layouts items: ' . $e->getMessage());
-            return [
-                'data' => [],
-                'total' => 0,
-                'has_more' => false
-            ];
-        }
-    }
-
-    /**
      * Get vendor items by category
      *
      * @param string $vendorId
@@ -681,7 +267,7 @@ class FirebaseService
     public function getVendorItemsByCategory(string $vendorId, string $categoryId, int $page = 1, int $limit = 20)
     {
         try {
-            $query = $this->firestore->collection('mart_items')
+            $query = $this->firestore->collection('items')
                 ->where('vendorID', '==', $vendorId)
                 ->where('categoryID', '==', $categoryId)
                 ->where('publish', '==', true)
@@ -700,6 +286,7 @@ class FirebaseService
                 $items[] = $itemData;
             }
 
+            // For simplicity, we'll assume there are more results if we got the full limit
             $hasMore = count($items) === $limit;
 
             return [
@@ -714,6 +301,101 @@ class FirebaseService
                 'total' => 0,
                 'has_more' => false
             ];
+        }
+    }
+
+    /**
+     * Get vendor items by subcategory
+     *
+     * @param string $vendorId
+     * @param string $subcategoryId
+     * @param int $page
+     * @param int $limit
+     * @return array
+     */
+    public function getVendorItemsBySubcategory(string $vendorId, string $subcategoryId, int $page = 1, int $limit = 20)
+    {
+        try {
+            $query = $this->firestore->collection('items')
+                ->where('vendorID', '==', $vendorId)
+                ->where('subcategoryID', '==', $subcategoryId)
+                ->where('publish', '==', true)
+                ->where('isAvailable', '==', true);
+
+            // Apply pagination
+            $offset = ($page - 1) * $limit;
+            $query = $query->limit($limit)->offset($offset);
+
+            $documents = $query->documents();
+            $items = [];
+
+            foreach ($documents as $document) {
+                $itemData = $document->data();
+                $itemData['id'] = $document->id();
+                $items[] = $itemData;
+            }
+
+            // For simplicity, we'll assume there are more results if we got the full limit
+            $hasMore = count($items) === $limit;
+
+            return [
+                'data' => $items,
+                'total' => count($items) + ($page - 1) * $limit,
+                'has_more' => $hasMore
+            ];
+        } catch (\Exception $e) {
+            \Log::error('Error fetching vendor items by subcategory: ' . $e->getMessage());
+            return [
+                'data' => [],
+                'total' => 0,
+                'has_more' => false
+            ];
+        }
+    }
+
+    /**
+     * Get vendor working hours
+     *
+     * @param string $vendorId
+     * @return array|null
+     */
+    public function getVendorWorkingHours(string $vendorId)
+    {
+        try {
+            $document = $this->firestore->collection('vendors')->document($vendorId)->snapshot();
+
+            if ($document->exists()) {
+                $vendorData = $document->data();
+                return $vendorData['workingHours'] ?? null;
+            }
+
+            return null;
+        } catch (\Exception $e) {
+            \Log::error('Error fetching vendor working hours: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Get vendor special discounts
+     *
+     * @param string $vendorId
+     * @return array|null
+     */
+    public function getVendorSpecialDiscounts(string $vendorId)
+    {
+        try {
+            $document = $this->firestore->collection('vendors')->document($vendorId)->snapshot();
+
+            if ($document->exists()) {
+                $vendorData = $document->data();
+                return $vendorData['specialDiscounts'] ?? null;
+            }
+
+            return null;
+        } catch (\Exception $e) {
+            \Log::error('Error fetching vendor special discounts: ' . $e->getMessage());
+            return null;
         }
     }
 
@@ -743,887 +425,757 @@ class FirebaseService
     }
 
     /**
-     * Sanitize data to remove Inf and NaN values
+     * Search categories with optimized query, caching, and fallbacks
      *
-     * @param mixed $data
-     * @return mixed
+     * @param string $searchTerm
+     * @param int $limit
+     * @param int $offset
+     * @return array
      */
-    private function sanitizeData($data)
+    public function searchCategories(string $searchTerm = '', int $limit = 20, int $offset = 0): array
     {
+        $startTime = microtime(true);
+        $cacheKey = 'search_' . md5($searchTerm . '_' . $limit . '_' . $offset);
+        
         try {
-            if (is_array($data)) {
-                foreach ($data as $key => $value) {
-                    $data[$key] = $this->sanitizeData($value);
-                }
-                return $data;
-            } elseif (is_float($data)) {
-                // Check for infinite or NaN values
-                if (is_infinite($data) || is_nan($data)) {
-                    \Log::warning('Found infinite or NaN value in vendor data: ' . $data);
-                    return null;
-                }
-                return $data;
-            } elseif (is_numeric($data)) {
-                // Convert to float and check
-                $floatValue = (float) $data;
-                if (is_infinite($floatValue) || is_nan($floatValue)) {
-                    \Log::warning('Found infinite or NaN value in vendor data: ' . $data);
-                    return null;
-                }
-                return $data;
-            } elseif (is_object($data)) {
-                // Handle Firestore objects
-                if (method_exists($data, 'toArray')) {
-                    return $this->sanitizeData($data->toArray());
-                }
-                // Convert to array if possible
-                return $this->sanitizeData((array) $data);
+            // Check circuit breaker
+            if ($this->circuitBreaker->isOpen('firestore')) {
+                \Log::warning('Circuit breaker is open for Firestore, using fallback');
+                return $this->getFallbackSearchResult($searchTerm, $limit, $offset);
             }
-
-            return $data;
+            
+            // Check if Firestore is available
+            if (!$this->firestore) {
+                \Log::error('Firestore not available, using fallback');
+                return $this->getFallbackSearchResult($searchTerm, $limit, $offset);
+            }
+            
+            // Try to get from cache first
+            $result = $this->cacheService->get($cacheKey, function() use ($searchTerm, $limit, $offset) {
+                return $this->performFirestoreSearch($searchTerm, $limit, $offset);
+            });
+            
+            // Record success
+            $this->circuitBreaker->recordSuccess('firestore');
+            
+            // Store as stale data for emergency fallback
+            $this->cacheService->storeStale($cacheKey, $result);
+            
+            $responseTime = round((microtime(true) - $startTime) * 1000, 2);
+            \Log::info("Category search completed in {$responseTime}ms", [
+                'search_term' => $searchTerm,
+                'results_count' => count($result['data']),
+                'cache_hit' => true
+            ]);
+            
+            return $result;
+            
         } catch (\Exception $e) {
-            \Log::error('Error sanitizing data: ' . $e->getMessage());
-            return null;
+            // Record failure
+            $this->circuitBreaker->recordFailure('firestore');
+            
+            \Log::error('Error searching categories: ' . $e->getMessage(), [
+                'search_term' => $searchTerm,
+                'limit' => $limit,
+                'offset' => $offset
+            ]);
+            
+            return $this->getFallbackSearchResult($searchTerm, $limit, $offset);
         }
     }
-
+    
     /**
-     * Ensure consistent field structure for layouts categories with default values
+     * Perform the actual Firestore search
+     *
+     * @param string $searchTerm
+     * @param int $limit
+     * @param int $offset
+     * @return array
+     */
+    private function performFirestoreSearch(string $searchTerm, int $limit, int $offset): array
+    {
+        $query = $this->firestore->collection('mart_categories')
+            ->where('publish', '==', true);
+
+        if (!empty($searchTerm)) {
+            $searchTerm = strtolower(trim($searchTerm));
+            
+            // Fetch all published categories and filter in PHP
+            $documents = $query->documents();
+            $filteredCategories = [];
+            
+            foreach ($documents as $document) {
+                $categoryData = $document->data();
+                $categoryData['id'] = $document->id();
+                
+                // Check if search term matches title or description (case-insensitive)
+                $title = strtolower($categoryData['title'] ?? '');
+                $description = strtolower($categoryData['description'] ?? '');
+                
+                if (strpos($title, $searchTerm) !== false || strpos($description, $searchTerm) !== false) {
+                    $filteredCategories[] = $this->formatCategoryData($categoryData);
+                }
+            }
+            
+            // Sort and paginate
+            usort($filteredCategories, [$this, 'sortCategories']);
+            $totalCount = count($filteredCategories);
+            $paginatedResults = array_slice($filteredCategories, $offset, $limit);
+            
+            return [
+                'data' => $paginatedResults,
+                'total' => $totalCount,
+                'has_more' => ($offset + $limit) < $totalCount,
+                'current_page' => floor($offset / $limit) + 1,
+                'per_page' => $limit
+            ];
+        } else {
+            // No search term - return all published categories
+            $documents = $query->documents();
+            $allCategories = [];
+            
+            foreach ($documents as $document) {
+                $categoryData = $document->data();
+                $categoryData['id'] = $document->id();
+                $allCategories[] = $categoryData;
+            }
+            
+            // Sort by section_order and category_order
+            usort($allCategories, [$this, 'sortCategories']);
+            
+            // Apply pagination
+            $totalCount = count($allCategories);
+            $paginatedResults = array_slice($allCategories, $offset, $limit);
+            
+            $categories = [];
+            foreach ($paginatedResults as $categoryData) {
+                $categories[] = $this->formatCategoryData($categoryData);
+            }
+            
+            return [
+                'data' => $categories,
+                'total' => $totalCount,
+                'has_more' => ($offset + $limit) < $totalCount,
+                'current_page' => floor($offset / $limit) + 1,
+                'per_page' => $limit
+            ];
+        }
+    }
+    
+    /**
+     * Format category data for response
      *
      * @param array $categoryData
      * @return array
      */
-    private function ensureCategoryFieldStructure(array $categoryData): array
+    private function formatCategoryData(array $categoryData): array
     {
-        return array_merge([
-            'title' => '',
-            'description' => '',
-            'photo' => '',
-            'publish' => true,
-            'show_in_homepage' => false,
-            'category_order' => 0,
-            'section' => '',
-            'section_order' => 0,
-            'review_attributes' => []
-        ], $categoryData);
+        return [
+            'id' => $categoryData['id'],
+            'title' => $categoryData['title'] ?? '',
+            'description' => $categoryData['description'] ?? '',
+            'photo' => $categoryData['photo'] ?? '',
+            'section' => $categoryData['section'] ?? '',
+            'category_order' => $categoryData['category_order'] ?? 0,
+            'section_order' => $categoryData['section_order'] ?? 0,
+            'show_in_homepage' => $categoryData['show_in_homepage'] ?? false
+        ];
+    }
+    
+    /**
+     * Sort categories by section_order and category_order
+     *
+     * @param array $a
+     * @param array $b
+     * @return int
+     */
+    private function sortCategories(array $a, array $b): int
+    {
+        $sectionOrderA = $a['section_order'] ?? 0;
+        $sectionOrderB = $b['section_order'] ?? 0;
+        $categoryOrderA = $a['category_order'] ?? 0;
+        $categoryOrderB = $b['category_order'] ?? 0;
+        
+        if ($sectionOrderA == $sectionOrderB) {
+            return $categoryOrderA <=> $categoryOrderB;
+        }
+        return $sectionOrderA <=> $sectionOrderB;
+    }
+    
+    /**
+     * Get fallback search result when Firestore fails
+     *
+     * @param string $searchTerm
+     * @param int $limit
+     * @param int $offset
+     * @return array
+     */
+    private function getFallbackSearchResult(string $searchTerm, int $limit, int $offset): array
+    {
+        $fallbackData = $this->cacheService->get('search_all', function() {
+            return $this->getStaticFallbackData('search_all');
+        }, 3600); // Cache fallback for 1 hour
+        
+        if (!empty($searchTerm)) {
+            $searchTerm = strtolower(trim($searchTerm));
+            $filtered = array_filter($fallbackData['data'], function($category) use ($searchTerm) {
+                $title = strtolower($category['title'] ?? '');
+                $description = strtolower($category['description'] ?? '');
+                return strpos($title, $searchTerm) !== false || strpos($description, $searchTerm) !== false;
+            });
+            
+            $totalCount = count($filtered);
+            $paginatedResults = array_slice($filtered, $offset, $limit);
+            
+            return [
+                'data' => $paginatedResults,
+                'total' => $totalCount,
+                'has_more' => ($offset + $limit) < $totalCount,
+                'current_page' => floor($offset / $limit) + 1,
+                'per_page' => $limit,
+                'fallback' => true
+            ];
+        }
+        
+        $totalCount = count($fallbackData['data']);
+        $paginatedResults = array_slice($fallbackData['data'], $offset, $limit);
+        
+        return [
+            'data' => $paginatedResults,
+            'total' => $totalCount,
+            'has_more' => ($offset + $limit) < $totalCount,
+            'current_page' => floor($offset / $limit) + 1,
+            'per_page' => $limit,
+            'fallback' => true
+        ];
+    }
+    
+    /**
+     * Get static fallback data
+     *
+     * @param string $key
+     * @return array
+     */
+    private function getStaticFallbackData(string $key): array
+    {
+        $staticData = [
+            'search_all' => [
+                'data' => [
+                    [
+                        'id' => 'fallback_1',
+                        'title' => 'Groceries',
+                        'description' => 'Fresh groceries and daily essentials',
+                        'photo' => 'https://via.placeholder.com/150x150?text=Groceries',
+                        'section' => 'Grocery & Kitchen',
+                        'category_order' => 1,
+                        'section_order' => 1,
+                        'show_in_homepage' => true
+                    ],
+                    [
+                        'id' => 'fallback_2',
+                        'title' => 'Medicine',
+                        'description' => 'Health and wellness products',
+                        'photo' => 'https://via.placeholder.com/150x150?text=Medicine',
+                        'section' => 'Pharmacy & Health',
+                        'category_order' => 2,
+                        'section_order' => 2,
+                        'show_in_homepage' => true
+                    ],
+                    [
+                        'id' => 'fallback_3',
+                        'title' => 'Pet Care',
+                        'description' => 'Pet supplies and care products',
+                        'photo' => 'https://via.placeholder.com/150x150?text=Pet+Care',
+                        'section' => 'Pet Care',
+                        'category_order' => 3,
+                        'section_order' => 3,
+                        'show_in_homepage' => true
+                    ]
+                ],
+                'total' => 3,
+                'has_more' => false,
+                'current_page' => 1,
+                'per_page' => 20
+            ]
+        ];
+        
+        return $staticData[$key] ?? [];
     }
 
     /**
-     * Get all layouts vendors with filters and pagination
+     * Get all published categories (lightweight version for homepage)
      *
-     * @param array $filters
-     * @param string|null $search
-     * @param int $page
      * @param int $limit
      * @return array
      */
-    public function getAllMartVendors(array $filters = [], ?string $search = null, int $page = 1, int $limit = 20)
+    public function getPublishedCategories(int $limit = 50): array
     {
         try {
-            $query = $this->firestore->collection('vendors');
-
-            // Always filter by vType = 'layouts'
-            $query = $query->where('vType', '==', 'layouts');
-
-            // Apply additional filters
-            if (isset($filters['isOpen'])) {
-                $query = $query->where('isOpen', '==', $filters['isOpen']);
-            }
-            if (isset($filters['enabledDelivery'])) {
-                $query = $query->where('enabledDelivery', '==', $filters['enabledDelivery']);
-            }
-            if (isset($filters['categoryID'])) {
-                $query = $query->where('categoryID', 'array-contains', $filters['categoryID']);
-            }
-
-            // Apply search if provided
-            if ($search) {
-                $query = $query->where('title', '>=', $search)
-                              ->where('title', '<=', $search . '\uf8ff');
-            }
-
-            // Apply pagination
-            $offset = ($page - 1) * $limit;
-            $query = $query->limit($limit)->offset($offset);
+            // Fetch all published categories first, then filter and sort in PHP
+            $query = $this->firestore->collection('mart_categories')
+                ->where('publish', '==', true);
 
             $documents = $query->documents();
-            $vendors = [];
+            $allCategories = [];
 
             foreach ($documents as $document) {
-                $vendorData = $document->data();
-                $vendorData['id'] = $document->id();
-
-                // Sanitize the data to remove Inf and NaN values
-                $vendorData = $this->sanitizeData($vendorData);
-
-                $vendors[] = $vendorData;
+                $categoryData = $document->data();
+                $categoryData['id'] = $document->id();
+                
+                // Filter for homepage categories
+                if (isset($categoryData['show_in_homepage']) && $categoryData['show_in_homepage'] === true) {
+                    $allCategories[] = $categoryData;
+                }
             }
 
-            // For simplicity, we'll assume there are more results if we got the full limit
-            $hasMore = count($vendors) === $limit;
+            // Sort by section_order and category_order in PHP
+            usort($allCategories, function($a, $b) {
+                $sectionOrderA = $a['section_order'] ?? 0;
+                $sectionOrderB = $b['section_order'] ?? 0;
+                $categoryOrderA = $a['category_order'] ?? 0;
+                $categoryOrderB = $b['category_order'] ?? 0;
+                
+                if ($sectionOrderA == $sectionOrderB) {
+                    return $categoryOrderA <=> $categoryOrderB;
+                }
+                return $sectionOrderA <=> $sectionOrderB;
+            });
 
-            $result = [
-                'data' => $vendors,
-                'total' => count($vendors) + ($page - 1) * $limit,
-                'has_more' => $hasMore
-            ];
+            // Apply limit
+            $limitedCategories = array_slice($allCategories, 0, $limit);
+            $categories = [];
 
-            // Validate that the result can be JSON encoded
-            $jsonTest = json_encode($result);
-            if ($jsonTest === false) {
-                \Log::error('JSON encoding failed for vendor data: ' . json_last_error_msg());
-                // Return a simplified version if JSON encoding fails
-                return [
-                    'data' => [],
-                    'total' => 0,
-                    'has_more' => false
+            foreach ($limitedCategories as $categoryData) {
+                // Return only essential fields for lightweight response
+                $categories[] = [
+                    'id' => $categoryData['id'],
+                    'title' => $categoryData['title'] ?? '',
+                    'description' => $categoryData['description'] ?? '',
+                    'photo' => $categoryData['photo'] ?? '',
+                    'section' => $categoryData['section'] ?? '',
+                    'category_order' => $categoryData['category_order'] ?? 0,
+                    'section_order' => $categoryData['section_order'] ?? 0
                 ];
             }
 
+            return $categories;
+        } catch (\Exception $e) {
+            \Log::error('Error fetching published categories: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Search mart items with multiple filters
+     */
+    public function searchMartItems(array $filters = [], int $limit = 20, int $offset = 0): array
+    {
+        $startTime = microtime(true);
+        
+        // Check circuit breaker
+        if ($this->circuitBreaker->isOpen('firestore')) {
+            \Log::warning('Firestore circuit breaker is open, using fallback for mart_items search');
+            return $this->getFallbackMartItemsResult($filters, $limit, $offset);
+        }
+
+        $cacheKey = 'mart_items_search_' . md5(serialize($filters) . $limit . $offset);
+        
+        try {
+            $result = $this->cacheService->get($cacheKey, function() use ($filters, $limit, $offset) {
+                return $this->performFirestoreMartItemsSearch($filters, $limit, $offset);
+            }, 300); // 5 minutes cache
+
+            // Record success
+            $this->circuitBreaker->recordSuccess('firestore');
+            
+            // Store stale data for emergency fallback
+            $this->cacheService->storeStale($cacheKey, $result, 3600);
+            
+            $responseTime = round((microtime(true) - $startTime) * 1000, 2);
+            \Log::info("Mart items search completed in {$responseTime}ms");
+            
             return $result;
+            
         } catch (\Exception $e) {
-            \Log::error('Error fetching all layouts vendors: ' . $e->getMessage());
-            return [
-                'data' => [],
-                'total' => 0,
-                'has_more' => false
-            ];
-        }
-    }
-
-    // ==================== MART SUBCATEGORIES METHODS ====================
-
-    /**
-     * Get layouts subcategories with pagination and enhanced filtering
-     *
-     * @param array $filters
-     * @param string|null $search
-     * @param int $page
-     * @param int $limit
-     * @param string $sortBy
-     * @param string $sortOrder
-     * @return array
-     */
-    public function getMartSubCategoriesWithPagination(array $filters = [], ?string $search = null, int $page = 1, int $limit = 20, string $sortBy = 'title', string $sortOrder = 'asc')
-    {
-        try {
-            $query = $this->firestore->collection('mart_subcategories');
-
-            // Apply filters
-            if (isset($filters['publish'])) {
-                $query = $query->where('publish', '==', $filters['publish']);
+            \Log::error('Mart items search failed: ' . $e->getMessage());
+            
+            // Record failure
+            $this->circuitBreaker->recordFailure('firestore');
+            
+            // Try to get stale data
+            $staleData = $this->cacheService->get($cacheKey . '_stale');
+            if ($staleData) {
+                \Log::info('Using stale mart items data as fallback');
+                return $staleData;
             }
-            if (isset($filters['show_in_homepage'])) {
-                $query = $query->where('show_in_homepage', '==', $filters['show_in_homepage']);
-            }
-            if (isset($filters['parent_category_id'])) {
-                $query = $query->where('parent_category_id', '==', $filters['parent_category_id']);
-            }
-            if (isset($filters['mart_id'])) {
-                $query = $query->where('mart_id', '==', $filters['mart_id']);
-            }
-
-            // Apply search if provided
-            if ($search) {
-                $query = $query->where('title', '>=', $search)
-                              ->where('title', '<=', $search . '\uf8ff');
-            }
-
-            // Apply sorting
-            if ($sortBy === 'title') {
-                $query = $query->orderBy('title', $sortOrder);
-            } elseif ($sortBy === 'subcategory_order') {
-                $query = $query->orderBy('subcategory_order', $sortOrder);
-            } elseif ($sortBy === 'category_order') {
-                $query = $query->orderBy('category_order', $sortOrder);
-            } elseif ($sortBy === 'section_order') {
-                $query = $query->orderBy('section_order', $sortOrder);
-            }
-
-            // Apply pagination
-            $offset = ($page - 1) * $limit;
-            $query = $query->limit($limit)->offset($offset);
-
-            $documents = $query->documents();
-            $subcategories = [];
-
-            foreach ($documents as $document) {
-                $subcategoryData = $document->data();
-                $subcategoryData['id'] = $document->id();
-                $subcategoryData = $this->ensureSubcategoryFieldStructure($subcategoryData);
-                $subcategories[] = $subcategoryData;
-            }
-
-            // For simplicity, we'll assume there are more results if we got the full limit
-            $hasMore = count($subcategories) === $limit;
-
-            return [
-                'data' => $subcategories,
-                'total' => count($subcategories) + ($page - 1) * $limit,
-                'has_more' => $hasMore
-            ];
-        } catch (\Exception $e) {
-            \Log::error('Error fetching layouts subcategories with pagination: ' . $e->getMessage());
-            return [
-                'data' => [],
-                'total' => 0,
-                'has_more' => false
-            ];
+            
+            // Final fallback to static data
+            return $this->getFallbackMartItemsResult($filters, $limit, $offset);
         }
     }
 
     /**
-     * Get specific layouts subcategory by ID
-     *
-     * @param string $subcategoryId
-     * @return array|null
+     * Perform the actual Firestore search for mart items
      */
-    public function getMartSubCategory(string $subcategoryId)
+    private function performFirestoreMartItemsSearch(array $filters, int $limit, int $offset): array
     {
-        try {
-            $document = $this->firestore->collection('mart_subcategories')->document($subcategoryId)->snapshot();
+        if (!$this->firestore) {
+            throw new \Exception('Firestore not initialized');
+        }
 
+        $collection = $this->firestore->collection('mart_items');
+        $query = $collection->where('publish', '==', true);
+
+        // Execute query to get all published items
+        $documents = $query->documents();
+        $items = [];
+
+        foreach ($documents as $document) {
             if ($document->exists()) {
-                $subcategoryData = $document->data();
-                $subcategoryData['id'] = $document->id();
-                $subcategoryData = $this->ensureSubcategoryFieldStructure($subcategoryData);
-                return $subcategoryData;
+                $data = $document->data();
+                $data['id'] = $document->id();
+                
+                // Apply filters
+                if ($this->matchesFilters($data, $filters)) {
+                    $items[] = $this->formatMartItemData($data);
+                }
             }
-
-            return null;
-        } catch (\Exception $e) {
-            \Log::error('Error fetching layouts subcategory: ' . $e->getMessage());
-            return null;
         }
-    }
 
-    /**
-     * Create a new layouts subcategory
-     *
-     * @param array $subcategoryData
-     * @return string|false
-     */
-    public function createMartSubCategory(array $subcategoryData)
-    {
-        try {
-            $document = $this->firestore->collection('mart_subcategories')->add($subcategoryData);
-            return $document->id();
-        } catch (\Exception $e) {
-            \Log::error('Error creating layouts subcategory: ' . $e->getMessage());
-            return false;
-        }
-    }
+        // Sort items by relevance/price
+        $items = $this->sortMartItems($items, $filters);
 
-    /**
-     * Update an existing layouts subcategory
-     *
-     * @param string $subcategoryId
-     * @param array $updateData
-     * @return bool
-     */
-    public function updateMartSubCategory(string $subcategoryId, array $updateData)
-    {
-        try {
-            $this->firestore->collection('mart_subcategories')->document($subcategoryId)->set($updateData, ['merge' => true]);
-            return true;
-        } catch (\Exception $e) {
-            \Log::error('Error updating layouts subcategory: ' . $e->getMessage());
-            return false;
-        }
-    }
+        // Apply pagination
+        $total = count($items);
+        $items = array_slice($items, $offset, $limit);
+        $hasMore = ($offset + $limit) < $total;
 
-    /**
-     * Delete a layouts subcategory
-     *
-     * @param string $subcategoryId
-     * @return bool
-     */
-    public function deleteMartSubCategory(string $subcategoryId)
-    {
-        try {
-            $this->firestore->collection('mart_subcategories')->document($subcategoryId)->delete();
-            return true;
-        } catch (\Exception $e) {
-            \Log::error('Error deleting layouts subcategory: ' . $e->getMessage());
-            return false;
-        }
-    }
-
-    /**
-     * Search layouts subcategories
-     *
-     * @param string $query
-     * @param array $filters
-     * @param int $page
-     * @param int $limit
-     * @return array
-     */
-    public function searchMartSubCategories(string $query, array $filters = [], int $page = 1, int $limit = 20)
-    {
-        try {
-            $searchQuery = $this->firestore->collection('mart_subcategories');
-
-            // Apply filters first
-            if (isset($filters['publish'])) {
-                $searchQuery = $searchQuery->where('publish', '==', $filters['publish']);
-            }
-            if (isset($filters['parent_category_id'])) {
-                $searchQuery = $searchQuery->where('parent_category_id', '==', $filters['parent_category_id']);
-            }
-
-            // Apply search
-            $searchQuery = $searchQuery->where('title', '>=', $query)
-                                     ->where('title', '<=', $query . '\uf8ff');
-
-            // Apply pagination
-            $offset = ($page - 1) * $limit;
-            $searchQuery = $searchQuery->limit($limit)->offset($offset);
-
-            $documents = $searchQuery->documents();
-            $subcategories = [];
-
-            foreach ($documents as $document) {
-                $subcategoryData = $document->data();
-                $subcategoryData['id'] = $document->id();
-                $subcategoryData = $this->ensureSubcategoryFieldStructure($subcategoryData);
-                $subcategories[] = $subcategoryData;
-            }
-
-            $hasMore = count($subcategories) === $limit;
-
-            return [
-                'data' => $subcategories,
-                'total' => count($subcategories) + ($page - 1) * $limit,
-                'has_more' => $hasMore
-            ];
-        } catch (\Exception $e) {
-            \Log::error('Error searching layouts subcategories: ' . $e->getMessage());
-            return [
-                'data' => [],
-                'total' => 0,
-                'has_more' => false
-            ];
-        }
-    }
-
-    /**
-     * Bulk update layouts subcategories
-     *
-     * @param array $subcategoryIds
-     * @param array $updateData
-     * @return array
-     */
-    public function bulkUpdateMartSubCategories(array $subcategoryIds, array $updateData)
-    {
-        $results = [
-            'updated' => 0,
-            'failed' => 0,
-            'failed_ids' => []
+        return [
+            'data' => $items,
+            'total' => $total,
+            'has_more' => $hasMore,
+            'current_page' => floor($offset / $limit) + 1,
+            'per_page' => $limit,
+            'filters_applied' => $filters
         ];
+    }
 
-        try {
-            $batch = $this->firestore->batch();
+    /**
+     * Check if item matches the applied filters
+     */
+    private function matchesFilters(array $item, array $filters): bool
+    {
+        foreach ($filters as $key => $value) {
+            if (empty($value)) continue;
 
-            foreach ($subcategoryIds as $subcategoryId) {
-                try {
-                    $documentRef = $this->firestore->collection('mart_subcategories')->document($subcategoryId);
-                    $batch->update($documentRef, $updateData);
-                    $results['updated']++;
-                } catch (\Exception $e) {
-                    $results['failed']++;
-                    $results['failed_ids'][] = $subcategoryId;
-                    \Log::error("Error updating subcategory {$subcategoryId}: " . $e->getMessage());
+            switch ($key) {
+                case 'search':
+                    $searchTerm = strtolower($value);
+                    $searchFields = ['name', 'description', 'categoryTitle', 'subcategoryTitle', 'vendorTitle'];
+                    $matches = false;
+                    
+                    foreach ($searchFields as $field) {
+                        if (isset($item[$field]) && strpos(strtolower($item[$field]), $searchTerm) !== false) {
+                            $matches = true;
+                            break;
+                        }
+                    }
+                    if (!$matches) return false;
+                    break;
+
+                case 'category':
+                    if (isset($item['categoryTitle']) && strtolower($item['categoryTitle']) !== strtolower($value)) {
+                        return false;
+                    }
+                    break;
+
+                case 'subcategory':
+                    if (isset($item['subcategoryTitle']) && strtolower($item['subcategoryTitle']) !== strtolower($value)) {
+                        return false;
+                    }
+                    break;
+
+                case 'vendor':
+                    if (isset($item['vendorTitle']) && strtolower($item['vendorTitle']) !== strtolower($value)) {
+                        return false;
+                    }
+                    break;
+
+                case 'min_price':
+                    if (isset($item['price']) && $item['price'] < $value) {
+                        return false;
+                    }
+                    break;
+
+                case 'max_price':
+                    if (isset($item['price']) && $item['price'] > $value) {
+                        return false;
+                    }
+                    break;
+
+                case 'veg':
+                    if (isset($item['veg']) && $item['veg'] !== (bool)$value) {
+                        return false;
+                    }
+                    break;
+
+                case 'isAvailable':
+                    if (isset($item['isAvailable']) && $item['isAvailable'] !== (bool)$value) {
+                        return false;
+                    }
+                    break;
+
+                case 'isBestSeller':
+                    if (isset($item['isBestSeller']) && $item['isBestSeller'] !== (bool)$value) {
+                        return false;
+                    }
+                    break;
+
+                case 'isFeature':
+                    if (isset($item['isFeature']) && $item['isFeature'] !== (bool)$value) {
+                        return false;
+                    }
+                    break;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Format mart item data for response
+     */
+    private function formatMartItemData(array $data): array
+    {
+        return [
+            'id' => $data['id'] ?? '',
+            'name' => $data['name'] ?? '',
+            'description' => $data['description'] ?? '',
+            'price' => $data['price'] ?? 0,
+            'disPrice' => $data['disPrice'] ?? 0,
+            'photo' => $data['photo'] ?? '',
+            'photos' => $data['photos'] ?? [],
+            'categoryID' => $data['categoryID'] ?? '',
+            'categoryTitle' => $data['categoryTitle'] ?? '',
+            'subcategoryID' => $data['subcategoryID'] ?? '',
+            'subcategoryTitle' => $data['subcategoryTitle'] ?? '',
+            'vendorID' => $data['vendorID'] ?? '',
+            'vendorTitle' => $data['vendorTitle'] ?? '',
+            'section' => $data['section'] ?? '',
+            'veg' => $data['veg'] ?? false,
+            'nonveg' => $data['nonveg'] ?? false,
+            'isAvailable' => $data['isAvailable'] ?? false,
+            'isBestSeller' => $data['isBestSeller'] ?? false,
+            'isFeature' => $data['isFeature'] ?? false,
+            'isNew' => $data['isNew'] ?? false,
+            'isTrending' => $data['isTrending'] ?? false,
+            'isSpotlight' => $data['isSpotlight'] ?? false,
+            'isSeasonal' => $data['isSeasonal'] ?? false,
+            'isStealOfMoment' => $data['isStealOfMoment'] ?? false,
+            'quantity' => $data['quantity'] ?? -1,
+            'calories' => $data['calories'] ?? 0,
+            'proteins' => $data['proteins'] ?? 0,
+            'fats' => $data['fats'] ?? 0,
+            'grams' => $data['grams'] ?? 0,
+            'has_options' => $data['has_options'] ?? false,
+            'options_count' => $data['options_count'] ?? 0,
+            'options_enabled' => $data['options_enabled'] ?? false,
+            'options_toggle' => $data['options_toggle'] ?? false,
+            'options' => $data['options'] ?? [],
+            'addOnsTitle' => $data['addOnsTitle'] ?? [],
+            'addOnsPrice' => $data['addOnsPrice'] ?? [],
+            'reviewCount' => $data['reviewCount'] ?? '0',
+            'reviewSum' => $data['reviewSum'] ?? '0',
+            'takeawayOption' => $data['takeawayOption'] ?? false,
+            'created_at' => $data['created_at'] ?? null,
+            'updated_at' => $data['updated_at'] ?? null
+        ];
+    }
+
+    /**
+     * Sort mart items based on relevance and filters
+     */
+    private function sortMartItems(array $items, array $filters): array
+    {
+        usort($items, function($a, $b) use ($filters) {
+            // Priority sorting based on filters
+            $scoreA = $this->calculateRelevanceScore($a, $filters);
+            $scoreB = $this->calculateRelevanceScore($b, $filters);
+            
+            if ($scoreA !== $scoreB) {
+                return $scoreB - $scoreA; // Higher score first
+            }
+            
+            // Secondary sort by price (ascending)
+            return $a['price'] <=> $b['price'];
+        });
+
+        return $items;
+    }
+
+    /**
+     * Calculate relevance score for sorting
+     */
+    private function calculateRelevanceScore(array $item, array $filters): int
+    {
+        $score = 0;
+        
+        // Boost featured items
+        if ($item['isFeature']) $score += 100;
+        if ($item['isBestSeller']) $score += 80;
+        if ($item['isTrending']) $score += 60;
+        if ($item['isSpotlight']) $score += 40;
+        if ($item['isNew']) $score += 20;
+        
+        // Boost available items
+        if ($item['isAvailable']) $score += 10;
+        
+        // Boost items with discounts
+        if ($item['disPrice'] > 0 && $item['disPrice'] < $item['price']) {
+            $score += 30;
+        }
+        
+        return $score;
+    }
+
+    /**
+     * Get fallback mart items result
+     */
+    private function getFallbackMartItemsResult(array $filters, int $limit, int $offset): array
+    {
+        $fallbackData = $this->getStaticMartItemsFallbackData();
+        
+        // Apply basic filtering to fallback data
+        $filteredData = array_filter($fallbackData, function($item) use ($filters) {
+            return $this->matchesFilters($item, $filters);
+        });
+        
+        $total = count($filteredData);
+        $items = array_slice($filteredData, $offset, $limit);
+        $hasMore = ($offset + $limit) < $total;
+
+        return [
+            'data' => $items,
+            'total' => $total,
+            'has_more' => $hasMore,
+            'current_page' => floor($offset / $limit) + 1,
+            'per_page' => $limit,
+            'filters_applied' => $filters,
+            'fallback' => true
+        ];
+    }
+
+    /**
+     * Get static fallback data for mart items
+     */
+    private function getStaticMartItemsFallbackData(): array
+    {
+        return [
+            [
+                'id' => 'fallback_item_1',
+                'name' => 'Fresh Orange Juice',
+                'description' => 'Freshly squeezed orange juice',
+                'price' => 120,
+                'disPrice' => 110,
+                'photo' => 'https://via.placeholder.com/150',
+                'photos' => ['https://via.placeholder.com/150'],
+                'categoryID' => '68b17af92183b',
+                'categoryTitle' => 'Beverages (Non-Alcoholic)',
+                'subcategoryID' => '68b6e7b0ebe24',
+                'subcategoryTitle' => 'Juices',
+                'vendorID' => '4ir2OLhuMEc2yg9L1YxX',
+                'vendorTitle' => 'Jippy Mart',
+                'section' => 'Beverages & Juices',
+                'veg' => true,
+                'nonveg' => false,
+                'isAvailable' => true,
+                'isBestSeller' => false,
+                'isFeature' => true,
+                'isNew' => false,
+                'isTrending' => true,
+                'isSpotlight' => true,
+                'isSeasonal' => false,
+                'isStealOfMoment' => true,
+                'quantity' => 10,
+                'calories' => 0,
+                'proteins' => 0,
+                'fats' => 0,
+                'grams' => 0,
+                'has_options' => false,
+                'options_count' => 0,
+                'options_enabled' => false,
+                'options_toggle' => false,
+                'options' => [],
+                'addOnsTitle' => [],
+                'addOnsPrice' => [],
+                'reviewCount' => '0',
+                'reviewSum' => '0',
+                'takeawayOption' => false,
+                'created_at' => null,
+                'updated_at' => null
+            ],
+            [
+                'id' => 'fallback_item_2',
+                'name' => 'Apple Juice',
+                'description' => 'Pure apple juice',
+                'price' => 100,
+                'disPrice' => 90,
+                'photo' => 'https://via.placeholder.com/150',
+                'photos' => ['https://via.placeholder.com/150'],
+                'categoryID' => '68b17af92183b',
+                'categoryTitle' => 'Beverages (Non-Alcoholic)',
+                'subcategoryID' => '68b6e7b0ebe24',
+                'subcategoryTitle' => 'Juices',
+                'vendorID' => '4ir2OLhuMEc2yg9L1YxX',
+                'vendorTitle' => 'Jippy Mart',
+                'section' => 'Beverages & Juices',
+                'veg' => true,
+                'nonveg' => false,
+                'isAvailable' => true,
+                'isBestSeller' => true,
+                'isFeature' => false,
+                'isNew' => true,
+                'isTrending' => false,
+                'isSpotlight' => false,
+                'isSeasonal' => false,
+                'isStealOfMoment' => false,
+                'quantity' => 15,
+                'calories' => 0,
+                'proteins' => 0,
+                'fats' => 0,
+                'grams' => 0,
+                'has_options' => false,
+                'options_count' => 0,
+                'options_enabled' => false,
+                'options_toggle' => false,
+                'options' => [],
+                'addOnsTitle' => [],
+                'addOnsPrice' => [],
+                'reviewCount' => '0',
+                'reviewSum' => '0',
+                'takeawayOption' => false,
+                'created_at' => null,
+                'updated_at' => null
+            ]
+        ];
+    }
+
+    /**
+     * Sanitize data to remove Inf and NaN values
+     *
+     * @param array $data
+     * @return array
+     */
+    private function sanitizeData(array $data): array
+    {
+        array_walk_recursive($data, function(&$value) {
+            if (is_numeric($value)) {
+                if (is_infinite($value) || is_nan($value)) {
+                    $value = 0;
                 }
             }
+        });
 
-            $batch->commit();
-
-            return $results;
-        } catch (\Exception $e) {
-            \Log::error('Error in bulk update layouts subcategories: ' . $e->getMessage());
-            return $results;
-        }
-    }
-
-    /**
-     * Increment subcategories count for a parent category
-     *
-     * @param string $categoryId
-     * @return bool
-     */
-    public function incrementSubcategoriesCount(string $categoryId)
-    {
-        try {
-            $categoryRef = $this->firestore->collection('mart_categories')->document($categoryId);
-            $categoryRef->update([
-                ['path' => 'subcategories_count', 'value' => \Google\Cloud\Firestore\FieldValue::increment(1)]
-            ]);
-            return true;
-        } catch (\Exception $e) {
-            \Log::error('Error incrementing subcategories count: ' . $e->getMessage());
-            return false;
-        }
-    }
-
-    /**
-     * Decrement subcategories count for a parent category
-     *
-     * @param string $categoryId
-     * @return bool
-     */
-    public function decrementSubcategoriesCount(string $categoryId)
-    {
-        try {
-            $categoryRef = $this->firestore->collection('mart_categories')->document($categoryId);
-            $categoryRef->update([
-                ['path' => 'subcategories_count', 'value' => \Google\Cloud\Firestore\FieldValue::increment(-1)]
-            ]);
-            return true;
-        } catch (\Exception $e) {
-            \Log::error('Error decrementing subcategories count: ' . $e->getMessage());
-            return false;
-        }
-    }
-
-    /**
-     * Ensure subcategory field structure
-     *
-     * @param array $subcategoryData
-     * @return array
-     */
-    private function ensureSubcategoryFieldStructure(array $subcategoryData): array
-    {
-        return array_merge([
-            'title' => '',
-            'description' => '',
-            'parent_category_id' => '',
-            'parent_category_title' => '',
-            'photo' => '',
-            'publish' => true,
-            'show_in_homepage' => false,
-            'category_order' => 1,
-            'subcategory_order' => 1,
-            'section' => '',
-            'section_order' => 1,
-            'mart_id' => '',
-            'review_attributes' => [],
-            'migratedBy' => 'migrate:layouts-subcategories'
-        ], $subcategoryData);
-    }
-
-    /**
-     * Get layouts items with enhanced pagination and filters
-     *
-     * @param array $filters
-     * @param string|null $search
-     * @param int $page
-     * @param int $limit
-     * @param string $sortBy
-     * @param string $sortOrder
-     * @return array
-     */
-    public function getMartItemsWithPagination(array $filters = [], ?string $search = null, int $page = 1, int $limit = 20, string $sortBy = 'name', string $sortOrder = 'asc')
-    {
-        try {
-            $query = $this->firestore->collection('mart_items');
-
-            // Apply filters
-            if (isset($filters['vendor_id'])) {
-                $query = $query->where('vendorID', '==', $filters['vendor_id']);
-            }
-            if (isset($filters['category_id'])) {
-                $query = $query->where('categoryID', '==', $filters['category_id']);
-            }
-            // Note: subcategory_id filtering will be done in PHP after fetching documents
-            // due to potential issues with array-contains queries
-            if (isset($filters['is_available'])) {
-                $query = $query->where('isAvailable', '==', $filters['is_available']);
-            }
-            if (isset($filters['publish'])) {
-                $query = $query->where('publish', '==', $filters['publish']);
-            }
-            if (isset($filters['has_options'])) {
-                $query = $query->where('has_options', '==', $filters['has_options']);
-            }
-
-            // Enhanced filter fields
-            if (isset($filters['is_spotlight'])) {
-                $query = $query->where('isSpotlight', '==', $filters['is_spotlight']);
-            }
-            if (isset($filters['is_steal_of_moment'])) {
-                $query = $query->where('isStealOfMoment', '==', $filters['is_steal_of_moment']);
-            }
-            if (isset($filters['is_feature'])) {
-                $query = $query->where('isFeature', '==', $filters['is_feature']);
-            }
-            if (isset($filters['is_trending'])) {
-                $query = $query->where('isTrending', '==', $filters['is_trending']);
-            }
-            if (isset($filters['is_new'])) {
-                $query = $query->where('isNew', '==', $filters['is_new']);
-            }
-            if (isset($filters['is_best_seller'])) {
-                $query = $query->where('isBestSeller', '==', $filters['is_best_seller']);
-            }
-            if (isset($filters['is_seasonal'])) {
-                $query = $query->where('isSeasonal', '==', $filters['is_seasonal']);
-            }
-
-            // Dietary filters
-            if (isset($filters['veg'])) {
-                $query = $query->where('veg', '==', $filters['veg']);
-            }
-            if (isset($filters['nonveg'])) {
-                $query = $query->where('nonveg', '==', $filters['nonveg']);
-            }
-            if (isset($filters['takeaway_option'])) {
-                $query = $query->where('takeawayOption', '==', $filters['takeaway_option']);
-            }
-
-            // Price filters
-            if (isset($filters['min_price'])) {
-                $query = $query->where('price', '>=', $filters['min_price']);
-            }
-            if (isset($filters['max_price'])) {
-                $query = $query->where('price', '<=', $filters['max_price']);
-            }
-
-            // Apply search if provided
-            if ($search) {
-                $query = $query->where('name', '>=', $search)
-                              ->where('name', '<=', $search . '\uf8ff');
-            }
-
-            // Apply sorting
-            if ($sortBy === 'created_at') {
-                $query = $query->orderBy('created_at', $sortOrder);
-            } elseif ($sortBy === 'updated_at') {
-                $query = $query->orderBy('updated_at', $sortOrder);
-            } elseif ($sortBy === 'price') {
-                $query = $query->orderBy('price', $sortOrder);
-            } else {
-                $query = $query->orderBy('name', $sortOrder);
-            }
-
-            // Apply pagination
-            $offset = ($page - 1) * $limit;
-            $query = $query->limit($limit)->offset($offset);
-
-            $documents = $query->documents();
-            $items = [];
-
-            foreach ($documents as $document) {
-                $itemData = $document->data();
-                $itemData['id'] = $document->id();
-                $items[] = $itemData;
-            }
-
-            // For simplicity, we'll assume there are more results if we got the full limit
-            $hasMore = count($items) === $limit;
-
-            return [
-                'data' => $items,
-                'total' => count($items) + ($page - 1) * $limit,
-                'has_more' => $hasMore
-            ];
-        } catch (\Exception $e) {
-            \Log::error('Error fetching layouts items with pagination: ' . $e->getMessage());
-            return [
-                'data' => [],
-                'total' => 0,
-                'has_more' => false
-            ];
-        }
-    }
-
-    /**
-     * Get items by subcategory with PHP filtering
-     *
-     * @param string $subcategoryId
-     * @param array $filters
-     * @param int $page
-     * @param int $limit
-     * @param string $sortBy
-     * @param string $sortOrder
-     * @return array
-     */
-    public function getMartItemsBySubcategory(string $subcategoryId, array $filters = [], int $page = 1, int $limit = 20, string $sortBy = 'name', string $sortOrder = 'asc')
-    {
-        try {
-            // Remove subcategory_id from filters since we'll handle it separately
-            $queryFilters = $filters;
-            unset($queryFilters['subcategory_id']);
-            
-            // Get all items first (without subcategory filter)
-            $allItems = $this->getMartItemsWithPagination($queryFilters, null, 1, 1000, $sortBy, $sortOrder);
-            
-            // Filter by subcategory in PHP
-            $filteredItems = [];
-            foreach ($allItems['data'] as $item) {
-                if (isset($item['subcategoryID']) && is_array($item['subcategoryID']) && in_array($subcategoryId, $item['subcategoryID'])) {
-                    $filteredItems[] = $item;
-                }
-            }
-            
-            // Apply pagination
-            $offset = ($page - 1) * $limit;
-            $paginatedItems = array_slice($filteredItems, $offset, $limit);
-            
-            $hasMore = count($filteredItems) > ($offset + $limit);
-            
-            return [
-                'data' => $paginatedItems,
-                'total' => count($filteredItems),
-                'has_more' => $hasMore
-            ];
-        } catch (\Exception $e) {
-            \Log::error('Error fetching items by subcategory: ' . $e->getMessage());
-            return [
-                'data' => [],
-                'total' => 0,
-                'has_more' => false
-            ];
-        }
-    }
-
-    /**
-     * Search layouts items with enhanced filters
-     *
-     * @param string $query
-     * @param array $filters
-     * @param int $page
-     * @param int $limit
-     * @param string $sortBy
-     * @param string $sortOrder
-     * @return array
-     */
-    public function searchMartItemsWithFilters(string $query, array $filters = [], int $page = 1, int $limit = 20, string $sortBy = 'name', string $sortOrder = 'asc')
-    {
-        try {
-            $searchQuery = $this->firestore->collection('mart_items');
-
-            // Apply filters first
-            if (isset($filters['vendor_id'])) {
-                $searchQuery = $searchQuery->where('vendorID', '==', $filters['vendor_id']);
-            }
-            if (isset($filters['category_id'])) {
-                $searchQuery = $searchQuery->where('categoryID', '==', $filters['category_id']);
-            }
-            if (isset($filters['subcategory_id'])) {
-                $searchQuery = $searchQuery->where('subcategoryID', 'array-contains-any', $filters['subcategory_id']);
-            }
-            if (isset($filters['is_available'])) {
-                $searchQuery = $searchQuery->where('isAvailable', '==', $filters['is_available']);
-            }
-            if (isset($filters['publish'])) {
-                $searchQuery = $searchQuery->where('publish', '==', $filters['publish']);
-            }
-            if (isset($filters['has_options'])) {
-                $searchQuery = $searchQuery->where('has_options', '==', $filters['has_options']);
-            }
-            if (isset($filters['min_price'])) {
-                $searchQuery = $searchQuery->where('price', '>=', $filters['min_price']);
-            }
-            if (isset($filters['max_price'])) {
-                $searchQuery = $searchQuery->where('price', '<=', $filters['max_price']);
-            }
-
-            // Apply search
-            $searchQuery = $searchQuery->where('name', '>=', $query)
-                                     ->where('name', '<=', $query . '\uf8ff');
-
-            // Apply sorting
-            if ($sortBy === 'created_at') {
-                $searchQuery = $searchQuery->orderBy('created_at', $sortOrder);
-            } elseif ($sortBy === 'updated_at') {
-                $searchQuery = $searchQuery->orderBy('updated_at', $sortOrder);
-            } elseif ($sortBy === 'price') {
-                $searchQuery = $searchQuery->orderBy('price', $sortOrder);
-            } else {
-                $searchQuery = $searchQuery->orderBy('name', $sortOrder);
-            }
-
-            // Apply pagination
-            $offset = ($page - 1) * $limit;
-            $searchQuery = $searchQuery->limit($limit)->offset($offset);
-
-            $documents = $searchQuery->documents();
-            $items = [];
-
-            foreach ($documents as $document) {
-                $itemData = $document->data();
-                $itemData['id'] = $document->id();
-                $items[] = $itemData;
-            }
-
-            // For simplicity, we'll assume there are more results if we got the full limit
-            $hasMore = count($items) === $limit;
-
-            return [
-                'data' => $items,
-                'total' => count($items) + ($page - 1) * $limit,
-                'has_more' => $hasMore
-            ];
-        } catch (\Exception $e) {
-            \Log::error('Error searching layouts items with filters: ' . $e->getMessage());
-            return [
-                'data' => [],
-                'total' => 0,
-                'has_more' => false
-            ];
-        }
-    }
-
-    /**
-     * Create a new layouts item
-     *
-     * @param array $itemData
-     * @return string|false
-     */
-    public function createMartItem(array $itemData)
-    {
-        try {
-            $itemData = $this->ensureMartItemFieldStructure($itemData);
-
-            $documentRef = $this->firestore->collection('mart_items')->add($itemData);
-
-            return $documentRef->id();
-        } catch (\Exception $e) {
-            \Log::error('Error creating layouts item: ' . $e->getMessage());
-            return false;
-        }
-    }
-
-    /**
-     * Update a layouts item
-     *
-     * @param string $itemId
-     * @param array $updateData
-     * @return bool
-     */
-    public function updateMartItem(string $itemId, array $updateData)
-    {
-        try {
-            $itemRef = $this->firestore->collection('mart_items')->document($itemId);
-            $itemRef->update($updateData);
-            return true;
-        } catch (\Exception $e) {
-            \Log::error('Error updating layouts item: ' . $e->getMessage());
-            return false;
-        }
-    }
-
-    /**
-     * Delete a layouts item
-     *
-     * @param string $itemId
-     * @return bool
-     */
-    public function deleteMartItem(string $itemId)
-    {
-        try {
-            $this->firestore->collection('mart_items')->document($itemId)->delete();
-            return true;
-        } catch (\Exception $e) {
-            \Log::error('Error deleting layouts item: ' . $e->getMessage());
-            return false;
-        }
-    }
-
-    /**
-     * Bulk update layouts items
-     *
-     * @param array $itemIds
-     * @param array $updates
-     * @param string $userId
-     * @return bool
-     */
-    public function bulkUpdateMartItems(array $itemIds, array $updates, string $userId)
-    {
-        try {
-            $batch = $this->firestore->batch();
-
-            // Add updated_by and updated_at to updates
-            $updates['updated_by'] = $userId;
-            $updates['updated_at'] = now()->toISOString();
-
-            foreach ($itemIds as $itemId) {
-                $itemRef = $this->firestore->collection('mart_items')->document($itemId);
-                $batch->update($itemRef, $updates);
-            }
-
-            $batch->commit();
-            return true;
-        } catch (\Exception $e) {
-            \Log::error('Error bulk updating layouts items: ' . $e->getMessage());
-            return false;
-        }
-    }
-
-    /**
-     * Ensure layouts item field structure
-     *
-     * @param array $itemData
-     * @return array
-     */
-    private function ensureMartItemFieldStructure(array $itemData): array
-    {
-        return array_merge([
-            'name' => '',
-            'description' => '',
-            'price' => 0,
-            'disPrice' => 0,
-            'vendorID' => '',
-            'categoryID' => '',
-            'subcategoryID' => [],
-            'photo' => '',
-            'photos' => [],
-            'publish' => true,
-            'isAvailable' => true,
-            'veg' => true,
-            'nonveg' => false,
-            'takeawayOption' => false,
-
-            // Enhanced filter fields
-            'isSpotlight' => false,
-            'isStealOfMoment' => false,
-            'isFeature' => false,
-            'isTrending' => false,
-            'isNew' => false,
-            'isBestSeller' => false,
-            'isSeasonal' => false,
-
-            // Options configuration
-            'has_options' => false,
-            'options_enabled' => false,
-            'options_toggle' => false,
-            'options_count' => 0,
-            'options' => [],
-            'min_price' => 0,
-            'max_price' => 0,
-            'price_range' => '',
-            'default_option_id' => '',
-            'best_value_option' => '',
-            'savings_percentage' => 0,
-
-            // Nutrition fields
-            'calories' => 0,
-            'grams' => 0,
-            'proteins' => 0,
-            'fats' => 0,
-
-            // Additional fields
-            'quantity' => -1,
-            'addOnsTitle' => [],
-            'addOnsPrice' => [],
-            'product_specification' => [],
-            'item_attribute' => null,
-
-            // Timestamps
-            'created_at' => now()->toISOString(),
-            'updated_at' => now()->toISOString(),
-            'created_by' => '',
-            'updated_by' => ''
-        ], $itemData);
+        return $data;
     }
 }

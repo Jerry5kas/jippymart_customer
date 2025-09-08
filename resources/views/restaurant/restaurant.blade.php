@@ -2157,14 +2157,14 @@
         }
     }
     
-    // Function to check restaurant status periodically (every 5 minutes)
+    // Function to check restaurant status periodically (every 15 minutes - reduced frequency)
     function startStatusMonitoring() {
         if (window.restaurantStatusManager) {
-            window.restaurantStatusManager.startStatusMonitoring(5);
+            window.restaurantStatusManager.startStatusMonitoring(15); // Increased from 5 to 15 minutes
         } else {
-            // Fallback monitoring
+            // Fallback monitoring - reduced frequency to prevent server overload
             checkAndUpdateStatus();
-            setInterval(checkAndUpdateStatus, 5 * 60 * 1000);
+            setInterval(checkAndUpdateStatus, 15 * 60 * 1000); // Changed from 5 to 15 minutes
         }
     }
     
