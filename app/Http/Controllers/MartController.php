@@ -49,8 +49,40 @@ class MartController extends Controller
             }
         }
 
+        // Fetch published top-position mart banners from Firestore
+        $bannersSnapshot = $firestore->collection('mart_banners')
+            ->where('position', '=', 'top')
+            ->where('is_publish', '=', true)
+            ->documents();
+
+        $banners = [];
+        foreach ($bannersSnapshot as $doc) {
+            if ($doc->exists()) {
+                $data = $doc->data();
+                // Normalize expected fields and provide safe defaults
+                $banners[] = [
+                    'id' => $data['id'] ?? $doc->id(),
+                    'title' => $data['title'] ?? '',
+                    'text' => $data['text'] ?? '',
+                    'description' => $data['description'] ?? '',
+                    'photo' => $data['photo'] ?? '',
+                    'redirect_type' => $data['redirect_type'] ?? 'none',
+                    'productId' => $data['productId'] ?? null,
+                    'external_link' => $data['external_link'] ?? null,
+                    'position' => $data['position'] ?? 'top',
+                    'set_order' => $data['set_order'] ?? 0,
+                    'is_publish' => $data['is_publish'] ?? false,
+                ];
+            }
+        }
+
+        // Sort banners by set_order asc in PHP to avoid requiring composite index
+        usort($banners, function($a, $b) {
+            return ($a['set_order'] ?? 0) <=> ($b['set_order'] ?? 0);
+        });
+
         return view('mart.index', [
-            'categories' => $categoryData, 'spotlight' => $products
+            'categories' => $categoryData, 'spotlight' => $products, 'banners' => $banners
         ]);
     }
 
