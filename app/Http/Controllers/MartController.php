@@ -61,7 +61,7 @@ class MartController extends Controller
             ->where('isSpotlight', '=', true)
             ->where('isAvailable', '=', true);
 
-        $documents = $query->documents();
+        $documents =  $query->documents();
 
         $products = [];
         foreach ($documents as $doc) {
