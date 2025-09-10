@@ -1,21 +1,26 @@
 <ifmodule mod_rewrite.c>
- 
+
     <ifmodule mod_negotiation.c>
         Options -MultiViews
     </ifmodule>
-     
+
     RewriteEngine On
-     
+
+    # Allow direct access to Google verification files in root
+    RewriteCond %{REQUEST_URI} ^/google[0-9a-z]+\.html$ [NC]
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteRule ^(.*)$ $1 [L]
+
     RewriteCond %{REQUEST_FILENAME} -d [OR]
     RewriteCond %{REQUEST_FILENAME} -f
     RewriteRule ^ ^$1 [N]
- 
+
     RewriteCond %{REQUEST_URI} (\.\w+$) [NC]
-    RewriteRule ^(.*)$ public/$1 
- 
+    RewriteRule ^(.*)$ public/$1
+
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ server.php
- 
+
 </ifmodule>
 AddHandler application/x-httpd-php81 .php .php5 .php4 .php3

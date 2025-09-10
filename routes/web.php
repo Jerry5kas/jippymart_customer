@@ -42,6 +42,11 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
+// Google Search Console verification
+Route::get('googlee8775aee3a719706.html', function () {
+    return response()->view('google-verification')->header('Content-Type', 'text/html');
+});
+
 Route::get('set-location', [App\Http\Controllers\HomeController::class, 'setLocation'])->name('set-location');
 
 Route::get('login', [App\Http\Controllers\LoginController::class, 'login'])->name('login');
@@ -903,85 +908,7 @@ Route::get('/debug-session-delivery', function () {
     return response()->json($result);
 });
 
-// Comprehensive test for delivery charge flow
-Route::get('/test-complete-delivery-flow', function () {
-    $deliveryChargeService = new \App\Services\DeliveryChargeService();
 
-    // Create a test cart with items
-    $testCart = [
-        'item' => [
-            'restaurant1' => [
-                'item1' => [
-                    'item_price' => 100,
-                    'extra_price' => 20,
-                    'quantity' => 2
-                ],
-                'item2' => [
-                    'item_price' => 150,
-                    'extra_price' => 30,
-                    'quantity' => 1
-                ]
-            ]
-        ],
-        'deliverykm' => 5, // 5km distance
-        'decimal_degits' => 2
-    ];
-
-    // Calculate delivery charge using the service
-    $updatedCart = $deliveryChargeService->updateCartDeliveryCharge($testCart);
-
-    // Calculate item total
-    $itemTotal = 0;
-    foreach ($testCart['item'] as $restaurantItems) {
-        foreach ($restaurantItems as $item) {
-            $basePrice = floatval($item['item_price'] ?? 0);
-            $extraPrice = floatval($item['extra_price'] ?? 0);
-            $quantity = floatval($item['quantity'] ?? 1);
-            $itemTotal += ($basePrice + $extraPrice) * $quantity;
-        }
-    }
-
-    // Calculate tax (SGST + GST)
-    $sgst = ($itemTotal * 5) / 100;
-    $gst = ($updatedCart['deliverycharge'] * 18) / 100;
-    $totalTax = $sgst + $gst;
-
-    // Calculate final total
-    $finalTotal = $itemTotal + $updatedCart['deliverycharge'] + $totalTax;
-
-    $result = [
-        'original_cart' => $testCart,
-        'updated_cart' => $updatedCart,
-        'calculations' => [
-            'item_total' => $itemTotal,
-            'delivery_charge' => $updatedCart['deliverycharge'],
-            'delivery_charge_main' => $updatedCart['deliverychargemain'],
-            'sgst_5_percent' => $sgst,
-            'gst_18_percent' => $gst,
-            'total_tax' => $totalTax,
-            'final_total' => $finalTotal
-        ],
-        'session_variables_check' => [
-            'deliverycharge_exists' => isset($updatedCart['deliverycharge']),
-            'deliverychargemain_exists' => isset($updatedCart['deliverychargemain']),
-            'deliverycharge_value' => $updatedCart['deliverycharge'],
-            'deliverychargemain_value' => $updatedCart['deliverychargemain']
-        ],
-        'breakdown' => [
-            'item1' => '100 + 20 = 120 × 2 = 240',
-            'item2' => '150 + 30 = 180 × 1 = 180',
-            'item_total' => '240 + 180 = 420',
-            'distance' => '5km',
-            'delivery_charge_calculation' => 'Base: 23 (5km ≤ 7km, item < 299)',
-            'sgst_calculation' => '420 × 5% = 21',
-            'gst_calculation' => '23 × 18% = 4.14',
-            'total_tax_calculation' => '21 + 4.14 = 25.14',
-            'final_total_calculation' => '420 + 23 + 25.14 = 468.14'
-        ]
-    ];
-
-    return response()->json($result);
-});
 
 
 // routes/web.php
@@ -997,6 +924,5 @@ Route::prefix('mart')->group(function () {
     Route::get('/items-by-category', function () {
         return view('mart.item-by-category');
     });
-
 });
 

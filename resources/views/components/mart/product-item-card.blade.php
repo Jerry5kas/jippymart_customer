@@ -7,6 +7,8 @@
     'description' => 'Lorem ipsum dolor sit amet, consectetur adipisicing elit. Magnam, possimus?',
     'reviews' => 4,
     'rating' => 4.5,
+    'grams' => 200,
+    'subcategoryTitle' => 'fruits',
     ])
 <div class="relative shadow-lg rounded-xl">
     <img
@@ -51,14 +53,14 @@
                                              SAVE ₹{{$save}}</span>
     </div>
 
-    <p class="text-gray-500 text-[9px]">200g</p>
+    <p class="text-gray-500 text-[9px]">{{$grams}}</p>
 </div>
 <h3 class="mt-1 text-xs font-medium font-semibold text-gray-600">{{$title}}</h3>
 {{--<p class="mt-1 text-[9px] font-medium font-semibold line-clamp-2 text-gray-400">{{$description}}</p>--}}
 <!-- Rating -->
 <div class="flex items-center justify-between space-x-1 my-1 text-[9px]">
                                     <span
-                                        class="bg-blue-100 text-blue-600 px-2 rounded-sm max-w-max text-[9px] font-semibold">Fruits</span>
+                                        class="bg-blue-100 text-blue-600 px-2 rounded-sm max-w-max text-[9px] font-semibold">{{$subcategoryTitle}}</span>
     <div
         class="flex items-center space-x-1 bg-gradient-to-r from-gray-200 to-white rounded-full px-1">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"

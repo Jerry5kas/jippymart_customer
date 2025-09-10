@@ -126,6 +126,12 @@ if (@$cart['item']){ ?>
                                 <?php echo $value_item['name']; ?>
                         </p>
                     </div>
+        <div class="d-flex align-items-center justify-content col-md-3">
+            <p class="text-gray ml-3 mb-0 text-muted small">
+                Qty:
+            </p>
+        </div>
+
                 </div>
                     <?php
                     if (isset($value_item['variant_info']) && !empty($value_item['variant_info'])) {
@@ -190,19 +196,19 @@ if (@$cart['item']){ ?>
             <p class="text-gray mb-0 float-right ml-3 text-muted small">
                 <span class="currency-symbol-left"></span>
                 <span class="cart_iteam_total_<?php echo $key1; ?>">
-                    <?php 
+                    <?php
                     // Calculate individual item total correctly
                     $basePrice = @floatval($value_item['item_price']); // Use item_price as base price
                     $extraPrice = @floatval($value_item['extra_price']);
                     $quantity = @floatval($value_item['quantity']);
                     $totalItemPrice = ($basePrice + $extraPrice) * $quantity;
-                    
+
                     $digit_decimal = 0;
                     if (@$cart['decimal_degits']) {
                         $digit_decimal = $cart['decimal_degits'];
                     }
                     echo number_format($totalItemPrice, $digit_decimal);
-                    
+
                     // Debug information (remove in production)
                     if (isset($_GET['debug'])) {
                         echo "<!-- Debug: basePrice=$basePrice, extraPrice=$extraPrice, quantity=$quantity, total=$totalItemPrice -->";
@@ -217,7 +223,7 @@ if (@$cart['item']){ ?>
                 class="fa fa-times"></i></div>
     </div>
 
-        <?php 
+        <?php
         // Calculate total price correctly for each item
         $basePrice = @floatval($value_item['item_price']); // Use item_price as base price
         $extraPrice = @floatval($value_item['extra_price']);
@@ -473,18 +479,25 @@ if (@$cart['item']){ ?>
 @if (session('success'))
     <div class="alert alert-success mt-2">{{ session('success') }}</div>
 @endif
-<input type="text" name="coupon_code" id="coupon_code" class="form-control mb-2"
-    value="<?php echo @$cart['coupon']['coupon_code']; ?>"
-    data-vendor-id="<?php echo @$cart['restaurant']['id']; ?>"
-    placeholder="Enter coupon code" required>
-    <div id="coupon-message"></div>
-    <button type="button" id="apply-coupon-code" class="btn btn-primary btn-sm" data-vendor-id="<?php echo @$cart['restaurant']['id']; ?>">Apply Coupon</button>
+            <div class="input-group mb-2">
+                <input type="text" name="coupon_code" id="coupon_code"
+                       class="form-control"
+                       value="<?php echo @$cart['coupon']['coupon_code']; ?>"
+                       data-vendor-id="<?php echo @$cart['restaurant']['id']; ?>"
+                       placeholder="Enter coupon code" required>
+
+                <button type="button" id="apply-coupon-code"
+                        class="btn btn-primary btn-sm"
+                        data-vendor-id="<?php echo @$cart['restaurant']['id']; ?>">
+                    Apply Coupon
+                </button>
+            </div>
+            <div id="coupon-message"></div>
     <!-- <button type="button" id="remove-coupon" class="btn btn-primary btn-sm ml-2">Remove Coupon</button> -->
 @php
     $cartTotal = session('$to_pay') ?? 0;
 @endphp
-
-<!-- {{-- Coupon suggestions --}}
+    <!-- {{-- Coupon suggestions --}}
 @if ($cartTotal < 299)
     <p class="text-muted mt-2">Shop ₹{{ 299 }} more to unlock ₹100 off with code <strong>FLAT100</strong>.</p>
 @elseif ($cartTotal < 599)
@@ -521,10 +534,7 @@ if (@$cart['item']){ ?>
                 Please choose another payment method.</small>
         </div>
         <?php } ?>
-
-
     </div>
-
     <!-- Thanks with a tip! Section -->
     <!-- <div class="bg-white p-3 clearfix delivery-box" style="<?php if (!@$cart['item']){ ?> display:none; <?php } ?>">
     <h3>{{ trans('lang.delivery_option') }}</h3>

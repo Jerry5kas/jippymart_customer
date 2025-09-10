@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "182e823beea5df43b78736db7d3934c7",
+    "content-hash": "701fbfe706090c5ebf7184fe3abaca36",
     "packages": [
         {
             "name": "beste/clock",
@@ -1022,7 +1022,7 @@
         },
         {
             "name": "google/apiclient-services",
-            "version": "v0.403.0",
+            "version": "v0.406.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/googleapis/google-api-php-client-services.git",
@@ -1060,7 +1060,7 @@
             ],
             "support": {
                 "issues": "https://github.com/googleapis/google-api-php-client-services/issues",
-                "source": "https://github.com/googleapis/google-api-php-client-services/tree/v0.403.0"
+                "source": "https://github.com/googleapis/google-api-php-client-services/tree/v0.406.0"
             },
             "time": "2025-06-04T17:28:44+00:00"
         },

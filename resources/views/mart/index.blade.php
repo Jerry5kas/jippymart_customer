@@ -1,8 +1,9 @@
 <x-layouts.app>
     <x-mart.top-cat-items :categories="$categories"/>
     <x-mart.carousel :banners="$banners"/>
+    <x-mart.banner-card :products="$products"/>
+    <x-mart.categories />
     <x-mart.banner-card/>
-    <x-mart.categories :categories="$categories"/>
     <div class="w-full sm:w-[90%] mx-auto flex md:flex-row flex-col gap-4">
         <x-mart.small-cat-carousel/>
         <x-mart.small-cat-carousel/>
