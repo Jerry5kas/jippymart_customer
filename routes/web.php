@@ -925,4 +925,9 @@ Route::prefix('mart')->group(function () {
         return view('mart.item-by-category');
     });
 });
-
+    Route::prefix('mart')->group(function () {
+        Route::get('/', [MartController::class, 'index']);
+        Route::get('/items-by-category', function () {
+            return view('mart.item-by-category');
+        });
+    });
