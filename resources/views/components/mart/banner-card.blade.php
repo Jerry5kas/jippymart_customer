@@ -1,6 +1,5 @@
 @props([
-  "headings" => "Coffee Lovers",
-  "subheadings" => "Dive into the world of fresh brew"
+  "products" => []
 ])
 
 <style>
@@ -23,9 +22,9 @@
             <!-- Left Banner -->
             <div class="md:col-span-1 flex flex-col justify-between space-y-4">
                 <div>
-                    <p class="uppercase tracking-widest text-sm text-gray-500"> {{$headings}} </p>
+                    <p class="uppercase tracking-widest text-sm text-gray-500">hey this a mart </p>
                     <h2 class="text-2xl sm:text-3xl font-bold leading-snug text-gray-900 mt-2">
-                        {{$subheadings}}
+                        go go
                     </h2>
                 </div>
                 <button
@@ -48,14 +47,24 @@
                     x-ref="scroller"
                     class="flex space-x-4 overflow-x-auto scrollbar-hide scroll-smooth snap-x snap-mandatory pb-4 px-2">
 
-                    <!-- Product Card -->
-                    <template x-for="i in 10" :key="i">
-                        <div class="w-40 flex-shrink-0 snap-center">
-                            <div class="bg-white rounded-2xl flex flex-col space-y-1 p-1" x-data="{ added: false }">
-                                <x-mart.product-item-card />
+{{--                    <!-- Product Card -->--}}
+{{--                    <template x-for="i in 10" :key="i">--}}
+{{--                        <div class="w-40 flex-shrink-0 snap-center">--}}
+                    @forelse ($products ?? [] as $product)
+                    <div class="bg-white rounded-2xl flex flex-col space-y-1 p-1" x-data="{ added: false }">
+                                <x-mart.product-item-card :disPrice="$product['disPrice']" :price="$product['price']" :title="$product['name']" :description="$product['description']"
+                                                          :photo="$product['photo']" :grams="$product['grams']" :rating="$product['rating']" :reviews="$product['reviews']"
+                                                          :subcategoryTitle="$product['subcategoryTitle']"/>
+                            </div>
+{{--                        </div>--}}
+{{--                    </template>--}}
+                    @empty
+                        <div class="w-full flex-shrink-0">
+                            <div class="text-center text-gray-500 py-8">
+                                <p>No banners available at the moment.</p>
                             </div>
                         </div>
-                    </template>
+                    @endforelse
                 </div>
 
                 <!-- Right Arrow -->
