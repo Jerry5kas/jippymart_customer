@@ -104,7 +104,36 @@ class MartController extends Controller
         }
 
         // =========================
-        // 3️⃣ Banners (Top Position)
+        // 3️⃣ Featured Products
+        // =========================
+        // Fetch featured products based on isFeature field
+        $featuredProducts = [];
+        foreach ($documents as $doc) {
+            if ($doc->exists()) {
+                $data = $doc->data();
+
+                // Filter for featured and available products
+                if (($data['isFeature'] ?? false) && ($data['isAvailable'] ?? false)) {
+                    $featuredProducts[] = [
+                        'id' => $doc->id(),
+                        'disPrice' => $data['disPrice'] ?? 0,
+                        'name' => $data['name'] ?? 'Product',
+                        'description' => $data['description'] ?? 'Product description',
+                        'grams' => $data['grams'] ?? '200g',
+                        'photo' => $data['photo'] ?? '',
+                        'price' => $data['price'] ?? 0,
+                        'rating' => $data['rating'] ?? 4.5,
+                        'reviews' => $data['reviews'] ?? 100,
+                        'section' => $data['section'] ?? 'General',
+                        'subcategoryTitle' => $data['subcategoryTitle'] ?? 'category',
+                        'categoryTitle' => $data['categoryTitle'] ?? 'Category',
+                    ];
+                }
+            }
+        }
+
+        // =========================
+        // 4️⃣ Banners (Top Position)
         // =========================
         $bannersSnapshot = $firestore->collection('mart_banners')
             ->where('position', '=', 'top')
@@ -137,7 +166,7 @@ class MartController extends Controller
         });
 
         // =========================
-        // 4️⃣ Sections (Grouped Subcategories) - REUSE DATA
+        // 5️⃣ Sections (Grouped Subcategories) - REUSE DATA
         // =========================
         $sections = [];
 
@@ -160,13 +189,14 @@ class MartController extends Controller
         }
 
             // =========================
-            // 5️⃣ Return to Blade
+            // 6️⃣ Return to Blade
             // =========================
-            \Log::info("Mart data loaded: " . count($categoryData) . " categories, " . count($products) . " products, " . count($banners) . " banners");
+            \Log::info("Mart data loaded: " . count($categoryData) . " categories, " . count($products) . " spotlight products, " . count($featuredProducts) . " featured products, " . count($banners) . " banners");
 
             return view('mart.index', [
                 'categories' => $categoryData,
                 'spotlight'  => $products,
+                'featured'   => $featuredProducts,
                 'banners'    => $banners,
                 'sections'   => $sections,
             ]);
@@ -176,6 +206,7 @@ class MartController extends Controller
             return view('mart.index', [
                 'categories' => [],
                 'spotlight' => [],
+                'featured' => [],
                 'banners' => [],
                 'sections' => [],
             ]);
