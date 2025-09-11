@@ -14,7 +14,7 @@
             src="{{ $src }}"
             alt="{{ $title }}" 
             class="w-full h-full object-cover"
-            onerror="this.src='https://via.placeholder.com/150'">
+            onerror="this.src='/img/pro1.jpg'">
         
         <!-- Rating Badge -->
         <div class="absolute top-1 right-1 bg-yellow-400 text-black text-xs px-1 rounded flex items-center">

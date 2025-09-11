@@ -50,7 +50,7 @@ class MartController extends Controller
                     $subcategoriesByParent[$parentId][] = [
                         'id'    => $subData['id'] ?? null,
                         'title' => $subData['title'] ?? 'No Title',
-                        'photo' => $subData['photo'] ?? 'https://via.placeholder.com/150',
+                        'photo' => $subData['photo'] ?? '/img/pro1.jpg',
                     ];
                 }
             }
@@ -184,7 +184,7 @@ class MartController extends Controller
             $sections[$sectionName][] = [
                 'id'    => $subData['id'] ?? null,
                 'title' => $subData['title'] ?? 'No Title',
-                'photo' => $subData['photo'] ?? 'https://via.placeholder.com/150',
+                'photo' => $subData['photo'] ?? '/img/pro1.jpg',
             ];
         }
 

@@ -7,6 +7,8 @@ use Session;
 use Illuminate\Support\Facades\Storage;
 use Google\Client as Google_Client;
 use App\Helpers\UrlHelper;
+use App\Models\SeoPage;
+use App\Models\SeoSetting;
 
 class RestaurantController extends Controller
 {
@@ -27,22 +29,56 @@ class RestaurantController extends Controller
     public function index()
     {
         $cart = session()->get('cart', []);
-        return view('restaurant.restaurant',['cart'=>$cart]);
+        
+        // Get SEO data for restaurants page
+        $seoData = SeoPage::getForPage('restaurants');
+        $globalSettings = SeoSetting::getGlobalSettings();
+        
+        return view('restaurant.restaurant', [
+            'cart' => $cart,
+            'pageKey' => 'restaurants',
+            'seoData' => $seoData,
+            'globalSettings' => $globalSettings,
+        ]);
     }
 
     public function show($id, $restaurantSlug, $zoneSlug)
     {
         // In a real app, fetch restaurant from DB/Firestore using $id
         // Optionally, check if slugs match and redirect to canonical URL if not
+        
+        // Get SEO data for restaurant page
+        $seoData = SeoPage::getForPage('restaurant');
+        $globalSettings = SeoSetting::getGlobalSettings();
+        
+        // Dynamic SEO data for this specific restaurant
+        $dynamicTitle = ucwords(str_replace('-', ' ', $restaurantSlug)) . ' - Restaurant - JippyMart';
+        $dynamicDescription = 'Order food from ' . ucwords(str_replace('-', ' ', $restaurantSlug)) . ' restaurant. Fast delivery, fresh food, and great prices at JippyMart.';
+        $dynamicImage = '/images/restaurants/' . $restaurantSlug . '.jpg';
+        
         return view('restaurant.restaurant', [
             'restaurantId' => $id,
             'restaurantSlug' => $restaurantSlug,
             'zoneSlug' => $zoneSlug,
+            'pageKey' => 'restaurant',
+            'seoData' => $seoData,
+            'globalSettings' => $globalSettings,
+            'dynamicTitle' => $dynamicTitle,
+            'dynamicDescription' => $dynamicDescription,
+            'dynamicImage' => $dynamicImage,
         ]);
     }
     public function categoryList()
     {
-        return view('restaurant.categorylist');
+        // Get SEO data for categories page
+        $seoData = SeoPage::getForPage('categories');
+        $globalSettings = SeoSetting::getGlobalSettings();
+        
+        return view('restaurant.categorylist', [
+            'pageKey' => 'categories',
+            'seoData' => $seoData,
+            'globalSettings' => $globalSettings,
+        ]);
     }
 
     public function categoryDetail($id)

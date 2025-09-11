@@ -49,6 +49,15 @@ Route::get('googlee8775aee3a719706.html', function () {
 
 Route::get('set-location', [App\Http\Controllers\HomeController::class, 'setLocation'])->name('set-location');
 
+// Additional Customer Routes with SEO (keeping original homepage)
+Route::get('/about', [App\Http\Controllers\Customer\PageController::class, 'about'])->name('customer.about');
+Route::get('/contact', [App\Http\Controllers\Customer\PageController::class, 'contact'])->name('customer.contact');
+Route::get('/privacy', [App\Http\Controllers\Customer\PageController::class, 'privacy'])->name('customer.privacy');
+Route::get('/terms', [App\Http\Controllers\Customer\PageController::class, 'terms'])->name('customer.terms');
+Route::get('/faq', [App\Http\Controllers\Customer\PageController::class, 'faq'])->name('customer.faq');
+Route::get('/offers', [App\Http\Controllers\Customer\PageController::class, 'offers'])->name('customer.offers');
+
+
 Route::get('login', [App\Http\Controllers\LoginController::class, 'login'])->name('login');
 
 Route::get('signup', [App\Http\Controllers\LoginController::class, 'signup'])->name('signup');

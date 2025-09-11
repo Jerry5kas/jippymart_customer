@@ -25,6 +25,7 @@
     "paytm/paytmchecksum": "^1.1",
     "perfectmak/paystack-php": "dev-master",
     "razorpay/razorpay": "2.*",
+    "spatie/laravel-sitemap": "*",
     "stripe/stripe-php": "^7.116",
     "xendit/xendit-php": "^6.0"
   },
