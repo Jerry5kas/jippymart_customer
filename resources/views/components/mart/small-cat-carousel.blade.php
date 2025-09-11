@@ -1,3 +1,7 @@
+@props([
+    'products' => []
+])
+
 <div x-data="{ scroll: 0 }" class="md:w-1/2 w-full mt-8 px-4 rounded-2xl">
 
     <!-- Banner (Fixed) -->
@@ -5,7 +9,8 @@
         <h1 class="text-2xl text-white font-bold">Featured Products</h1>
     </div>
 
-    <!-- Category Carousel -->
+    <!-- Featured Products Carousel -->
+    @if(count($products) > 0)
     <div class="relative px-4 bg-black" x-data="{ scroll: 0 } rounded-2xl mb-5">
         <!-- Left Button -->
         <button
@@ -14,22 +19,21 @@
             ◀
         </button>
 
-        <!-- Categories -->
+        <!-- Featured Products -->
         <div
             x-ref="scroller"
             class="flex space-x-4 bg-black overflow-x-auto scrollbar-hide scroll-smooth snap-x snap-mandatory pb-6 px-2 rounded-2xl ">
 
-            <!-- Category Item -->
-            <x-mart.small-cat-card />
-            <x-mart.small-cat-card />
-            <x-mart.small-cat-card />
-            <x-mart.small-cat-card />
-            <x-mart.small-cat-card />
-            <x-mart.small-cat-card />
-            <x-mart.small-cat-card />
-            <x-mart.small-cat-card />
-            <x-mart.small-cat-card />
-            <x-mart.small-cat-card />
+            @foreach($products as $product)
+                <x-mart.small-cat-card 
+                    :src="$product['photo']" 
+                    :title="$product['name']" 
+                    :price="$product['price']"
+                    :disPrice="$product['disPrice']"
+                    :rating="$product['rating']"
+                    :reviews="$product['reviews']"
+                />
+            @endforeach
 
         </div>
 
@@ -40,5 +44,14 @@
             ▶
         </button>
     </div>
+    @else
+    <!-- No Featured Products Message -->
+    <div class="relative px-4 bg-black rounded-2xl mb-5 py-8">
+        <div class="text-center text-white">
+            <p class="text-lg">No featured products available</p>
+            <p class="text-sm text-gray-400">Check back later for exciting offers!</p>
+        </div>
+    </div>
+    @endif
 
 </div>

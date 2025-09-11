@@ -53,7 +53,7 @@
                     @forelse ($products ?? [] as $product)
                     <div class="bg-white rounded-2xl flex flex-col space-y-1 p-1" x-data="{ added: false }">
                                 <x-mart.product-item-card :disPrice="$product['disPrice']" :price="$product['price']" :title="$product['name']" :description="$product['description']"
-                                                          :photo="$product['photo']" :grams="$product['grams']" :rating="$product['rating']" :reviews="$product['reviews']"
+                                                          :src="$product['photo']" :grams="$product['grams']" :rating="$product['rating']" :reviews="$product['reviews']"
                                                           :subcategoryTitle="$product['subcategoryTitle']"/>
                             </div>
 {{--                        </div>--}}

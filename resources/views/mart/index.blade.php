@@ -25,8 +25,8 @@
 
     <x-mart.categories :categories="$categories"/>
     <div class="w-full sm:w-[90%] mx-auto flex md:flex-row flex-col gap-4">
-        <x-mart.small-cat-carousel/>
-        <x-mart.small-cat-carousel/>
+        <x-mart.small-cat-carousel :products="$featured"/>
+        <x-mart.small-cat-carousel :products="$featured"/>
     </div>
     <div class="pb-16 space-y-8">
         <x-mart.banner-card/>

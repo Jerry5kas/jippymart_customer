@@ -12,7 +12,7 @@
     ])
 <div class="relative shadow-lg rounded-xl">
     <img
-        src="{{$src}}"
+        src="{{ is_array($src) ? $src[0] : $src }}"
         alt="product Image"
         class="rounded-xl w-full object-cover">
     <!-- Add Button -->
