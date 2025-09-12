@@ -24,10 +24,23 @@
     <!-- ✅ End of New Section -->
 
     <x-mart.categories :categories="$categories"/>
+
     <div class="w-full sm:w-[90%] mx-auto flex md:flex-row flex-col gap-4">
-        <x-mart.small-cat-carousel :products="$featured"/>
-        <x-mart.small-cat-carousel :products="$featured"/>
+        <x-mart.small-cat-carousel :products="$featured" title="Featured Products"/>
+        <x-mart.small-cat-carousel :products="$trendingProducts" title="Trending Products" />
     </div>
+
+    <div class="w-full sm:w-[90%] mx-auto flex md:flex-row flex-col gap-4">
+        <x-mart.small-cat-carousel :products="$bestSellerProducts" title="Best Seller Products" />
+        <x-mart.small-cat-carousel :products="$stealOfMomentProducts" title="Steal Of Products" />
+
+    </div>
+
+    <div class="w-full sm:w-[90%] mx-auto flex md:flex-row flex-col gap-4">
+        <x-mart.small-cat-carousel :products="$newArrivalProducts" title="New Product" />
+        <x-mart.small-cat-carousel :products="$seasonalProducts" title="Seasonal Products" />
+   </div>
+
     <div class="pb-16 space-y-8">
         <x-mart.banner-card/>
         <x-mart.item-card headings="Get Your Home Needs"/>
