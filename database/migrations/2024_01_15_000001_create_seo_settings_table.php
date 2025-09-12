@@ -19,7 +19,7 @@ return new class extends Migration
             $table->text('description')->nullable()->comment('Description of what this setting does');
             $table->boolean('is_active')->default(true)->comment('Whether this setting is active');
             $table->timestamps();
-            
+
             $table->index(['setting_key', 'is_active']);
         });
     }
@@ -32,3 +32,4 @@ return new class extends Migration
         Schema::dropIfExists('seo_settings');
     }
 };
+

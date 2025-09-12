@@ -149,3 +149,4 @@ class SeoSetting extends Model
         ];
     }
 }
+

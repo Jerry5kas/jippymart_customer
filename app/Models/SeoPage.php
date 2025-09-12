@@ -130,3 +130,4 @@ class SeoPage extends Model
         return $this->extra['structured_data'] ?? [];
     }
 }
+

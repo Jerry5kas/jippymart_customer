@@ -5,7 +5,7 @@
     <div class="row">
         <div class="col-lg-8 mx-auto">
             <h1 class="display-4 fw-bold text-center mb-5">About JippyMart</h1>
-            
+
             <div class="row mb-5">
                 <div class="col-md-6">
                     <img src="{{ asset('images/about-us.jpg') }}" alt="About JippyMart" class="img-fluid rounded shadow">
@@ -16,14 +16,14 @@
                     <p>We understand that in today's fast-paced world, convenience is key. That's why we've built a comprehensive platform that brings everything you need right to your doorstep.</p>
                 </div>
             </div>
-            
+
             <div class="row mb-5">
                 <div class="col-12">
                     <h2 class="text-center mb-4">Our Mission</h2>
                     <p class="text-center lead">To provide the freshest products, fastest delivery, and best customer service while making online shopping simple and enjoyable for everyone.</p>
                 </div>
             </div>
-            
+
             <div class="row mb-5">
                 <div class="col-md-4 text-center">
                     <div class="mb-3">
@@ -47,7 +47,7 @@
                     <p>We're committed to supporting our local community and building lasting relationships.</p>
                 </div>
             </div>
-            
+
             <div class="row">
                 <div class="col-12">
                     <h2 class="text-center mb-4">Why Choose Us?</h2>
@@ -71,7 +71,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="text-center mt-5">
                 <a href="{{ url('/contact') }}" class="btn btn-primary btn-lg">
                     <i class="fas fa-envelope me-2"></i>Get in Touch
@@ -81,3 +81,4 @@
     </div>
 </div>
 @endsection
+
