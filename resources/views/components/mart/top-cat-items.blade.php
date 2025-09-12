@@ -25,10 +25,12 @@
             <div x-show="active === '{{ $category['title'] }}'" class="flex space-x-6 overflow-x-auto px-4 py-5 scrollbar-hide sm:w-[90%] mx-auto w-full text-xs">
                 @foreach($category['subcategories'] as $sub)
                     <div class="flex-shrink-0 w-20 rounded-full bg-white text-center">
+                    <a href="{{ route('mart.items.by.subcategory') }}">
                         <img src="{{ $sub['photo'] }}" alt="{{ $sub['title'] }}"
                              class="w-20 h-20 mx-auto object-cover rounded-full shadow-lg">
                         <p class="mt-2 text-xs font-semibold text-gray-800">{{ $sub['title'] }}</p>
                     </div>
+                    </a>
                 @endforeach
             </div>
         @endforeach

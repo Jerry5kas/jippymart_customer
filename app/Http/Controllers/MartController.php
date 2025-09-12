@@ -212,4 +212,126 @@ class MartController extends Controller
             ]);
         }
     }
+
+    public function itemsBySubcategory($subcategoryTitle)
+    {
+        try {
+            // Initialize Firebase
+            $factory = (new Factory)->withServiceAccount(
+                base_path('storage/app/firebase/credentials.json')
+            );
+            $firestore = $factory->createFirestore()->database();
+
+            // First, get one item to determine the category
+            $itemsRef = $firestore->collection('mart_items');
+            $sampleQuery = $itemsRef->where('publish', '=', true)
+                                   ->where('isAvailable', '=', true)
+                                   ->where('subcategoryTitle', '=', $subcategoryTitle)
+                                   ->limit(1);
+
+            $sampleDocuments = $sampleQuery->documents();
+            $categoryTitle = '';
+            
+            foreach ($sampleDocuments as $doc) {
+                if ($doc->exists()) {
+                    $data = $doc->data();
+                    $categoryTitle = $data['categoryTitle'] ?? '';
+                    break;
+                }
+            }
+
+            // Fetch all items by subcategoryTitle
+            $query = $itemsRef->where('publish', '=', true)
+                              ->where('isAvailable', '=', true)
+                              ->where('subcategoryTitle', '=', $subcategoryTitle);
+
+            $documents = $query->documents();
+
+            $items = [];
+            foreach ($documents as $doc) {
+                if ($doc->exists()) {
+                    $data = $doc->data();
+                    
+                    // Generate random rating between 4.0 and 5.0 if not present
+                    $rating = $data['rating'] ?? round(4.0 + (mt_rand() / mt_getrandmax()) * 1.0, 1);
+                    $reviews = $data['reviews'] ?? mt_rand(10, 500);
+
+                    $items[] = [
+                        'id' => $doc->id(),
+                        'disPrice' => $data['disPrice'] ?? 0,
+                        'name' => $data['name'] ?? 'Product',
+                        'description' => $data['description'] ?? 'Product description',
+                        'grams' => $data['grams'] ?? '200g',
+                        'photo' => $data['photo'] ?? '',
+                        'price' => $data['price'] ?? 0,
+                        'rating' => $rating,
+                        'reviews' => $reviews,
+                        'section' => $data['section'] ?? 'General',
+                        'subcategoryTitle' => $data['subcategoryTitle'] ?? 'category',
+                        'categoryTitle' => $data['categoryTitle'] ?? 'Category',
+                        'isBestSeller' => $data['isBestSeller'] ?? false,
+                        'isFeature' => $data['isFeature'] ?? false,
+                        'isSpotlight' => $data['isSpotlight'] ?? false,
+                        'isNew' => $data['isNew'] ?? false,
+                        'veg' => $data['veg'] ?? true,
+                        'nonveg' => $data['nonveg'] ?? false,
+                        'quantity' => $data['quantity'] ?? 0,
+                        'vendorID' => $data['vendorID'] ?? '',
+                        'vendorTitle' => $data['vendorTitle'] ?? '',
+                    ];
+                }
+            }
+
+            // Sort items by set_order or name
+            usort($items, function($a, $b) {
+                return strcmp($a['name'], $b['name']);
+            });
+
+            \Log::info("Items loaded for subcategory '{$subcategoryTitle}': " . count($items) . " items");
+
+            // Fetch subcategories that belong to the same category only
+            $subcategories = [];
+            if (!empty($categoryTitle)) {
+                $subcategoriesSnapshot = $firestore->collection('mart_subcategories')
+                    ->where('publish', '=', true)
+                    ->documents();
+
+                foreach ($subcategoriesSnapshot as $sub) {
+                    if ($sub->exists()) {
+                        $subData = $sub->data();
+                        // Check if this subcategory belongs to the same category
+                        if (($subData['parent_category_title'] ?? '') === $categoryTitle) {
+                            $subcategories[] = [
+                                'id'    => $subData['id'] ?? null,
+                                'title' => $subData['title'] ?? 'No Title',
+                                'photo' => $subData['photo'] ?? '/img/pro1.jpg',
+                                'isActive' => ($subData['title'] ?? '') === $subcategoryTitle,
+                            ];
+                        }
+                    }
+                }
+
+                // Sort subcategories by set_order or title
+                usort($subcategories, function($a, $b) {
+                    return strcmp($a['title'], $b['title']);
+                });
+            }
+
+            return view('mart.item-by-category', [
+                'items' => $items,
+                'subcategoryTitle' => $subcategoryTitle,
+                'categoryTitle' => $categoryTitle,
+                'subcategories' => $subcategories,
+            ]);
+
+        } catch (FirebaseException $e) {
+            \Log::error('Firebase error in MartController itemsBySubcategory method: ' . $e->getMessage());
+            return view('mart.item-by-category', [
+                'items' => [],
+                'subcategoryTitle' => $subcategoryTitle,
+                'categoryTitle' => '',
+                'subcategories' => [],
+            ]);
+        }
+    }
 }
