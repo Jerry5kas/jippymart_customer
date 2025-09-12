@@ -100,6 +100,7 @@ class MartController extends Controller
                         'subcategoryTitle' => $data['subcategoryTitle'] ?? 'category',
                     ];
                 }
+
             }
         }
 
@@ -131,8 +132,35 @@ class MartController extends Controller
                 }
             }
         }
+            // =========================
+// 7️⃣ Trending Products
+// =========================
+            $trendingProducts = [];
+            foreach ($documents as $doc) {
+                if ($doc->exists()) {
+                    $data = $doc->data();
 
-        // =========================
+                    if (($data['isTrending'] ?? false) && ($data['isAvailable'] ?? false)) {
+                        $trendingProducts[] = [
+                            'id' => $doc->id(),
+                            'disPrice' => $data['disPrice'] ?? 0,
+                            'name' => $data['name'] ?? 'Product',
+                            'description' => $data['description'] ?? 'Product description',
+                            'grams' => $data['grams'] ?? '200g',
+                            'photo' => $data['photo'] ?? '',
+                            'price' => $data['price'] ?? 0,
+                            'rating' => $data['rating'] ?? 4.5,
+                            'reviews' => $data['reviews'] ?? 100,
+                            'section' => $data['section'] ?? 'General',
+                            'subcategoryTitle' => $data['subcategoryTitle'] ?? 'category',
+                            'categoryTitle' => $data['categoryTitle'] ?? 'Category',
+                        ];
+                    }
+                }
+            }
+
+
+            // =========================
         // 4️⃣ Banners (Top Position)
         // =========================
         $bannersSnapshot = $firestore->collection('mart_banners')
@@ -164,8 +192,33 @@ class MartController extends Controller
         usort($banners, function($a, $b) {
             return ($a['set_order'] ?? 0) <=> ($b['set_order'] ?? 0);
         });
+            // Best Seller Products
+            $bestSellerProducts = [];
+            foreach ($documents as $doc) {
+                if ($doc->exists()) {
+                    $data = $doc->data();
 
-        // =========================
+                    if (($data['isBestSeller'] ?? false) && ($data['isAvailable'] ?? false)) {
+                        $bestSellerProducts[] = [
+                            'id' => $doc->id(),
+                            'disPrice' => $data['disPrice'] ?? 0,
+                            'name' => $data['name'] ?? 'Product',
+                            'description' => $data['description'] ?? 'Product description',
+                            'grams' => $data['grams'] ?? '200g',
+                            'photo' => $data['photo'] ?? '',
+                            'price' => $data['price'] ?? 0,
+                            'rating' => $data['rating'] ?? 4.5,
+                            'reviews' => $data['reviews'] ?? 100,
+                            'section' => $data['section'] ?? 'General',
+                            'subcategoryTitle' => $data['subcategoryTitle'] ?? 'category',
+                            'categoryTitle' => $data['categoryTitle'] ?? 'Category',
+                        ];
+                    }
+                }
+            }
+
+
+            // =========================
         // 5️⃣ Sections (Grouped Subcategories) - REUSE DATA
         // =========================
         $sections = [];
@@ -187,6 +240,70 @@ class MartController extends Controller
                 'photo' => $subData['photo'] ?? '/img/pro1.jpg',
             ];
         }
+            // =========================
+// Steal Of Moment, New Arrival & Seasonal Products
+// =========================
+            $stealOfMomentProducts = [];
+            $newArrivalProducts = [];
+            $seasonalProducts = [];
+
+            foreach ($documents as $doc) {
+                if ($doc->exists()) {
+                    $data = $doc->data();
+
+                    if (($data['isStealOfMoment'] ?? false) && ($data['isAvailable'] ?? false)) {
+                        $stealOfMomentProducts[] = [
+                            'id' => $doc->id(),
+                            'disPrice' => $data['disPrice'] ?? 0,
+                            'name' => $data['name'] ?? 'Product',
+                            'description' => $data['description'] ?? 'Product description',
+                            'grams' => $data['grams'] ?? '200g',
+                            'photo' => $data['photo'] ?? '',
+                            'price' => $data['price'] ?? 0,
+                            'rating' => $data['rating'] ?? 4.5,
+                            'reviews' => $data['reviews'] ?? 100,
+                            'section' => $data['section'] ?? 'General',
+                            'subcategoryTitle' => $data['subcategoryTitle'] ?? 'category',
+                            'categoryTitle' => $data['categoryTitle'] ?? 'Category',
+                        ];
+                    }
+
+                    if (($data['isNew'] ?? false) && ($data['isAvailable'] ?? false)) {
+                        $newArrivalProducts[] = [
+                            'id' => $doc->id(),
+                            'disPrice' => $data['disPrice'] ?? 0,
+                            'name' => $data['name'] ?? 'Product',
+                            'description' => $data['description'] ?? 'Product description',
+                            'grams' => $data['grams'] ?? '200g',
+                            'photo' => $data['photo'] ?? '',
+                            'price' => $data['price'] ?? 0,
+                            'rating' => $data['rating'] ?? 4.5,
+                            'reviews' => $data['reviews'] ?? 100,
+                            'section' => $data['section'] ?? 'General',
+                            'subcategoryTitle' => $data['subcategoryTitle'] ?? 'category',
+                            'categoryTitle' => $data['categoryTitle'] ?? 'Category',
+                        ];
+                    }
+
+                    if (($data['isSeasonal'] ?? false) && ($data['isAvailable'] ?? false)) {
+                        $seasonalProducts[] = [
+                            'id' => $doc->id(),
+                            'disPrice' => $data['disPrice'] ?? 0,
+                            'name' => $data['name'] ?? 'Product',
+                            'description' => $data['description'] ?? 'Product description',
+                            'grams' => $data['grams'] ?? '200g',
+                            'photo' => $data['photo'] ?? '',
+                            'price' => $data['price'] ?? 0,
+                            'rating' => $data['rating'] ?? 4.5,
+                            'reviews' => $data['reviews'] ?? 100,
+                            'section' => $data['section'] ?? 'General',
+                            'subcategoryTitle' => $data['subcategoryTitle'] ?? 'category',
+                            'categoryTitle' => $data['categoryTitle'] ?? 'Category',
+                        ];
+                    }
+                }
+            }
+
 
             // =========================
             // 6️⃣ Return to Blade
@@ -199,6 +316,12 @@ class MartController extends Controller
                 'featured'   => $featuredProducts,
                 'banners'    => $banners,
                 'sections'   => $sections,
+                'trendingProducts' => $trendingProducts,
+                'bestSellerProducts' => $bestSellerProducts,
+                'stealOfMomentProducts' => $stealOfMomentProducts,
+                'newArrivalProducts' => $newArrivalProducts,
+                'seasonalProducts' => $seasonalProducts,
+
             ]);
 
         } catch (FirebaseException $e) {
@@ -209,6 +332,7 @@ class MartController extends Controller
                 'featured' => [],
                 'banners' => [],
                 'sections' => [],
+
             ]);
         }
     }
