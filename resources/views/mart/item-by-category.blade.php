@@ -65,67 +65,82 @@
                     </div>
                     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 gap-y-8">
                         @foreach($items as $item)
-                            <div class="w-full flex-shrink-0">
-                                <div class="bg-white rounded-2xl flex flex-col gap-y-1 shadow-md hover:shadow-lg transition-shadow" x-data="{ added: false }">
-                                    <div class="relative">
-                                        <img src="{{ $item['photo'] }}" alt="{{ $item['name'] }}" 
-                                             class="w-full h-32 object-cover rounded-t-2xl">
-                                        @if($item['isBestSeller'])
-                                            <span class="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full">Best Seller</span>
-                                        @endif
-                                        @if($item['isNew'])
-                                            <span class="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full">New</span>
-                                        @endif
-                                        @if($item['isSpotlight'])
-                                            <span class="absolute bottom-2 left-2 bg-yellow-500 text-white text-xs px-2 py-1 rounded-full">⭐ Spotlight</span>
-                                        @endif
+                            <div class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+                                <!-- Product Image -->
+                                <div class="relative">
+                                    <img src="{{ $item['photo'] }}" alt="{{ $item['name'] }}"
+                                         class="w-full h-40 object-cover rounded-t-xl">
+                                    <!-- ADD Button -->
+                                    <div class="absolute top-2 right-2" x-data="{ qty: 0 }">
+                                        <button x-show="qty === 0" @click="qty = 1"
+                                                class="px-3 py-1.5 bg-white text-violet-600 border border-violet-400 rounded-full text-xs font-semibold hover:bg-violet-50 transition">
+                                            ADD
+                                        </button>
+                                        <div x-show="qty > 0" class="flex items-center space-x-2 bg-violet-600 text-white rounded-full px-3 py-1 text-xs font-semibold">
+                                            <button @click="if(qty > 0) qty--" class="px-2">−</button>
+                                            <span x-text="qty"></span>
+                                            <button @click="qty++" class="px-2">+</button>
+                                        </div>
                                     </div>
-                                    <div class="p-3 flex-1 flex flex-col">
-                                        <h3 class="font-semibold text-sm text-gray-800 mb-1 line-clamp-2">{{ $item['name'] }}</h3>
-                                        <p class="text-xs text-gray-500 mb-2 line-clamp-2">{{ $item['description'] }}</p>
-                                        <div class="flex items-center mb-2">
-                                            <div class="flex text-yellow-400 text-xs">
-                                                @for($i = 1; $i <= 5; $i++)
-                                                    @if($i <= floor($item['rating']))
-                                                        ★
-                                                    @else
-                                                        ☆
-                                                    @endif
-                                                @endfor
-                                            </div>
-                                            <span class="text-xs text-gray-500 ml-1">({{ $item['reviews'] }})</span>
-                                        </div>
-                                        <div class="flex items-center justify-between mb-2">
-                                            <div class="flex items-center space-x-2">
-                                                @if($item['disPrice'] > 0)
-                                                    <span class="text-lg font-bold text-violet-600">₹{{ $item['disPrice'] }}</span>
-                                                    <span class="text-sm text-gray-500 line-through">₹{{ $item['price'] }}</span>
-                                                @else
-                                                    <span class="text-lg font-bold text-violet-600">₹{{ $item['price'] }}</span>
-                                                @endif
-                                            </div>
-                                            <span class="text-xs text-gray-500">{{ $item['grams'] }}</span>
-                                        </div>
-                                        <div class="flex items-center justify-between">
-                                            <span class="text-xs text-gray-500">{{ $item['vendorTitle'] }}</span>
-                                            @if($item['veg'])
-                                                <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">🟢 Veg</span>
-                                            @else
-                                                <span class="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">🔴 Non-Veg</span>
+                                </div>
+
+                                <!-- Price and Save Info -->
+                                <div class="p-3 space-y-1">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-1">
+                                            <span class="text-sm font-bold text-green-900">₹{{ $item['disPrice'] }}</span>
+                                            @if($item['price'] > $item['disPrice'])
+                                                <span class="text-xs text-red-400 line-through">₹{{ $item['price'] }}</span>
                                             @endif
                                         </div>
-                                        <button 
-                                            class="mt-3 w-full bg-violet-600 text-white py-2 px-4 rounded-lg hover:bg-violet-700 transition-colors text-sm font-medium"
-                                            @click="added = !added"
-                                            :class="added ? 'bg-green-600 hover:bg-green-700' : 'bg-violet-600 hover:bg-violet-700'"
-                                            x-text="added ? 'Added to Cart' : 'Add to Cart'">
-                                        </button>
+                                        @if($item['price'] > $item['disPrice'])
+                                            <span class="text-xs bg-green-100 text-green-600 px-2 py-0.5 rounded-full font-semibold">
+                                SAVE ₹{{ $item['price'] - $item['disPrice'] }}
+                            </span>
+                                        @endif
+                                    </div>
+
+                                    <!-- Delivery Time -->
+                                    <div class="flex items-center justify-between bg-gray-100 rounded-full px-3 py-1 text-xs text-gray-500">
+                                        <!-- Grams -->
+                                        <div class="flex items-center space-x-1">
+                                            <span>{{ $item['grams'] }}</span>
+                                        </div>
+
+                                        <!-- Time -->
+                                        <div class="flex items-center space-x-1">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none"
+                                                 stroke="currentColor" stroke-width="2"
+                                                 class="w-3 h-3 text-gray-600" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                      d="M12 8v4l3 3"/>
+                                                <circle cx="12" cy="12" r="9"/>
+                                            </svg>
+                                            <span>15 mins</span>
+                                        </div>
+                                    </div>
+                                    <!-- Name -->
+                                    <h3 class="text-sm font-medium text-gray-700 truncate">{{ $item['name'] }}</h3>
+
+                                    <!-- Ratings and Reviews -->
+                                    <div class="flex items-center justify-between text-xs text-gray-500 mt-2">
+                                        <!-- Rating -->
+                                        <div class="flex items-end space-x-1 text-xs text-gray-500">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor"
+                                                 class="w-3 h-3 text-yellow-400" viewBox="0 0 20 20">
+                                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.963a1 1 0 00.95.69h4.162c.969 0 1.371 1.24.588 1.81l-3.37 2.448a1 1 0 00-.364 1.118l1.287 3.963c.3.921-.755 1.688-1.538 1.118L10 13.347l-3.37 2.448c-.783.57-1.838-.197-1.538-1.118l1.287-3.963a1 1 0 00-.364-1.118L3.645 9.39c-.783-.57-.38-1.81.588-1.81h4.162a1 1 0 00.95-.69l1.286-3.963z"/>
+                                            </svg>
+                                            <span class="leading-none">{{ $item['reviewSum'] }}</span>
+                                        </div>
+                                        <div>
+                                            <span class="leading-none text-gray-600">({{ $item['reviewCount'] }})</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         @endforeach
                     </div>
-                @else
+                        @else
                     <div class="text-center py-12">
                         <div class="text-gray-400 text-6xl mb-4">📦</div>
                         <h3 class="text-lg font-semibold text-gray-700 mb-2">No items found</h3>

@@ -222,7 +222,7 @@ class MartController extends Controller
             );
             $firestore = $factory->createFirestore()->database();
 
-            // First, get one item to determine the category
+            // First, try to get category info from items
             $itemsRef = $firestore->collection('mart_items');
             $sampleQuery = $itemsRef->where('publish', '=', true)
                                    ->where('isAvailable', '=', true)
@@ -231,12 +231,28 @@ class MartController extends Controller
 
             $sampleDocuments = $sampleQuery->documents();
             $categoryTitle = '';
-            
+
             foreach ($sampleDocuments as $doc) {
                 if ($doc->exists()) {
                     $data = $doc->data();
                     $categoryTitle = $data['categoryTitle'] ?? '';
                     break;
+                }
+            }
+
+            // If no items found, try to get category from subcategory document directly
+            if (empty($categoryTitle)) {
+                $subcategorySnapshot = $firestore->collection('mart_subcategories')
+                    ->where('publish', '=', true)
+                    ->where('title', '=', $subcategoryTitle)
+                    ->documents();
+
+                foreach ($subcategorySnapshot as $subDoc) {
+                    if ($subDoc->exists()) {
+                        $subData = $subDoc->data();
+                        $categoryTitle = $subData['parent_category_title'] ?? '';
+                        break;
+                    }
                 }
             }
 
@@ -251,10 +267,10 @@ class MartController extends Controller
             foreach ($documents as $doc) {
                 if ($doc->exists()) {
                     $data = $doc->data();
-                    
-                    // Generate random rating between 4.0 and 5.0 if not present
-                    $rating = $data['rating'] ?? round(4.0 + (mt_rand() / mt_getrandmax()) * 1.0, 1);
-                    $reviews = $data['reviews'] ?? mt_rand(10, 500);
+
+//                    // Generate random rating between 4.0 and 5.0 if not present
+//                    $rating = $data['rating'] ?? round(4.0 + (mt_rand() / mt_getrandmax()) * 1.0, 1);
+//                    $reviews = $data['reviews'] ?? mt_rand(10, 500);
 
                     $items[] = [
                         'id' => $doc->id(),
@@ -264,8 +280,8 @@ class MartController extends Controller
                         'grams' => $data['grams'] ?? '200g',
                         'photo' => $data['photo'] ?? '',
                         'price' => $data['price'] ?? 0,
-                        'rating' => $rating,
-                        'reviews' => $reviews,
+//                        'rating' => $rating,
+//                        'reviews' => $reviews,
                         'section' => $data['section'] ?? 'General',
                         'subcategoryTitle' => $data['subcategoryTitle'] ?? 'category',
                         'categoryTitle' => $data['categoryTitle'] ?? 'Category',
@@ -278,6 +294,8 @@ class MartController extends Controller
                         'quantity' => $data['quantity'] ?? 0,
                         'vendorID' => $data['vendorID'] ?? '',
                         'vendorTitle' => $data['vendorTitle'] ?? '',
+                        'reviewSum' => $data['reviewSum'] ?? '',
+                        'reviewCount' => $data['reviewCount'] ?? '',
                     ];
                 }
             }
@@ -288,8 +306,9 @@ class MartController extends Controller
             });
 
             \Log::info("Items loaded for subcategory '{$subcategoryTitle}': " . count($items) . " items");
+            \Log::info("Category Title determined: '{$categoryTitle}'");
 
-            // Fetch subcategories that belong to the same category only
+            // Fetch ALL subcategories that belong to the same category (regardless of item count)
             $subcategories = [];
             if (!empty($categoryTitle)) {
                 $subcategoriesSnapshot = $firestore->collection('mart_subcategories')
@@ -301,11 +320,26 @@ class MartController extends Controller
                         $subData = $sub->data();
                         // Check if this subcategory belongs to the same category
                         if (($subData['parent_category_title'] ?? '') === $categoryTitle) {
+                            // Count items for this subcategory (optional - for display purposes)
+                            $itemCount = 0;
+                            $itemsQuery = $firestore->collection('mart_items')
+                                ->where('publish', '=', true)
+                                ->where('isAvailable', '=', true)
+                                ->where('subcategoryTitle', '=', $subData['title'] ?? '');
+
+                            $itemDocuments = $itemsQuery->documents();
+                            foreach ($itemDocuments as $itemDoc) {
+                                if ($itemDoc->exists()) {
+                                    $itemCount++;
+                                }
+                            }
+
                             $subcategories[] = [
                                 'id'    => $subData['id'] ?? null,
                                 'title' => $subData['title'] ?? 'No Title',
                                 'photo' => $subData['photo'] ?? '/img/pro1.jpg',
                                 'isActive' => ($subData['title'] ?? '') === $subcategoryTitle,
+                                'itemCount' => $itemCount, // Add item count for reference
                             ];
                         }
                     }
@@ -316,6 +350,8 @@ class MartController extends Controller
                     return strcmp($a['title'], $b['title']);
                 });
             }
+
+            \Log::info("Found " . count($subcategories) . " subcategories for category '{$categoryTitle}'");
 
             return view('mart.item-by-category', [
                 'items' => $items,

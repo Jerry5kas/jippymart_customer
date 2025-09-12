@@ -10,27 +10,24 @@
     </div>
 
     <nav class="space-y-2">
-        @if(!empty($subcategories))
             @foreach($subcategories as $subcategory)
-                <a href="{{ route('mart.items.by.subcategory', ['subcategoryTitle' => $subcategory['title']]) }}" 
-                   class="flex items-center space-x-3 p-2 rounded-xl transition-colors {{ $subcategory['isActive'] ? 'bg-violet-100 border border-violet-300' : 'hover:bg-violet-50' }}">
-                    <img src="{{ $subcategory['photo'] ?? 'https://img.icons8.com/color/48/vegetarian-food.png' }}" 
-                         alt="{{ $subcategory['title'] }}" class="w-8 h-8 object-cover rounded-full">
-                    <span class="font-medium {{ $subcategory['isActive'] ? 'text-violet-700' : 'text-gray-700' }}">
-                        {{ $subcategory['title'] }}
-                        @if($subcategory['isActive'])
-                            <span class="text-xs text-violet-500 ml-1">●</span>
-                        @endif
+                <a href="{{ route('mart.items.by.subcategory', ['subcategoryTitle' => $subcategory['title']]) }}"
+                    class="flex items-center justify-between p-2 rounded-xl transition-colors {{ $subcategory['isActive'] ? 'bg-violet-100 border border-violet-300' : 'hover:bg-violet-50' }}">
+                    <div class="flex items-center space-x-3">
+                        <img src="{{ $subcategory['photo'] ?? 'https://img.icons8.com/color/48/vegetarian-food.png' }}"
+                             alt="{{ $subcategory['title'] }}" class="w-8 h-8 object-cover rounded-full">
+                        <span class="font-medium {{ $subcategory['isActive'] ? 'text-violet-700' : 'text-gray-700' }}">
+                            {{ $subcategory['title'] }}
+                            <!-- @if($subcategory['isActive'])
+                                <span class="text-xs text-violet-500 ml-1">●</span>
+                            @endif -->
+                        </span>
+                    </div>
+                    <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                        {{ $subcategory['itemCount'] ?? 0 }}
                     </span>
                 </a>
             @endforeach
-        @else
-            {{-- Fallback static menu if no subcategories provided --}}
-            <div class="text-center py-8">
-                <div class="text-gray-400 text-4xl mb-2">📂</div>
-                <p class="text-sm text-gray-500">No subcategories available</p>
-            </div>
-        @endif
     </nav>
 </aside>
 
@@ -46,12 +43,12 @@
             @endif
         </div>
         <nav class="space-y-2">
-            @if(!empty($subcategories))
-                @foreach($subcategories as $subcategory)
-                    <a href="{{ route('mart.items.by.subcategory', ['subcategoryTitle' => $subcategory['title']]) }}" 
-                       class="flex items-center space-x-3 p-2 rounded-xl transition-colors {{ $subcategory['isActive'] ? 'bg-violet-100 border border-violet-300' : 'hover:bg-violet-50' }}"
-                       @click="sidebarOpen = false">
-                        <img src="{{ $subcategory['photo'] ?? 'https://img.icons8.com/color/48/vegetarian-food.png' }}" 
+            @foreach($subcategories as $subcategory)
+                <a href="{{ route('mart.items.by.subcategory', ['subcategoryTitle' => $subcategory['title']]) }}"
+                   class="flex items-center justify-between p-2 rounded-xl transition-colors {{ $subcategory['isActive'] ? 'bg-violet-100 border border-violet-300' : 'hover:bg-violet-50' }}"
+                   @click="sidebarOpen = false">
+                    <div class="flex items-center space-x-3">
+                        <img src="{{ $subcategory['photo'] ?? 'https://img.icons8.com/color/48/vegetarian-food.png' }}"
                              alt="{{ $subcategory['title'] }}" class="w-8 h-8 object-cover rounded-full">
                         <span class="font-medium {{ $subcategory['isActive'] ? 'text-violet-700' : 'text-gray-700' }}">
                             {{ $subcategory['title'] }}
@@ -59,15 +56,12 @@
                                 <span class="text-xs text-violet-500 ml-1">●</span>
                             @endif
                         </span>
-                    </a>
-                @endforeach
-            @else
-                {{-- Fallback static menu if no subcategories provided --}}
-                <div class="text-center py-8">
-                    <div class="text-gray-400 text-4xl mb-2">📂</div>
-                    <p class="text-sm text-gray-500">No subcategories available</p>
-                </div>
-            @endif
+                    </div>
+                    <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                        {{ $subcategory['itemCount'] ?? 0 }}
+                    </span>
+                </a>
+            @endforeach
         </nav>
     </aside>
 </div>
