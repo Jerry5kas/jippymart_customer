@@ -918,25 +918,10 @@ Route::get('/debug-session-delivery', function () {
 });
 
 
-
-
-// routes/web.php
-
 Route::prefix('mart')->group(function () {
-//    Route::get('/', function () {
-//        return view('mart.index');
-//    });
-
-    Route::get('/', [MartController::class, 'index']);
-
-
+    Route::get('/', [MartController::class, 'index'])->name('mart.index');
     Route::get('/items-by-category', function () {
         return view('mart.item-by-category');
     });
+    Route::get('/items-by-subcategory/{subcategoryTitle}', [MartController::class, 'itemsBySubcategory'])->name('mart.items.by.subcategory');
 });
-    Route::prefix('mart')->group(function () {
-        Route::get('/', [MartController::class, 'index']);
-        Route::get('/items-by-category', function () {
-            return view('mart.item-by-category');
-        });
-    });
