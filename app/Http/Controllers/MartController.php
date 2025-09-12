@@ -494,4 +494,167 @@ class MartController extends Controller
             ]);
         }
     }
+
+    /**
+     * Fetch mart coupons from Firebase
+     */
+    public function getMartCoupons()
+    {
+        try {
+            // Initialize Firebase
+            $factory = (new Factory)->withServiceAccount(
+                base_path('storage/app/firebase/credentials.json')
+            );
+            $firestore = $factory->createFirestore()->database();
+
+            // Fetch mart coupons
+            $couponsRef = $firestore->collection('coupons')
+                ->where('cType', '==', 'mart')
+                ->where('isEnabled', '==', true)
+                ->where('isPublic', '==', true)
+                ->where('expiresAt', '>=', new \DateTime())
+                ->documents();
+
+            $coupons = [];
+            foreach ($couponsRef as $doc) {
+                if ($doc->exists()) {
+                    $data = $doc->data();
+                    $coupons[] = [
+                        'id' => $doc->id(),
+                        'code' => $data['code'] ?? '',
+                        'description' => $data['description'] ?? '',
+                        'discount' => $data['discount'] ?? 0,
+                        'discountType' => $data['discountType'] ?? 'Fix Price',
+                        'item_value' => $data['item_value'] ?? 0,
+                        'expiresAt' => $data['expiresAt'] ?? null,
+                        'image' => $data['image'] ?? '',
+                        'usageLimit' => $data['usageLimit'] ?? 0,
+                        'usedCount' => $data['usedCount'] ?? 0,
+                    ];
+                }
+            }
+
+            // Sort coupons by discount amount (highest first)
+            usort($coupons, function($a, $b) {
+                return $b['discount'] <=> $a['discount'];
+            });
+
+            return response()->json([
+                'status' => true,
+                'coupons' => $coupons
+            ]);
+
+        } catch (FirebaseException $e) {
+            \Log::error('Firebase error in MartController getMartCoupons method: ' . $e->getMessage());
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to fetch coupons',
+                'coupons' => []
+            ]);
+        }
+    }
+
+    /**
+     * Apply mart coupon
+     */
+    public function applyMartCoupon(Request $request)
+    {
+        try {
+            $couponCode = $request->input('coupon_code');
+            $cartTotal = $request->input('cart_total', 0);
+
+            if (!$couponCode) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Coupon code is required'
+                ]);
+            }
+
+            // Initialize Firebase
+            $factory = (new Factory)->withServiceAccount(
+                base_path('storage/app/firebase/credentials.json')
+            );
+            $firestore = $factory->createFirestore()->database();
+
+            // Fetch coupon from Firebase
+            $couponRef = $firestore->collection('coupons')
+                ->where('code', '==', $couponCode)
+                ->where('cType', '==', 'mart')
+                ->where('isEnabled', '==', true)
+                ->where('isPublic', '==', true)
+                ->where('expiresAt', '>=', new \DateTime())
+                ->limit(1)
+                ->documents();
+
+            $couponData = null;
+            foreach ($couponRef as $doc) {
+                if ($doc->exists()) {
+                    $couponData = $doc->data();
+                    $couponData['id'] = $doc->id();
+                    break;
+                }
+            }
+
+            if (!$couponData) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Invalid or expired coupon code'
+                ]);
+            }
+
+            // Check minimum order value
+            $minOrderValue = $couponData['item_value'] ?? 0;
+            if ($cartTotal < $minOrderValue) {
+                return response()->json([
+                    'status' => false,
+                    'message' => "Minimum order value of ₹{$minOrderValue} required for this coupon"
+                ]);
+            }
+
+            // Check usage limit
+            $usageLimit = $couponData['usageLimit'] ?? 0;
+            $usedCount = $couponData['usedCount'] ?? 0;
+            if ($usageLimit > 0 && $usedCount >= $usageLimit) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'This coupon has reached its usage limit'
+                ]);
+            }
+
+            // Calculate discount
+            $discount = $couponData['discount'] ?? 0;
+            $discountType = $couponData['discountType'] ?? 'Fix Price';
+            
+            if ($discountType === 'Percentage') {
+                $discountAmount = ($cartTotal * $discount) / 100;
+            } else {
+                $discountAmount = $discount;
+            }
+
+            // Ensure discount doesn't exceed cart total
+            if ($discountAmount > $cartTotal) {
+                $discountAmount = $cartTotal;
+            }
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Coupon applied successfully',
+                'coupon' => [
+                    'id' => $couponData['id'],
+                    'code' => $couponData['code'],
+                    'discount' => $discount,
+                    'discountType' => $discountType,
+                    'discountAmount' => $discountAmount,
+                    'description' => $couponData['description'] ?? ''
+                ]
+            ]);
+
+        } catch (FirebaseException $e) {
+            \Log::error('Firebase error in MartController applyMartCoupon method: ' . $e->getMessage());
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to apply coupon'
+            ]);
+        }
+    }
 }

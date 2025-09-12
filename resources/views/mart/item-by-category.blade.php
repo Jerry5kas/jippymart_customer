@@ -71,7 +71,7 @@
                                     <img src="{{ $item['photo'] }}" alt="{{ $item['name'] }}"
                                          class="w-full h-40 object-cover rounded-t-xl">
                                     <!-- ADD Button -->
-                                    <div class="absolute top-2 right-2" x-data="{ qty: 0 }">
+                                    <div class="absolute bottom-2 left-2" x-data="{ qty: 0 }">
                                         <button x-show="qty === 0" @click="qty = 1"
                                                 class="px-3 py-1.5 bg-white text-violet-600 border border-violet-400 rounded-full text-xs font-semibold hover:bg-violet-50 transition">
                                             ADD
@@ -93,19 +93,26 @@
                                                 <span class="text-xs text-red-400 line-through">₹{{ $item['price'] }}</span>
                                             @endif
                                         </div>
-                                        @if($item['price'] > $item['disPrice'])
-                                            <span class="text-xs bg-green-100 text-green-600 px-2 py-0.5 rounded-full font-semibold">
-                                SAVE ₹{{ $item['price'] - $item['disPrice'] }}
-                            </span>
-                                        @endif
+                                                                            <span
+                                            class="self-end bg-gradient-to-r from-green-200 to-white text-green-600 text-[9px] px-2 font-semibold p-0.5 rounded-sm inline-flex items-center gap-x-1">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                                                 fill="currentColor" class="size-3">
+                                              <path fill-rule="evenodd"
+                                                    d="M5.25 2.25a3 3 0 0 0-3 3v4.318a3 3 0 0 0 .879 2.121l9.58 9.581c.92.92 2.39 1.186 3.548.428a18.849 18.849 0 0 0 5.441-5.44c.758-1.16.492-2.629-.428-3.548l-9.58-9.581a3 3 0 0 0-2.122-.879H5.25ZM6.375 7.5a1.125 1.125 0 1 0 0-2.25 1.125 1.125 0 0 0 0 2.25Z"
+                                                    clip-rule="evenodd"/>
+                                            </svg>
+                                             SAVE ₹30</span>
                                     </div>
+                                    <div class="flex items-center space-x-1 text-xs text-gray-500">
+                                            <span>{{ $item['grams'] }}</span>
+                                        </div>
+
+                                        <h3 class="text-sm font-medium text-gray-700 truncate text-xs">{{ $item['name'] }}</h3>
 
                                     <!-- Delivery Time -->
                                     <div class="flex items-center justify-between bg-gray-100 rounded-full px-3 py-1 text-xs text-gray-500">
                                         <!-- Grams -->
-                                        <div class="flex items-center space-x-1">
-                                            <span>{{ $item['grams'] }}</span>
-                                        </div>
+                                        
 
                                         <!-- Time -->
                                         <div class="flex items-center space-x-1">
@@ -120,7 +127,7 @@
                                         </div>
                                     </div>
                                     <!-- Name -->
-                                    <h3 class="text-sm font-medium text-gray-700 truncate">{{ $item['name'] }}</h3>
+                                    
 
                                     <!-- Ratings and Reviews -->
                                     <div class="flex items-center justify-between text-xs text-gray-500 mt-2">
