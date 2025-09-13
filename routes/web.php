@@ -924,4 +924,6 @@ Route::prefix('mart')->group(function () {
         return view('mart.item-by-category');
     });
     Route::get('/items-by-subcategory/{subcategoryTitle}', [MartController::class, 'itemsBySubcategory'])->name('mart.items.by.subcategory');
-});
+    Route::get('/search', [MartController::class, 'search'])->name('mart.search');
+    Route::get('/search-suggestions', [MartController::class, 'search'])->name('mart.search.suggestions');
+    });

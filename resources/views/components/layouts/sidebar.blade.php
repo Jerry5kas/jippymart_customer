@@ -24,7 +24,7 @@
                         </span>
                     </div>
                     <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
-                        {{ $subcategory['itemCount'] ?? 0 }}
+                        <!-- {{ $subcategory['itemCount'] ?? 0 }} -->
                     </span>
                 </a>
             @endforeach

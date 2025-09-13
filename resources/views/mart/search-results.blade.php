@@ -1,68 +1,55 @@
-@props(['items' => [], 'subcategoryTitle' => '', 'subcategories' => [], 'categoryTitle' => ''])
-
 <x-layouts.app>
+    <div class="pt-20 pb-8">
+        <div class="sm:w-[90%] w-full mx-auto px-4">
+            <!-- Search Header -->
+            <div class="mb-6">
+{{--                <div class="flex items-center space-x-4 mb-4">--}}
+{{--                    <a href="{{ route('mart.index') }}" class="text-purple-600 hover:text-purple-700 flex items-center space-x-2">--}}
+{{--                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">--}}
+{{--                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>--}}
+{{--                        </svg>--}}
+{{--                        <span>Back to Mart</span>--}}
+{{--                    </a>--}}
+{{--                </div>--}}
 
-    <div
-        class="pt-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 font-semibold text-xs text-gray-500 inline-flex items-center text-gray-700 gap-x-3">
-        <a href="{{ route('mart.index') }}" class="hover:text-violet-600">Home</a>
-        <span>
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                 stroke="currentColor" class="size-4 ">
-              <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/>
-            </svg>
-        </span>
-        @if(!empty($categoryTitle))
-            <span>{{ $categoryTitle }}</span>
-        <span>
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                 stroke="currentColor" class="size-4 ">
-              <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/>
-            </svg>
-        </span>
-        @else
-        <span>Groceries</span>
-        <span>
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                 stroke="currentColor" class="size-4 ">
-              <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/>
-            </svg>
-        </span>
-        @endif
-        <span class="text-violet-700 font-semibold">{{ $subcategoryTitle ?: 'Top Picks' }}</span>
-    </div>
-    <div x-data="{ sidebarOpen: false }" class="flex h-screen overflow-hidden">
-
-        <!-- Sidebar -->
-        <x-layouts.sidebar :subcategories="$subcategories" :categoryTitle="$categoryTitle"/>
-
-        <!-- Main content -->
-        <div class="flex-1 overflow-y-auto">
-            <!-- Top bar -->
-            <header class="flex items-center justify-between p-4 bg-white border-b shadow-md">
-                <div>
-                    <h1 class="text-xl font-bold text-gray-800">{{ $subcategoryTitle ?: 'Groceries' }}</h1>
-                    @if(!empty($categoryTitle))
-                        <p class="text-sm text-gray-500 mt-1">Category: {{ $categoryTitle }}</p>
+                <h1 class="text-2xl font-bold text-gray-800 mb-2">
+                    @if($query)
+                        Search Results for "{{ $query }}"
+                    @else
+                        Search Mart Items
                     @endif
-                </div>
-                <div class="inline-flex items-center gap-x-2">
-                    <button class="md:hidden px-3 py-2 border rounded-lg" @click="sidebarOpen = true">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                             stroke="currentColor" class="size-6">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                  d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75"/>
-                        </svg>
-                    </button>
-                </div>
-            </header>
+                </h1>
 
-            <!-- Products -->
-            <main class="p-4">
+                <p class="text-gray-600">
+                    @if($totalResults > 0)
+                        Found {{ $totalResults }} {{ $totalResults === 1 ? 'item' : 'items' }}
+                    @else
+                        No items found
+                    @endif
+                </p>
+            </div>
 
-                @if(count($items) > 0)
-                    <div class="mb-4 text-sm text-gray-600">
-                        Showing {{ count($items) }} items in {{ $subcategoryTitle }}
+            <!-- Search Form -->
+            <div class="mb-8">
+                <form action="{{ route('mart.search') }}" method="GET" class="max-w-md">
+                    <div class="relative">
+                        <input type="text"
+                               name="q"
+                               value="{{ $query }}"
+                               placeholder="Search for products..."
+                               class="w-full px-4 py-3 pl-12 pr-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+
+                        <button type="submit" class="absolute left-4 top-3.5 text-gray-400 hover:text-purple-500 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1010.5 18.5a7.5 7.5 0 006.15-3.35z"/>
+                            </svg>
+                        </button>
                     </div>
+                </form>
+            </div>
+
+            <!-- Search Results -->
+            @if($totalResults > 0)
                 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 gap-y-8">
                         @foreach($items as $item)
                             <div class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow">
@@ -81,8 +68,8 @@
                                             <span x-text="qty"></span>
                                             <button @click="qty++" class="px-2">+</button>
                                         </div>
-                        </div>
-                    </div>
+                                    </div>
+                                </div>
 
                                 <!-- Price and Save Info -->
                                 <div class="p-3 space-y-1">
@@ -117,8 +104,8 @@
                                                 <circle cx="12" cy="12" r="9"/>
                                             </svg>
                                             <span>15 mins</span>
-                            </div>
-                        </div>
+                                        </div>
+                                    </div>
                                     <!-- Name -->
                                     <h3 class="text-sm font-medium text-gray-700 truncate">{{ $item['name'] }}</h3>
 
@@ -139,21 +126,38 @@
                                 </div>
                             </div>
                         @endforeach
-                    </div>
-                        @else
-                    <div class="text-center py-12">
-                        <div class="text-gray-400 text-6xl mb-4">📦</div>
-                        <h3 class="text-lg font-semibold text-gray-700 mb-2">No items found</h3>
-                        <p class="text-gray-500 mb-4">We couldn't find any items in the "{{ $subcategoryTitle }}" category.</p>
-                        <a href="{{ route('mart.index') }}" class="inline-flex items-center px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 mr-2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-                            </svg>
-                            Back to Home
-                        </a>
                 </div>
-                @endif
-            </main>
+            @else
+                <!-- No Results -->
+                <div class="text-center py-12">
+                    <div class="w-24 h-24 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1010.5 18.5a7.5 7.5 0 006.15-3.35z"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-800 mb-2">No items found</h3>
+                    <p class="text-gray-600 mb-6">
+                        @if($query)
+                            We couldn't find any items matching "{{ $query }}". Try searching with different keywords.
+                        @else
+                            Enter a search term to find products in our mart.
+                        @endif
+                    </p>
+                    <a href="{{ route('mart.index') }}" class="inline-flex items-center px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors duration-200">
+                        Browse All Products
+                    </a>
+                </div>
+            @endif
         </div>
     </div>
+
+    <!-- Line Clamp CSS -->
+    <style>
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+    </style>
 </x-layouts.app>
