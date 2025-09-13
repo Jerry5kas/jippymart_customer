@@ -346,41 +346,41 @@ class MartController extends Controller
             );
             $firestore = $factory->createFirestore()->database();
 
-            // First, try to get category info from items
-            $itemsRef = $firestore->collection('mart_items');
-            $sampleQuery = $itemsRef->where('publish', '=', true)
-                                   ->where('isAvailable', '=', true)
-                                   ->where('subcategoryTitle', '=', $subcategoryTitle)
-                                   ->limit(1);
-
-            $sampleDocuments = $sampleQuery->documents();
+            // First, get category info from subcategory document directly (faster than querying items)
             $categoryTitle = '';
+            $subcategoriesSnapshot = $firestore->collection('mart_subcategories')
+                ->where('publish', '=', true)
+                ->where('title', '=', $subcategoryTitle)
+                ->documents();
 
-            foreach ($sampleDocuments as $doc) {
-                if ($doc->exists()) {
-                    $data = $doc->data();
-                    $categoryTitle = $data['categoryTitle'] ?? '';
+            foreach ($subcategoriesSnapshot as $subDoc) {
+                if ($subDoc->exists()) {
+                    $subData = $subDoc->data();
+                    $categoryTitle = $subData['parent_category_title'] ?? '';
                     break;
                 }
             }
 
-            // If no items found, try to get category from subcategory document directly
+            // If still no category found, try to get from one item (fallback)
             if (empty($categoryTitle)) {
-                $subcategorySnapshot = $firestore->collection('mart_subcategories')
-                    ->where('publish', '=', true)
-                    ->where('title', '=', $subcategoryTitle)
-                    ->documents();
+                $itemsRef = $firestore->collection('mart_items');
+                $sampleQuery = $itemsRef->where('publish', '=', true)
+                                       ->where('isAvailable', '=', true)
+                                       ->where('subcategoryTitle', '=', $subcategoryTitle)
+                                       ->limit(1);
 
-                foreach ($subcategorySnapshot as $subDoc) {
-                    if ($subDoc->exists()) {
-                        $subData = $subDoc->data();
-                        $categoryTitle = $subData['parent_category_title'] ?? '';
+                $sampleDocuments = $sampleQuery->documents();
+                foreach ($sampleDocuments as $doc) {
+                    if ($doc->exists()) {
+                        $data = $doc->data();
+                        $categoryTitle = $data['categoryTitle'] ?? '';
                         break;
                     }
                 }
             }
 
-            // Fetch all items by subcategoryTitle
+            // Fetch ONLY items for this specific subcategory (much faster)
+            $itemsRef = $firestore->collection('mart_items');
             $query = $itemsRef->where('publish', '=', true)
                               ->where('isAvailable', '=', true)
                               ->where('subcategoryTitle', '=', $subcategoryTitle);
@@ -430,50 +430,9 @@ class MartController extends Controller
             });
 
             \Log::info("Items loaded for subcategory '{$subcategoryTitle}': " . count($items) . " items");
-            \Log::info("Category Title determined: '{$categoryTitle}'");
 
-            // Fetch ALL subcategories that belong to the same category (regardless of item count)
-            $subcategories = [];
-            if (!empty($categoryTitle)) {
-                $subcategoriesSnapshot = $firestore->collection('mart_subcategories')
-                    ->where('publish', '=', true)
-                    ->documents();
-
-                foreach ($subcategoriesSnapshot as $sub) {
-                    if ($sub->exists()) {
-                        $subData = $sub->data();
-                        // Check if this subcategory belongs to the same category
-                        if (($subData['parent_category_title'] ?? '') === $categoryTitle) {
-                            // Count items for this subcategory (optional - for display purposes)
-                            $itemCount = 0;
-                            $itemsQuery = $firestore->collection('mart_items')
-                                ->where('publish', '=', true)
-                                ->where('isAvailable', '=', true)
-                                ->where('subcategoryTitle', '=', $subData['title'] ?? '');
-
-                            $itemDocuments = $itemsQuery->documents();
-                            foreach ($itemDocuments as $itemDoc) {
-                                if ($itemDoc->exists()) {
-                                    $itemCount++;
-                                }
-                            }
-
-                            $subcategories[] = [
-                                'id'    => $subData['id'] ?? null,
-                                'title' => $subData['title'] ?? 'No Title',
-                                'photo' => $subData['photo'] ?? '/img/pro1.jpg',
-                                'isActive' => ($subData['title'] ?? '') === $subcategoryTitle,
-                                'itemCount' => $itemCount, // Add item count for reference
-                            ];
-                        }
-                    }
-                }
-
-                // Sort subcategories by set_order or title
-                usort($subcategories, function($a, $b) {
-                    return strcmp($a['title'], $b['title']);
-                });
-            }
+            // Get subcategories for sidebar (without counting items for performance)
+            $subcategories = $this->getSubcategoriesForSidebar($firestore, $categoryTitle, $subcategoryTitle);
 
             \Log::info("Found " . count($subcategories) . " subcategories for category '{$categoryTitle}'");
 
@@ -493,6 +452,245 @@ class MartController extends Controller
                 'subcategories' => [],
             ]);
         }
+    }
+
+    /**
+     * Get subcategories for sidebar without counting items (for performance)
+     */
+    private function getSubcategoriesForSidebar($firestore, $categoryTitle, $currentSubcategoryTitle)
+    {
+        if (empty($categoryTitle)) {
+            return [];
+        }
+
+        $subcategories = [];
+        $subcategoriesSnapshot = $firestore->collection('mart_subcategories')
+            ->where('publish', '=', true)
+            ->where('parent_category_title', '=', $categoryTitle)
+            ->documents();
+
+        foreach ($subcategoriesSnapshot as $sub) {
+            if ($sub->exists()) {
+                $subData = $sub->data();
+
+                $subcategories[] = [
+                    'id'    => $subData['id'] ?? null,
+                    'title' => $subData['title'] ?? 'No Title',
+                    'photo' => $subData['photo'] ?? '/img/pro1.jpg',
+                    'isActive' => ($subData['title'] ?? '') === $currentSubcategoryTitle,
+                    'itemCount' => 0, // Don't count items for performance
+                ];
+            }
+        }
+
+        // Sort subcategories by title
+        usort($subcategories, function($a, $b) {
+            return strcmp($a['title'], $b['title']);
+        });
+
+        return $subcategories;
+    }
+
+    public function search(Request $request)
+    {
+        try {
+            $query = $request->get('q', '');
+            $type = $request->get('type', 'search'); // 'search' or 'suggestions'
+
+            // Handle suggestions request
+            if ($type === 'suggestions') {
+                if (strlen($query) < 2) {
+                    return response()->json([]);
+                }
+
+                $suggestions = $this->getSearchSuggestions($query);
+                return response()->json($suggestions);
+            }
+
+            // Handle regular search request
+            if (empty($query)) {
+                return view('mart.search-results', [
+                    'items' => [],
+                    'query' => '',
+                    'totalResults' => 0,
+                ]);
+            }
+
+            $items = $this->getSearchResults($query);
+
+            \Log::info("Search completed for query '{$query}': " . count($items) . " items found");
+
+            return view('mart.search-results', [
+                'items' => $items,
+                'query' => $query,
+                'totalResults' => count($items),
+            ]);
+
+        } catch (FirebaseException $e) {
+            \Log::error('Firebase error in MartController search method: ' . $e->getMessage());
+
+            if ($request->get('type') === 'suggestions') {
+                return response()->json([]);
+            }
+
+            return view('mart.search-results', [
+                'items' => [],
+                'query' => $query ?? '',
+                'totalResults' => 0,
+            ]);
+        }
+    }
+
+    /**
+     * Get search results for products
+     */
+    private function getSearchResults($query)
+    {
+        // Initialize Firebase
+        $factory = (new Factory)->withServiceAccount(
+            base_path('storage/app/firebase/credentials.json')
+        );
+        $firestore = $factory->createFirestore()->database();
+
+        // Search in mart_items collection
+        $itemsRef = $firestore->collection('mart_items');
+        $documents = $itemsRef->where('publish', '=', true)
+                             ->where('isAvailable', '=', true)
+                             ->documents();
+
+        $items = [];
+        $searchQuery = strtolower($query);
+
+        foreach ($documents as $doc) {
+            if ($doc->exists()) {
+                $data = $doc->data();
+
+                // Search in multiple fields
+                $name = strtolower($data['name'] ?? '');
+                $description = strtolower($data['description'] ?? '');
+                $categoryTitle = strtolower($data['categoryTitle'] ?? '');
+                $subcategoryTitle = strtolower($data['subcategoryTitle'] ?? '');
+                $section = strtolower($data['section'] ?? '');
+
+                // Check if query matches any field
+                if (strpos($name, $searchQuery) !== false ||
+                    strpos($description, $searchQuery) !== false ||
+                    strpos($categoryTitle, $searchQuery) !== false ||
+                    strpos($subcategoryTitle, $searchQuery) !== false ||
+                    strpos($section, $searchQuery) !== false) {
+
+                    $items[] = [
+                        'id' => $doc->id(),
+                        'disPrice' => $data['disPrice'] ?? 0,
+                        'name' => $data['name'] ?? 'Product',
+                        'description' => $data['description'] ?? 'Product description',
+                        'grams' => $data['grams'] ?? '200g',
+                        'photo' => $data['photo'] ?? '',
+                        'price' => $data['price'] ?? 0,
+                        'section' => $data['section'] ?? 'General',
+                        'subcategoryTitle' => $data['subcategoryTitle'] ?? 'category',
+                        'categoryTitle' => $data['categoryTitle'] ?? 'Category',
+                        'isBestSeller' => $data['isBestSeller'] ?? false,
+                        'isFeature' => $data['isFeature'] ?? false,
+                        'isSpotlight' => $data['isSpotlight'] ?? false,
+                        'isNew' => $data['isNew'] ?? false,
+                        'veg' => $data['veg'] ?? true,
+                        'nonveg' => $data['nonveg'] ?? false,
+                        'quantity' => $data['quantity'] ?? 0,
+                        'vendorID' => $data['vendorID'] ?? '',
+                        'vendorTitle' => $data['vendorTitle'] ?? '',
+                        'reviewSum' => $data['reviewSum'] ?? '',
+                        'reviewCount' => $data['reviewCount'] ?? '',
+                    ];
+                }
+            }
+        }
+
+        // Sort items by name
+        usort($items, function($a, $b) {
+            return strcmp($a['name'], $b['name']);
+        });
+
+        return $items;
+    }
+
+    /**
+     * Get search suggestions for autocomplete
+     */
+    private function getSearchSuggestions($query)
+    {
+        // Initialize Firebase
+        $factory = (new Factory)->withServiceAccount(
+            base_path('storage/app/firebase/credentials.json')
+        );
+        $firestore = $factory->createFirestore()->database();
+
+        // Get all items for suggestions
+        $itemsRef = $firestore->collection('mart_items');
+        $documents = $itemsRef->where('publish', '=', true)
+                             ->where('isAvailable', '=', true)
+                             ->documents();
+
+        $suggestions = [];
+        $searchQuery = strtolower($query);
+        $seen = [];
+
+        foreach ($documents as $doc) {
+            if ($doc->exists()) {
+                $data = $doc->data();
+
+                // Get unique suggestions from name, category, and subcategory
+                $name = strtolower($data['name'] ?? '');
+                $categoryTitle = strtolower($data['categoryTitle'] ?? '');
+                $subcategoryTitle = strtolower($data['subcategoryTitle'] ?? '');
+
+                // Check name matches
+                if (strpos($name, $searchQuery) === 0 && !in_array($name, $seen)) {
+                    $suggestions[] = [
+                        'text' => $data['name'],
+                        'type' => 'product',
+                        'category' => $data['categoryTitle'] ?? '',
+                        'subcategory' => $data['subcategoryTitle'] ?? ''
+                    ];
+                    $seen[] = $name;
+                }
+
+                // Check category matches
+                if (strpos($categoryTitle, $searchQuery) === 0 && !in_array($categoryTitle, $seen)) {
+                    $suggestions[] = [
+                        'text' => $data['categoryTitle'],
+                        'type' => 'category',
+                        'category' => $data['categoryTitle'] ?? '',
+                        'subcategory' => ''
+                    ];
+                    $seen[] = $categoryTitle;
+                }
+
+                // Check subcategory matches
+                if (strpos($subcategoryTitle, $searchQuery) === 0 && !in_array($subcategoryTitle, $seen)) {
+                    $suggestions[] = [
+                        'text' => $data['subcategoryTitle'],
+                        'type' => 'subcategory',
+                        'category' => $data['categoryTitle'] ?? '',
+                        'subcategory' => $data['subcategoryTitle'] ?? ''
+                    ];
+                    $seen[] = $subcategoryTitle;
+                }
+
+                // Limit suggestions to 10
+                if (count($suggestions) >= 10) {
+                    break;
+                }
+            }
+        }
+
+        // Sort suggestions by type (products first, then categories, then subcategories)
+        usort($suggestions, function($a, $b) {
+            $typeOrder = ['product' => 0, 'category' => 1, 'subcategory' => 2];
+            return $typeOrder[$a['type']] <=> $typeOrder[$b['type']];
+        });
+
+        return array_slice($suggestions, 0, 8); // Return max 8 suggestions
     }
 
     /**
@@ -624,7 +822,7 @@ class MartController extends Controller
             // Calculate discount
             $discount = $couponData['discount'] ?? 0;
             $discountType = $couponData['discountType'] ?? 'Fix Price';
-            
+
             if ($discountType === 'Percentage') {
                 $discountAmount = ($cartTotal * $discount) / 100;
             } else {
