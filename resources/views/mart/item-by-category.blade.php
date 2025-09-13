@@ -13,20 +13,20 @@
         </span>
         @if(!empty($categoryTitle))
             <span>{{ $categoryTitle }}</span>
-        <span>
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                 stroke="currentColor" class="size-4 ">
-              <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/>
-            </svg>
-        </span>
+            <span>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                     stroke="currentColor" class="size-4 ">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/>
+                </svg>
+            </span>
         @else
-        <span>Groceries</span>
-        <span>
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                 stroke="currentColor" class="size-4 ">
-              <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/>
-            </svg>
-        </span>
+            <span>Groceries</span>
+            <span>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                     stroke="currentColor" class="size-4 ">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/>
+                </svg>
+            </span>
         @endif
         <span class="text-violet-700 font-semibold">{{ $subcategoryTitle ?: 'Top Picks' }}</span>
     </div>
@@ -46,6 +46,7 @@
                     @endif
                 </div>
                 <div class="inline-flex items-center gap-x-2">
+                    <x-mart.filter/>
                     <button class="md:hidden px-3 py-2 border rounded-lg" @click="sidebarOpen = true">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                              stroke="currentColor" class="size-6">
@@ -58,12 +59,11 @@
 
             <!-- Products -->
             <main class="p-4">
-
                 @if(count($items) > 0)
                     <div class="mb-4 text-sm text-gray-600">
                         Showing {{ count($items) }} items in {{ $subcategoryTitle }}
                     </div>
-                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 gap-y-8">
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 gap-y-8">
                         @foreach($items as $item)
                             <div class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow">
                                 <!-- Product Image -->
@@ -81,8 +81,8 @@
                                             <span x-text="qty"></span>
                                             <button @click="qty++" class="px-2">+</button>
                                         </div>
-                        </div>
-                    </div>
+                                    </div>
+                                </div>
 
                                 <!-- Price and Save Info -->
                                 <div class="p-3 space-y-1">
@@ -124,8 +124,8 @@
                                                 <circle cx="12" cy="12" r="9"/>
                                             </svg>
                                             <span>15 mins</span>
-                            </div>
-                        </div>
+                                        </div>
+                                    </div>
                                     <!-- Name -->
                                     
 
@@ -158,7 +158,7 @@
                             </svg>
                             Back to Home
                         </a>
-                </div>
+                    </div>
                 @endif
             </main>
         </div>

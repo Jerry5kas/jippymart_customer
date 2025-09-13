@@ -3,6 +3,7 @@
     <x-mart.carousel :banners="$banners"/>
     <x-mart.banner-card :products="$spotlight"/>
     <x-mart.categories />
+    <x-mart.banner-card/>
 
     <!-- ✅ Our New Dynamic Section & Subcategories Block -->
     <div class="sm:w-[90%] w-full mx-auto space-y-8 py-8">
@@ -41,7 +42,9 @@
    </div>
 
     <div class="pb-16 space-y-8">
+        <x-mart.banner-card/>
         <x-mart.item-card headings="Get Your Home Needs"/>
+        <x-mart.banner-card/>
         <x-mart.item-card headings="New in Store"/>
         <x-mart.item-card headings="New in Store"/>
         <x-mart.item-card headings="New in Store"/>

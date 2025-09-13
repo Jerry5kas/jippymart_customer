@@ -4,7 +4,7 @@
 <div x-data="{ active: '{{ $categories[0]['title'] ?? '' }}' }" class="w-full pb-5 pt-16">
 
     <!-- Categories Navigation -->
-    <div class="fixed z-40 w-full border-b bg-gradient-to-t from-slate-50 to-white">
+    <div class="fixed z-30 w-full border-b bg-gradient-to-t from-slate-50 to-white">
         <div class="sm:w-[90%] mx-auto w-full px-4">
             <div class="flex items-center space-x-6 overflow-x-auto scrollbar-hide py-3">
                 @foreach($categories as $category)
@@ -20,7 +20,7 @@
     </div>
 
     <!-- Category Items Scroll -->
-    <div class="w-full pt-16">
+    <div class="w-full pt-12">
         @foreach($categories as $category)
             <div x-show="active === '{{ $category['title'] }}'" class="flex space-x-6 overflow-x-auto px-4 py-5 scrollbar-hide sm:w-[90%] mx-auto w-full text-xs">
                 @foreach($category['subcategories'] as $sub)
