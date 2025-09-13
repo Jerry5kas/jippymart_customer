@@ -3,320 +3,658 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Log;
-use Google\Cloud\Firestore\FirestoreClient;
+use Kreait\Firebase\Factory;
+use Kreait\Firebase\Exception\FirebaseException;
 
 class MartController extends Controller
 {
-    protected $firestore;
-
-    public function __construct()
-    {
-        try {
-            $this->firestore = new FirestoreClient([
-                'projectId' => env('FIREBASE_PROJECT_ID'),
-                'keyFilePath' => storage_path('app/firebase/credentials.json')
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Failed to initialize Firestore client: ' . $e->getMessage());
-            $this->firestore = null;
-        }
-    }
-
-    /**
-     * Get mart categories for homepage
-     */
-    public function getHomepageCategories()
-    {
-        return Cache::remember('mart_homepage_categories', 300, function () {
-            if (!$this->firestore) {
-                Log::warning('Firestore client not available, returning demo categories');
-                return $this->getDemoCategories();
-            }
-
-            try {
-                $query = $this->firestore->collection('mart_categories')
-                    ->where('publish', '=', true)
-                    ->where('show_in_homepage', '=', true)
-                    ->orderBy('category_order');
-
-                $documents = $query->documents();
-                $categories = [];
-
-                foreach ($documents as $document) {
-                    $data = $document->data();
-                    $data['id'] = $document->id();
-                    $categories[] = $data;
-                }
-
-                Log::info('Successfully fetched ' . count($categories) . ' mart categories');
-                return collect($categories)->sortBy('category_order')->values();
-            } catch (\Exception $e) {
-                Log::error('Error fetching mart categories: ' . $e->getMessage());
-                return $this->getDemoCategories();
-            }
-        });
-    }
-
-    /**
-     * Get mart subcategories for a specific category
-     */
-    public function getSubcategoriesByCategory($categoryId)
-    {
-        $cacheKey = "mart_subcategories_{$categoryId}";
-        
-        return Cache::remember($cacheKey, 300, function () use ($categoryId) {
-            if (!$this->firestore) {
-                Log::warning('Firestore client not available, returning demo subcategories');
-                return $this->getDemoSubcategories($categoryId);
-            }
-
-            try {
-                $query = $this->firestore->collection('mart_subcategories')
-                    ->where('publish', '=', true)
-                    ->where('show_in_homepage', '=', true)
-                    ->where('parent_category_id', '=', $categoryId)
-                    ->orderBy('subcategory_order');
-
-                $documents = $query->documents();
-                $subcategories = [];
-
-                foreach ($documents as $document) {
-                    $data = $document->data();
-                    $data['id'] = $document->id();
-                    // Add image loading state properties
-                    $data['imageLoaded'] = false;
-                    $data['imageError'] = false;
-                    $subcategories[] = $data;
-                }
-
-                Log::info("Successfully fetched " . count($subcategories) . " subcategories for category {$categoryId}");
-                return collect($subcategories)->sortBy('subcategory_order')->values();
-            } catch (\Exception $e) {
-                Log::error("Error fetching mart subcategories for category {$categoryId}: " . $e->getMessage());
-                return $this->getDemoSubcategories($categoryId);
-            }
-        });
-    }
-
-    /**
-     * Get all mart subcategories for homepage
-     */
-    public function getAllHomepageSubcategories()
-    {
-        return Cache::remember('mart_all_homepage_subcategories', 300, function () {
-            if (!$this->firestore) {
-                Log::warning('Firestore client not available, returning demo subcategories');
-                return $this->getDemoSubcategories();
-            }
-
-            try {
-                $query = $this->firestore->collection('mart_subcategories')
-                    ->where('publish', '=', true)
-                    ->where('show_in_homepage', '=', true)
-                    ->orderBy('subcategory_order');
-
-                $documents = $query->documents();
-                $subcategories = [];
-
-                foreach ($documents as $document) {
-                    $data = $document->data();
-                    $data['id'] = $document->id();
-                    // Add image loading state properties
-                    $data['imageLoaded'] = false;
-                    $data['imageError'] = false;
-                    $subcategories[] = $data;
-                }
-
-                Log::info('Successfully fetched ' . count($subcategories) . ' mart subcategories');
-                return collect($subcategories)->sortBy('subcategory_order')->values();
-            } catch (\Exception $e) {
-                Log::error('Error fetching all mart subcategories: ' . $e->getMessage());
-                return $this->getDemoSubcategories();
-            }
-        });
-    }
-
-    /**
-     * Show mart index page with dynamic data
-     */
     public function index()
     {
         try {
-            $categories = $this->getHomepageCategories();
-            $subcategories = $this->getAllHomepageSubcategories();
-            
-            Log::info('Mart index page loaded with ' . $categories->count() . ' categories and ' . $subcategories->count() . ' subcategories');
-            
-            return view('mart.index', compact('categories', 'subcategories'));
-        } catch (\Exception $e) {
-            Log::error('Error loading mart index page: ' . $e->getMessage());
-            
-            // Return view with empty collections as fallback
+            // Initialize Firebase
+            $factory = (new Factory)->withServiceAccount(
+                base_path('storage/app/firebase/credentials.json')
+            );
+            $firestore = $factory->createFirestore()->database();
+
+        // =========================
+        // 1️⃣ OPTIMIZED CATEGORIES & SUBCATEGORIES
+        // =========================
+
+        // Fetch all categories first
+        $categoriesSnapshot = $firestore->collection('mart_categories')
+            ->where('publish', '=', true)
+            ->documents();
+
+        $categoryData = [];
+        $categoryIds = [];
+
+        foreach ($categoriesSnapshot as $category) {
+            if (!$category->exists()) continue;
+            $cat = $category->data();
+            $categoryIds[] = $cat['id'];
+            $categoryData[] = $cat;
+        }
+
+        // Fetch all subcategories in one query
+        $subcategoriesSnapshot = $firestore->collection('mart_subcategories')
+            ->where('publish', '=', true)
+            ->documents();
+
+        $subcategoriesByParent = [];
+        foreach ($subcategoriesSnapshot as $sub) {
+            if ($sub->exists()) {
+                $subData = $sub->data();
+                $parentId = $subData['parent_category_id'] ?? null;
+                if ($parentId && in_array($parentId, $categoryIds)) {
+                    $subcategoriesByParent[$parentId][] = [
+                        'id'    => $subData['id'] ?? null,
+                        'title' => $subData['title'] ?? 'No Title',
+                        'photo' => $subData['photo'] ?? '/img/pro1.jpg',
+                    ];
+                }
+            }
+        }
+
+        // Attach subcategories to their parent categories
+        foreach ($categoryData as &$cat) {
+            $cat['subcategories'] = $subcategoriesByParent[$cat['id']] ?? [];
+        }
+            // Sort banners by set_order ascending
+            usort($categoryData, function($b, $a) {
+                return ($b['set_order'] ?? 0) <=> ($a['set_order'] ?? 0);
+            });
+        // Categories without ordering for maximum performance
+
+        // =========================
+        // 2️⃣ Spotlight Products
+        // =========================
+        // Fetch spotlight products (simplified query to avoid composite index)
+        $itemsRef = $firestore->collection('mart_items');
+        $query = $itemsRef->where('publish', '=', true);
+
+        $documents = $query->documents();
+
+        $products = [];
+        foreach ($documents as $doc) {
+            if ($doc->exists()) {
+                $data = $doc->data();
+
+                // Filter for spotlight and available products in PHP
+                if (($data['isSpotlight'] ?? false) && ($data['isAvailable'] ?? false)) {
+                    // Generate random rating between 4.0 and 5.0 if not present
+                    $rating = $data['rating'] ?? round(4.0 + (mt_rand() / mt_getrandmax()) * 1.0, 1);
+                    $reviews = $data['reviews'] ?? mt_rand(10, 500);
+
+                    $products[] = [
+                        'id' => $doc->id(),
+                        'disPrice' => $data['disPrice'] ?? 0,
+                        'name' => $data['name'] ?? 'Product',
+                        'description' => $data['description'] ?? 'Product description',
+                        'grams' => $data['grams'] ?? '200g',
+                        'photo' => $data['photo'] ?? '',
+                        'price' => $data['price'] ?? 0,
+                        'rating' => $rating,
+                        'reviews' => $reviews,
+                        'section' => $data['section'] ?? 'General',
+                        'subcategoryTitle' => $data['subcategoryTitle'] ?? 'category',
+                    ];
+                }
+
+            }
+        }
+
+        // =========================
+        // 3️⃣ Featured Products
+        // =========================
+        // Fetch featured products based on isFeature field
+        $featuredProducts = [];
+        foreach ($documents as $doc) {
+            if ($doc->exists()) {
+                $data = $doc->data();
+
+                // Filter for featured and available products
+                if (($data['isFeature'] ?? false) && ($data['isAvailable'] ?? false)) {
+                    $featuredProducts[] = [
+                        'id' => $doc->id(),
+                        'disPrice' => $data['disPrice'] ?? 0,
+                        'name' => $data['name'] ?? 'Product',
+                        'description' => $data['description'] ?? 'Product description',
+                        'grams' => $data['grams'] ?? '200g',
+                        'photo' => $data['photo'] ?? '',
+                        'price' => $data['price'] ?? 0,
+                        'rating' => $data['rating'] ?? 4.5,
+                        'reviews' => $data['reviews'] ?? 100,
+                        'section' => $data['section'] ?? 'General',
+                        'subcategoryTitle' => $data['subcategoryTitle'] ?? 'category',
+                        'categoryTitle' => $data['categoryTitle'] ?? 'Category',
+                    ];
+                }
+            }
+        }
+            // =========================
+// 7️⃣ Trending Products
+// =========================
+            $trendingProducts = [];
+            foreach ($documents as $doc) {
+                if ($doc->exists()) {
+                    $data = $doc->data();
+
+                    if (($data['isTrending'] ?? false) && ($data['isAvailable'] ?? false)) {
+                        $trendingProducts[] = [
+                            'id' => $doc->id(),
+                            'disPrice' => $data['disPrice'] ?? 0,
+                            'name' => $data['name'] ?? 'Product',
+                            'description' => $data['description'] ?? 'Product description',
+                            'grams' => $data['grams'] ?? '200g',
+                            'photo' => $data['photo'] ?? '',
+                            'price' => $data['price'] ?? 0,
+                            'rating' => $data['rating'] ?? 4.5,
+                            'reviews' => $data['reviews'] ?? 100,
+                            'section' => $data['section'] ?? 'General',
+                            'subcategoryTitle' => $data['subcategoryTitle'] ?? 'category',
+                            'categoryTitle' => $data['categoryTitle'] ?? 'Category',
+                        ];
+                    }
+                }
+            }
+
+
+            // =========================
+        // 4️⃣ Banners (Top Position)
+        // =========================
+        $bannersSnapshot = $firestore->collection('mart_banners')
+            ->where('position', '=', 'top')
+            ->where('is_publish', '=', true)
+            ->documents();
+
+        $banners = [];
+        foreach ($bannersSnapshot as $doc) {
+            if ($doc->exists()) {
+                $data = $doc->data();
+                $banners[] = [
+                    'id' => $data['id'] ?? $doc->id(),
+                    'title' => $data['title'] ?? '',
+                    'text' => $data['text'] ?? '',
+                    'description' => $data['description'] ?? '',
+                    'photo' => $data['photo'] ?? '',
+                    'redirect_type' => $data['redirect_type'] ?? 'none',
+                    'productId' => $data['productId'] ?? null,
+                    'external_link' => $data['external_link'] ?? null,
+                    'position' => $data['position'] ?? 'top',
+                    'set_order' => $data['set_order'] ?? 0,
+                    'is_publish' => $data['is_publish'] ?? false,
+                ];
+            }
+        }
+
+        // Sort banners by set_order ascending
+        usort($banners, function($a, $b) {
+            return ($a['set_order'] ?? 0) <=> ($b['set_order'] ?? 0);
+        });
+            // Best Seller Products
+            $bestSellerProducts = [];
+            foreach ($documents as $doc) {
+                if ($doc->exists()) {
+                    $data = $doc->data();
+
+                    if (($data['isBestSeller'] ?? false) && ($data['isAvailable'] ?? false)) {
+                        $bestSellerProducts[] = [
+                            'id' => $doc->id(),
+                            'disPrice' => $data['disPrice'] ?? 0,
+                            'name' => $data['name'] ?? 'Product',
+                            'description' => $data['description'] ?? 'Product description',
+                            'grams' => $data['grams'] ?? '200g',
+                            'photo' => $data['photo'] ?? '',
+                            'price' => $data['price'] ?? 0,
+                            'rating' => $data['rating'] ?? 4.5,
+                            'reviews' => $data['reviews'] ?? 100,
+                            'section' => $data['section'] ?? 'General',
+                            'subcategoryTitle' => $data['subcategoryTitle'] ?? 'category',
+                            'categoryTitle' => $data['categoryTitle'] ?? 'Category',
+                        ];
+                    }
+                }
+            }
+
+
+            // =========================
+        // 5️⃣ Sections (Grouped Subcategories) - REUSE DATA
+        // =========================
+        $sections = [];
+
+        // Reuse the subcategories data we already fetched
+        foreach ($subcategoriesSnapshot as $sub) {
+            if (!$sub->exists()) continue;
+
+            $subData = $sub->data();
+            $sectionName = $subData['section'] ?? 'Others';
+
+            if (!isset($sections[$sectionName])) {
+                $sections[$sectionName] = [];
+            }
+
+            $sections[$sectionName][] = [
+                'id'    => $subData['id'] ?? null,
+                'title' => $subData['title'] ?? 'No Title',
+                'photo' => $subData['photo'] ?? '/img/pro1.jpg',
+            ];
+        }
+            // =========================
+// Steal Of Moment, New Arrival & Seasonal Products
+// =========================
+            $stealOfMomentProducts = [];
+            $newArrivalProducts = [];
+            $seasonalProducts = [];
+
+            foreach ($documents as $doc) {
+                if ($doc->exists()) {
+                    $data = $doc->data();
+
+                    if (($data['isStealOfMoment'] ?? false) && ($data['isAvailable'] ?? false)) {
+                        $stealOfMomentProducts[] = [
+                            'id' => $doc->id(),
+                            'disPrice' => $data['disPrice'] ?? 0,
+                            'name' => $data['name'] ?? 'Product',
+                            'description' => $data['description'] ?? 'Product description',
+                            'grams' => $data['grams'] ?? '200g',
+                            'photo' => $data['photo'] ?? '',
+                            'price' => $data['price'] ?? 0,
+                            'rating' => $data['rating'] ?? 4.5,
+                            'reviews' => $data['reviews'] ?? 100,
+                            'section' => $data['section'] ?? 'General',
+                            'subcategoryTitle' => $data['subcategoryTitle'] ?? 'category',
+                            'categoryTitle' => $data['categoryTitle'] ?? 'Category',
+                        ];
+                    }
+
+                    if (($data['isNew'] ?? false) && ($data['isAvailable'] ?? false)) {
+                        $newArrivalProducts[] = [
+                            'id' => $doc->id(),
+                            'disPrice' => $data['disPrice'] ?? 0,
+                            'name' => $data['name'] ?? 'Product',
+                            'description' => $data['description'] ?? 'Product description',
+                            'grams' => $data['grams'] ?? '200g',
+                            'photo' => $data['photo'] ?? '',
+                            'price' => $data['price'] ?? 0,
+                            'rating' => $data['rating'] ?? 4.5,
+                            'reviews' => $data['reviews'] ?? 100,
+                            'section' => $data['section'] ?? 'General',
+                            'subcategoryTitle' => $data['subcategoryTitle'] ?? 'category',
+                            'categoryTitle' => $data['categoryTitle'] ?? 'Category',
+                        ];
+                    }
+
+                    if (($data['isSeasonal'] ?? false) && ($data['isAvailable'] ?? false)) {
+                        $seasonalProducts[] = [
+                            'id' => $doc->id(),
+                            'disPrice' => $data['disPrice'] ?? 0,
+                            'name' => $data['name'] ?? 'Product',
+                            'description' => $data['description'] ?? 'Product description',
+                            'grams' => $data['grams'] ?? '200g',
+                            'photo' => $data['photo'] ?? '',
+                            'price' => $data['price'] ?? 0,
+                            'rating' => $data['rating'] ?? 4.5,
+                            'reviews' => $data['reviews'] ?? 100,
+                            'section' => $data['section'] ?? 'General',
+                            'subcategoryTitle' => $data['subcategoryTitle'] ?? 'category',
+                            'categoryTitle' => $data['categoryTitle'] ?? 'Category',
+                        ];
+                    }
+                }
+            }
+
+
+            // =========================
+            // 6️⃣ Return to Blade
+            // =========================
+            \Log::info("Mart data loaded: " . count($categoryData) . " categories, " . count($products) . " spotlight products, " . count($featuredProducts) . " featured products, " . count($banners) . " banners");
+
             return view('mart.index', [
-                'categories' => collect(),
-                'subcategories' => collect()
+                'categories' => $categoryData,
+                'spotlight'  => $products,
+                'featured'   => $featuredProducts,
+                'banners'    => $banners,
+                'sections'   => $sections,
+                'trendingProducts' => $trendingProducts,
+                'bestSellerProducts' => $bestSellerProducts,
+                'stealOfMomentProducts' => $stealOfMomentProducts,
+                'newArrivalProducts' => $newArrivalProducts,
+                'seasonalProducts' => $seasonalProducts,
+
+            ]);
+
+        } catch (FirebaseException $e) {
+            \Log::error('Firebase error in MartController index method: ' . $e->getMessage());
+            return view('mart.index', [
+                'categories' => [],
+                'spotlight' => [],
+                'featured' => [],
+                'banners' => [],
+                'sections' => [],
+
+            ]);
+        }
+    }
+
+    public function itemsBySubcategory($subcategoryTitle)
+    {
+        try {
+            // Initialize Firebase
+            $factory = (new Factory)->withServiceAccount(
+                base_path('storage/app/firebase/credentials.json')
+            );
+            $firestore = $factory->createFirestore()->database();
+
+            // First, try to get category info from items
+            $itemsRef = $firestore->collection('mart_items');
+            $sampleQuery = $itemsRef->where('publish', '=', true)
+                                   ->where('isAvailable', '=', true)
+                                   ->where('subcategoryTitle', '=', $subcategoryTitle)
+                                   ->limit(1);
+
+            $sampleDocuments = $sampleQuery->documents();
+            $categoryTitle = '';
+
+            foreach ($sampleDocuments as $doc) {
+                if ($doc->exists()) {
+                    $data = $doc->data();
+                    $categoryTitle = $data['categoryTitle'] ?? '';
+                    break;
+                }
+            }
+
+            // If no items found, try to get category from subcategory document directly
+            if (empty($categoryTitle)) {
+                $subcategorySnapshot = $firestore->collection('mart_subcategories')
+                    ->where('publish', '=', true)
+                    ->where('title', '=', $subcategoryTitle)
+                    ->documents();
+
+                foreach ($subcategorySnapshot as $subDoc) {
+                    if ($subDoc->exists()) {
+                        $subData = $subDoc->data();
+                        $categoryTitle = $subData['parent_category_title'] ?? '';
+                        break;
+                    }
+                }
+            }
+
+            // Fetch all items by subcategoryTitle
+            $query = $itemsRef->where('publish', '=', true)
+                              ->where('isAvailable', '=', true)
+                              ->where('subcategoryTitle', '=', $subcategoryTitle);
+
+            $documents = $query->documents();
+
+            $items = [];
+            foreach ($documents as $doc) {
+                if ($doc->exists()) {
+                    $data = $doc->data();
+
+//                    // Generate random rating between 4.0 and 5.0 if not present
+//                    $rating = $data['rating'] ?? round(4.0 + (mt_rand() / mt_getrandmax()) * 1.0, 1);
+//                    $reviews = $data['reviews'] ?? mt_rand(10, 500);
+
+                    $items[] = [
+                        'id' => $doc->id(),
+                        'disPrice' => $data['disPrice'] ?? 0,
+                        'name' => $data['name'] ?? 'Product',
+                        'description' => $data['description'] ?? 'Product description',
+                        'grams' => $data['grams'] ?? '200g',
+                        'photo' => $data['photo'] ?? '',
+                        'price' => $data['price'] ?? 0,
+//                        'rating' => $rating,
+//                        'reviews' => $reviews,
+                        'section' => $data['section'] ?? 'General',
+                        'subcategoryTitle' => $data['subcategoryTitle'] ?? 'category',
+                        'categoryTitle' => $data['categoryTitle'] ?? 'Category',
+                        'isBestSeller' => $data['isBestSeller'] ?? false,
+                        'isFeature' => $data['isFeature'] ?? false,
+                        'isSpotlight' => $data['isSpotlight'] ?? false,
+                        'isNew' => $data['isNew'] ?? false,
+                        'veg' => $data['veg'] ?? true,
+                        'nonveg' => $data['nonveg'] ?? false,
+                        'quantity' => $data['quantity'] ?? 0,
+                        'vendorID' => $data['vendorID'] ?? '',
+                        'vendorTitle' => $data['vendorTitle'] ?? '',
+                        'reviewSum' => $data['reviewSum'] ?? '',
+                        'reviewCount' => $data['reviewCount'] ?? '',
+                    ];
+                }
+            }
+
+            // Sort items by set_order or name
+            usort($items, function($a, $b) {
+                return strcmp($a['name'], $b['name']);
+            });
+
+            \Log::info("Items loaded for subcategory '{$subcategoryTitle}': " . count($items) . " items");
+            \Log::info("Category Title determined: '{$categoryTitle}'");
+
+            // Fetch ALL subcategories that belong to the same category (regardless of item count)
+            $subcategories = [];
+            if (!empty($categoryTitle)) {
+                $subcategoriesSnapshot = $firestore->collection('mart_subcategories')
+                    ->where('publish', '=', true)
+                    ->documents();
+
+                foreach ($subcategoriesSnapshot as $sub) {
+                    if ($sub->exists()) {
+                        $subData = $sub->data();
+                        // Check if this subcategory belongs to the same category
+                        if (($subData['parent_category_title'] ?? '') === $categoryTitle) {
+                            // Count items for this subcategory (optional - for display purposes)
+                            $itemCount = 0;
+                            $itemsQuery = $firestore->collection('mart_items')
+                                ->where('publish', '=', true)
+                                ->where('isAvailable', '=', true)
+                                ->where('subcategoryTitle', '=', $subData['title'] ?? '');
+
+                            $itemDocuments = $itemsQuery->documents();
+                            foreach ($itemDocuments as $itemDoc) {
+                                if ($itemDoc->exists()) {
+                                    $itemCount++;
+                                }
+                            }
+
+                            $subcategories[] = [
+                                'id'    => $subData['id'] ?? null,
+                                'title' => $subData['title'] ?? 'No Title',
+                                'photo' => $subData['photo'] ?? '/img/pro1.jpg',
+                                'isActive' => ($subData['title'] ?? '') === $subcategoryTitle,
+                                'itemCount' => $itemCount, // Add item count for reference
+                            ];
+                        }
+                    }
+                }
+
+                // Sort subcategories by set_order or title
+                usort($subcategories, function($a, $b) {
+                    return strcmp($a['title'], $b['title']);
+                });
+            }
+
+            \Log::info("Found " . count($subcategories) . " subcategories for category '{$categoryTitle}'");
+
+            return view('mart.item-by-category', [
+                'items' => $items,
+                'subcategoryTitle' => $subcategoryTitle,
+                'categoryTitle' => $categoryTitle,
+                'subcategories' => $subcategories,
+            ]);
+
+        } catch (FirebaseException $e) {
+            \Log::error('Firebase error in MartController itemsBySubcategory method: ' . $e->getMessage());
+            return view('mart.item-by-category', [
+                'items' => [],
+                'subcategoryTitle' => $subcategoryTitle,
+                'categoryTitle' => '',
+                'subcategories' => [],
             ]);
         }
     }
 
     /**
-     * Test method to verify data fetching
+     * Fetch mart coupons from Firebase
      */
-    public function testData()
+    public function getMartCoupons()
     {
         try {
-            $categories = $this->getHomepageCategories();
-            $subcategories = $this->getAllHomepageSubcategories();
-            
-            $result = [
-                'success' => true,
-                'timestamp' => now()->toISOString(),
-                'categories' => [
-                    'count' => $categories->count(),
-                    'data' => $categories->toArray()
-                ],
-                'subcategories' => [
-                    'count' => $subcategories->count(),
-                    'data' => $subcategories->toArray()
-                ],
-                'firebase_status' => $this->firestore ? 'connected' : 'not_connected',
-                'environment' => [
-                    'project_id' => env('FIREBASE_PROJECT_ID'),
-                    'credentials_file' => storage_path('app/firebase/credentials.json'),
-                    'credentials_exist' => file_exists(storage_path('app/firebase/credentials.json'))
-                ]
-            ];
-            
-            return response()->json($result);
-        } catch (\Exception $e) {
+            // Initialize Firebase
+            $factory = (new Factory)->withServiceAccount(
+                base_path('storage/app/firebase/credentials.json')
+            );
+            $firestore = $factory->createFirestore()->database();
+
+            // Fetch mart coupons
+            $couponsRef = $firestore->collection('coupons')
+                ->where('cType', '==', 'mart')
+                ->where('isEnabled', '==', true)
+                ->where('isPublic', '==', true)
+                ->where('expiresAt', '>=', new \DateTime())
+                ->documents();
+
+            $coupons = [];
+            foreach ($couponsRef as $doc) {
+                if ($doc->exists()) {
+                    $data = $doc->data();
+                    $coupons[] = [
+                        'id' => $doc->id(),
+                        'code' => $data['code'] ?? '',
+                        'description' => $data['description'] ?? '',
+                        'discount' => $data['discount'] ?? 0,
+                        'discountType' => $data['discountType'] ?? 'Fix Price',
+                        'item_value' => $data['item_value'] ?? 0,
+                        'expiresAt' => $data['expiresAt'] ?? null,
+                        'image' => $data['image'] ?? '',
+                        'usageLimit' => $data['usageLimit'] ?? 0,
+                        'usedCount' => $data['usedCount'] ?? 0,
+                    ];
+                }
+            }
+
+            // Sort coupons by discount amount (highest first)
+            usort($coupons, function($a, $b) {
+                return $b['discount'] <=> $a['discount'];
+            });
+
             return response()->json([
-                'success' => false,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'timestamp' => now()->toISOString()
-            ], 500);
+                'status' => true,
+                'coupons' => $coupons
+            ]);
+
+        } catch (FirebaseException $e) {
+            \Log::error('Firebase error in MartController getMartCoupons method: ' . $e->getMessage());
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to fetch coupons',
+                'coupons' => []
+            ]);
         }
     }
 
     /**
-     * Get demo categories for testing/fallback
+     * Apply mart coupon
      */
-    private function getDemoCategories()
+    public function applyMartCoupon(Request $request)
     {
-        return collect([
-            [
-                'id' => 'demo-groceries',
-                'title' => 'Groceries',
-                'description' => 'Fresh groceries and kitchen essentials',
-                'photo' => 'https://firebasestorage.googleapis.com/v0/b/jippymart-27c08.firebasestorage.app/o/images%2Fgroc_1756460123245.jpg?alt=media&token=68038522-7865-40dd-bf5f-0f8bc64db7c1',
-                'publish' => true,
-                'show_in_homepage' => true,
-                'category_order' => 1,
-                'section' => 'Grocery & Kitchen',
-                'section_order' => 1,
-                'review_attributes' => []
-            ],
-            [
-                'id' => 'demo-fresh',
-                'title' => 'Fresh',
-                'description' => 'Fresh fruits, vegetables and dairy',
-                'photo' => 'https://icon2.cleanpng.com/lnd/20250108/yj/011d1e60d8d65ba818e537fc0cf2d3.webp',
-                'publish' => true,
-                'show_in_homepage' => true,
-                'category_order' => 2,
-                'section' => 'Fresh Food',
-                'section_order' => 2,
-                'review_attributes' => []
-            ],
-            [
-                'id' => 'demo-home',
-                'title' => 'Home',
-                'description' => 'Home and kitchen essentials',
-                'photo' => 'https://icon2.cleanpng.com/20180629/sij/kisspng-atta-flour-aashirvaad-multigrain-bread-roti-whole-barely-5b3636ab6d17d2.0614586915302795954469.jpg',
-                'publish' => true,
-                'show_in_homepage' => true,
-                'category_order' => 3,
-                'section' => 'Home & Living',
-                'section_order' => 3,
-                'review_attributes' => []
-            ]
-        ]);
-    }
+        try {
+            $couponCode = $request->input('coupon_code');
+            $cartTotal = $request->input('cart_total', 0);
 
-    /**
-     * Get demo subcategories for testing/fallback
-     */
-    private function getDemoSubcategories($categoryId = null)
-    {
-        $allSubcategories = [
-            [
-                'id' => 'demo-veggies',
-                'title' => 'Veggies',
-                'description' => 'Fresh vegetables and greens',
-                'photo' => 'https://firebasestorage.googleapis.com/v0/b/jippymart-27c08.firebasestorage.app/o/images%2Flogo%20jippy%20bike_1751542703043.jpg?alt=media&token=159c87a4-cc51-456f-a196-5848d9c83ee6',
-                'publish' => true,
-                'show_in_homepage' => true,
-                'parent_category_id' => 'demo-groceries',
-                'parent_category_title' => 'Groceries',
-                'subcategory_order' => 1,
-                'category_order' => 1,
-                'section' => 'Grocery & Kitchen',
-                'section_order' => 1,
-                'review_attributes' => []
-            ],
-            [
-                'id' => 'demo-fruits',
-                'title' => 'Fruits',
-                'description' => 'Fresh seasonal fruits',
-                'photo' => 'https://icon2.cleanpng.com/lnd/20250108/yj/011d1e60d8d65ba818e537fc0cf2d3.webp',
-                'publish' => true,
-                'show_in_homepage' => true,
-                'parent_category_id' => 'demo-fresh',
-                'parent_category_title' => 'Fresh',
-                'subcategory_order' => 1,
-                'category_order' => 2,
-                'section' => 'Fresh Food',
-                'section_order' => 2,
-                'review_attributes' => []
-            ],
-            [
-                'id' => 'demo-dairy',
-                'title' => 'Dairy',
-                'description' => 'Fresh dairy products',
-                'photo' => 'https://icon2.cleanpng.com/20180629/sij/kisspng-atta-flour-aashirvaad-multigrain-bread-roti-whole-barely-5b3636ab6d17d2.0614586915302795954469.jpg',
-                'publish' => true,
-                'show_in_homepage' => true,
-                'parent_category_id' => 'demo-fresh',
-                'parent_category_title' => 'Fresh',
-                'subcategory_order' => 2,
-                'category_order' => 2,
-                'section' => 'Fresh Food',
-                'section_order' => 2,
-                'review_attributes' => []
-            ],
-            [
-                'id' => 'demo-kitchen',
-                'title' => 'Kitchen',
-                'description' => 'Kitchen essentials and tools',
-                'photo' => 'https://icon2.cleanpng.com/lnd/20250108/yj/011d1e60d8d65ba818e537fc0cf2d3.webp',
-                'publish' => true,
-                'show_in_homepage' => true,
-                'parent_category_id' => 'demo-home',
-                'parent_category_title' => 'Home',
-                'subcategory_order' => 1,
-                'category_order' => 3,
-                'section' => 'Home & Living',
-                'section_order' => 3,
-                'review_attributes' => []
-            ]
-        ];
+            if (!$couponCode) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Coupon code is required'
+                ]);
+            }
 
-        if ($categoryId) {
-            return collect($allSubcategories)->where('parent_category_id', $categoryId)->values();
+            // Initialize Firebase
+            $factory = (new Factory)->withServiceAccount(
+                base_path('storage/app/firebase/credentials.json')
+            );
+            $firestore = $factory->createFirestore()->database();
+
+            // Fetch coupon from Firebase
+            $couponRef = $firestore->collection('coupons')
+                ->where('code', '==', $couponCode)
+                ->where('cType', '==', 'mart')
+                ->where('isEnabled', '==', true)
+                ->where('isPublic', '==', true)
+                ->where('expiresAt', '>=', new \DateTime())
+                ->limit(1)
+                ->documents();
+
+            $couponData = null;
+            foreach ($couponRef as $doc) {
+                if ($doc->exists()) {
+                    $couponData = $doc->data();
+                    $couponData['id'] = $doc->id();
+                    break;
+                }
+            }
+
+            if (!$couponData) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Invalid or expired coupon code'
+                ]);
+            }
+
+            // Check minimum order value
+            $minOrderValue = $couponData['item_value'] ?? 0;
+            if ($cartTotal < $minOrderValue) {
+                return response()->json([
+                    'status' => false,
+                    'message' => "Minimum order value of ₹{$minOrderValue} required for this coupon"
+                ]);
+            }
+
+            // Check usage limit
+            $usageLimit = $couponData['usageLimit'] ?? 0;
+            $usedCount = $couponData['usedCount'] ?? 0;
+            if ($usageLimit > 0 && $usedCount >= $usageLimit) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'This coupon has reached its usage limit'
+                ]);
+            }
+
+            // Calculate discount
+            $discount = $couponData['discount'] ?? 0;
+            $discountType = $couponData['discountType'] ?? 'Fix Price';
+            
+            if ($discountType === 'Percentage') {
+                $discountAmount = ($cartTotal * $discount) / 100;
+            } else {
+                $discountAmount = $discount;
+            }
+
+            // Ensure discount doesn't exceed cart total
+            if ($discountAmount > $cartTotal) {
+                $discountAmount = $cartTotal;
+            }
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Coupon applied successfully',
+                'coupon' => [
+                    'id' => $couponData['id'],
+                    'code' => $couponData['code'],
+                    'discount' => $discount,
+                    'discountType' => $discountType,
+                    'discountAmount' => $discountAmount,
+                    'description' => $couponData['description'] ?? ''
+                ]
+            ]);
+
+        } catch (FirebaseException $e) {
+            \Log::error('Firebase error in MartController applyMartCoupon method: ' . $e->getMessage());
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to apply coupon'
+            ]);
         }
-
-        return collect($allSubcategories);
     }
 }

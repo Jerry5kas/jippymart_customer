@@ -3,12 +3,9 @@
     "title" => "Mart Categories"
 ])
 
-<div class="w-20  h-auto space-y-3 rounded-full ">
-    <div
-        class="w-20 h-20 rounded-full  bg-gray-100 shadow-lg hover:shadow-xl cursor-pointer transition">
-        <img
-            src="{{$image}}"
-            alt="Fruits & Vegetables" class="w-full h-full object-cover mb-2 rounded-full">
+<a href="{{ route('mart.items.by.subcategory', ['subcategoryTitle' => $title]) }}" class="w-20 h-auto space-y-3 rounded-full block">
+    <div class="w-20 h-20 rounded-full bg-gray-100 shadow-lg hover:shadow-xl cursor-pointer transition">
+        <img src="{{$image}}" alt="{{$title}}" class="w-full h-full object-cover mb-2 rounded-full">
     </div>
     <div class="text-[10px] text-center font-medium text-gray-500">{{$title}}</div>
-</div>
+</a>

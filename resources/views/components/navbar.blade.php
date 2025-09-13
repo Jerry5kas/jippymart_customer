@@ -39,7 +39,7 @@
         init() {
             setInterval(() => {
                 this.index = (this.index + 1) % this.items.length;
-            }, 2500); // change every 2.5s
+            }, 5000); // Changed from 2.5s to 5s to reduce server load
         }
      }">
 

@@ -44,6 +44,27 @@ Route::post('/update-delivery-settings', [App\Http\Controllers\ApiController::cl
 // Product Stock API Routes
 Route::post('/product-stock-info', [App\Http\Controllers\ApiController::class, 'getProductStockInfo']);
 
+// Search API Routes
+Route::prefix('search')->group(function () {
+    // Category search endpoints
+    Route::get('/categories', [App\Http\Controllers\SearchController::class, 'searchCategories']);
+    Route::get('/categories/published', [App\Http\Controllers\SearchController::class, 'getPublishedCategories']);
+    
+    // Mart items search endpoints
+    Route::get('/items', [App\Http\Controllers\SearchController::class, 'searchMartItems']);
+    Route::get('/items/featured', [App\Http\Controllers\SearchController::class, 'getFeaturedMartItems']);
+    
+    // Health check endpoint
+    Route::get('/health', [App\Http\Controllers\SearchController::class, 'healthCheck']);
+});
+
+// Mart API Routes
+Route::prefix('mart')->group(function () {
+    // Coupon endpoints
+    Route::get('/coupons', [App\Http\Controllers\MartController::class, 'getMartCoupons']);
+    Route::post('/coupons/apply', [App\Http\Controllers\MartController::class, 'applyMartCoupon']);
+});
+
 // Razorpay API Routes
 Route::prefix('razorpay')->group(function () {
     // Public routes (no authentication required)

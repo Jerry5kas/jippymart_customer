@@ -4,10 +4,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<meta name="description" content="<?php echo @$_COOKIE['application_name']; ?>">
-<meta name="author" content="<?php echo @$_COOKIE['application_name']; ?>">
-<link rel="icon" type="image/png" href="<?php echo str_replace('images/','images%2F',@$_COOKIE['favicon']); ?>">
-<title><?php echo @$_COOKIE['meta_title']; ?></title>
+
+@if(isset($pageKey))
+    <!-- SEO Meta Tags -->
+    @include('partials.seo')
+@else
+    <!-- Fallback Meta Tags -->
+    <meta name="description" content="<?php echo @$_COOKIE['application_name']; ?>">
+    <meta name="author" content="<?php echo @$_COOKIE['application_name']; ?>">
+    <link rel="icon" type="image/png" href="<?php echo str_replace('images/','images%2F',@$_COOKIE['favicon']); ?>">
+    <title><?php echo @$_COOKIE['meta_title']; ?></title>
+@endif
 <!-- jQuery FIRST -->
           <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <!-- Bootstrap, plugins, and your custom scripts AFTER -->
