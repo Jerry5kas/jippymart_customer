@@ -15,15 +15,15 @@ class PageController extends Controller
     public function show($page)
     {
         $validPages = ['about', 'contact', 'privacy', 'terms', 'faq', 'offers'];
-        
+
         if (!in_array($page, $validPages)) {
             abort(404);
         }
-        
+
         // Get SEO data for the page
         $seoData = SeoPage::getForPage($page);
         $globalSettings = SeoSetting::getGlobalSettings();
-        
+
         // Prepare data for view
         $data = [
             'pageKey' => $page,
@@ -31,10 +31,10 @@ class PageController extends Controller
             'globalSettings' => $globalSettings,
             'pageTitle' => ucfirst(str_replace('-', ' ', $page)),
         ];
-        
+
         return view("customer.pages.{$page}", $data);
     }
-    
+
     /**
      * Display about page.
      */
@@ -42,7 +42,7 @@ class PageController extends Controller
     {
         return $this->show('about');
     }
-    
+
     /**
      * Display contact page.
      */
@@ -50,7 +50,7 @@ class PageController extends Controller
     {
         return $this->show('contact');
     }
-    
+
     /**
      * Display privacy policy page.
      */
@@ -58,7 +58,7 @@ class PageController extends Controller
     {
         return $this->show('privacy');
     }
-    
+
     /**
      * Display terms of service page.
      */
@@ -66,7 +66,7 @@ class PageController extends Controller
     {
         return $this->show('terms');
     }
-    
+
     /**
      * Display FAQ page.
      */
@@ -74,7 +74,7 @@ class PageController extends Controller
     {
         return $this->show('faq');
     }
-    
+
     /**
      * Display offers page.
      */
@@ -83,3 +83,4 @@ class PageController extends Controller
         return $this->show('offers');
     }
 }
+

@@ -1,36 +1,36 @@
 @php
     use App\Models\SeoPage;
     use App\Models\SeoSetting;
-    
+
     // Get global SEO settings
     $globalSettings = SeoSetting::getGlobalSettings();
-    
+
     // Determine page key based on current route or passed parameter
     $pageKey = $pageKey ?? 'home';
-    
+
     // Get SEO data for current page
     $seoData = SeoPage::getForPage($pageKey);
-    
+
     // Get dynamic data if provided
     $dynamicTitle = $dynamicTitle ?? null;
     $dynamicDescription = $dynamicDescription ?? null;
     $dynamicImage = $dynamicImage ?? null;
     $dynamicKeywords = $dynamicKeywords ?? null;
-    
+
     // Build final SEO values
     $finalTitle = $dynamicTitle ?: ($seoData ? $seoData->getMetaTitle() : $globalSettings['site_name']);
     $finalDescription = $dynamicDescription ?: ($seoData ? $seoData->getMetaDescription() : $globalSettings['site_description']);
     $finalKeywords = $dynamicKeywords ?: ($seoData ? $seoData->keywords : $globalSettings['site_keywords']);
     $finalOgImage = $dynamicImage ?: ($seoData ? $seoData->getOgImage() : $globalSettings['default_og_image']);
-    
+
     // Ensure title includes site name if not already present
     if (!str_contains($finalTitle, $globalSettings['site_name'])) {
         $finalTitle = $finalTitle . ' - ' . $globalSettings['site_name'];
     }
-    
+
     // Get current URL
     $currentUrl = url()->current();
-    
+
     // Get canonical URL (remove query parameters)
     $canonicalUrl = url()->current();
 @endphp
@@ -171,3 +171,4 @@
   }
 }
 </script>
+

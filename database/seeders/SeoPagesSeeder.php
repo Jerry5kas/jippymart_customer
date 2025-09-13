@@ -262,3 +262,4 @@ class SeoPagesSeeder extends Seeder
         $this->command->info('SEO pages and settings seeded successfully!');
     }
 }
+

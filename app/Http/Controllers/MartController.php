@@ -392,6 +392,10 @@ class MartController extends Controller
                 if ($doc->exists()) {
                     $data = $doc->data();
 
+//                    // Generate random rating between 4.0 and 5.0 if not present
+//                    $rating = $data['rating'] ?? round(4.0 + (mt_rand() / mt_getrandmax()) * 1.0, 1);
+//                    $reviews = $data['reviews'] ?? mt_rand(10, 500);
+
                     $items[] = [
                         'id' => $doc->id(),
                         'disPrice' => $data['disPrice'] ?? 0,
@@ -400,6 +404,8 @@ class MartController extends Controller
                         'grams' => $data['grams'] ?? '200g',
                         'photo' => $data['photo'] ?? '',
                         'price' => $data['price'] ?? 0,
+//                        'rating' => $rating,
+//                        'reviews' => $reviews,
                         'section' => $data['section'] ?? 'General',
                         'subcategoryTitle' => $data['subcategoryTitle'] ?? 'category',
                         'categoryTitle' => $data['categoryTitle'] ?? 'Category',
@@ -418,7 +424,7 @@ class MartController extends Controller
                 }
             }
 
-            // Sort items by name
+            // Sort items by set_order or name
             usort($items, function($a, $b) {
                 return strcmp($a['name'], $b['name']);
             });
@@ -466,7 +472,7 @@ class MartController extends Controller
         foreach ($subcategoriesSnapshot as $sub) {
             if ($sub->exists()) {
                 $subData = $sub->data();
-                
+
                 $subcategories[] = [
                     'id'    => $subData['id'] ?? null,
                     'title' => $subData['title'] ?? 'No Title',
@@ -490,17 +496,17 @@ class MartController extends Controller
         try {
             $query = $request->get('q', '');
             $type = $request->get('type', 'search'); // 'search' or 'suggestions'
-            
+
             // Handle suggestions request
             if ($type === 'suggestions') {
                 if (strlen($query) < 2) {
                     return response()->json([]);
                 }
-                
+
                 $suggestions = $this->getSearchSuggestions($query);
                 return response()->json($suggestions);
             }
-            
+
             // Handle regular search request
             if (empty($query)) {
                 return view('mart.search-results', [
@@ -522,11 +528,11 @@ class MartController extends Controller
 
         } catch (FirebaseException $e) {
             \Log::error('Firebase error in MartController search method: ' . $e->getMessage());
-            
+
             if ($request->get('type') === 'suggestions') {
                 return response()->json([]);
             }
-            
+
             return view('mart.search-results', [
                 'items' => [],
                 'query' => $query ?? '',
@@ -554,25 +560,25 @@ class MartController extends Controller
 
         $items = [];
         $searchQuery = strtolower($query);
-        
+
         foreach ($documents as $doc) {
             if ($doc->exists()) {
                 $data = $doc->data();
-                
+
                 // Search in multiple fields
                 $name = strtolower($data['name'] ?? '');
                 $description = strtolower($data['description'] ?? '');
                 $categoryTitle = strtolower($data['categoryTitle'] ?? '');
                 $subcategoryTitle = strtolower($data['subcategoryTitle'] ?? '');
                 $section = strtolower($data['section'] ?? '');
-                
+
                 // Check if query matches any field
-                if (strpos($name, $searchQuery) !== false || 
+                if (strpos($name, $searchQuery) !== false ||
                     strpos($description, $searchQuery) !== false ||
                     strpos($categoryTitle, $searchQuery) !== false ||
                     strpos($subcategoryTitle, $searchQuery) !== false ||
                     strpos($section, $searchQuery) !== false) {
-                    
+
                     $items[] = [
                         'id' => $doc->id(),
                         'disPrice' => $data['disPrice'] ?? 0,
@@ -628,16 +634,16 @@ class MartController extends Controller
         $suggestions = [];
         $searchQuery = strtolower($query);
         $seen = [];
-        
+
         foreach ($documents as $doc) {
             if ($doc->exists()) {
                 $data = $doc->data();
-                
+
                 // Get unique suggestions from name, category, and subcategory
                 $name = strtolower($data['name'] ?? '');
                 $categoryTitle = strtolower($data['categoryTitle'] ?? '');
                 $subcategoryTitle = strtolower($data['subcategoryTitle'] ?? '');
-                
+
                 // Check name matches
                 if (strpos($name, $searchQuery) === 0 && !in_array($name, $seen)) {
                     $suggestions[] = [
@@ -648,7 +654,7 @@ class MartController extends Controller
                     ];
                     $seen[] = $name;
                 }
-                
+
                 // Check category matches
                 if (strpos($categoryTitle, $searchQuery) === 0 && !in_array($categoryTitle, $seen)) {
                     $suggestions[] = [
@@ -659,7 +665,7 @@ class MartController extends Controller
                     ];
                     $seen[] = $categoryTitle;
                 }
-                
+
                 // Check subcategory matches
                 if (strpos($subcategoryTitle, $searchQuery) === 0 && !in_array($subcategoryTitle, $seen)) {
                     $suggestions[] = [
@@ -670,7 +676,7 @@ class MartController extends Controller
                     ];
                     $seen[] = $subcategoryTitle;
                 }
-                
+
                 // Limit suggestions to 10
                 if (count($suggestions) >= 10) {
                     break;
@@ -685,5 +691,168 @@ class MartController extends Controller
         });
 
         return array_slice($suggestions, 0, 8); // Return max 8 suggestions
+    }
+
+    /**
+     * Fetch mart coupons from Firebase
+     */
+    public function getMartCoupons()
+    {
+        try {
+            // Initialize Firebase
+            $factory = (new Factory)->withServiceAccount(
+                base_path('storage/app/firebase/credentials.json')
+            );
+            $firestore = $factory->createFirestore()->database();
+
+            // Fetch mart coupons
+            $couponsRef = $firestore->collection('coupons')
+                ->where('cType', '==', 'mart')
+                ->where('isEnabled', '==', true)
+                ->where('isPublic', '==', true)
+                ->where('expiresAt', '>=', new \DateTime())
+                ->documents();
+
+            $coupons = [];
+            foreach ($couponsRef as $doc) {
+                if ($doc->exists()) {
+                    $data = $doc->data();
+                    $coupons[] = [
+                        'id' => $doc->id(),
+                        'code' => $data['code'] ?? '',
+                        'description' => $data['description'] ?? '',
+                        'discount' => $data['discount'] ?? 0,
+                        'discountType' => $data['discountType'] ?? 'Fix Price',
+                        'item_value' => $data['item_value'] ?? 0,
+                        'expiresAt' => $data['expiresAt'] ?? null,
+                        'image' => $data['image'] ?? '',
+                        'usageLimit' => $data['usageLimit'] ?? 0,
+                        'usedCount' => $data['usedCount'] ?? 0,
+                    ];
+                }
+            }
+
+            // Sort coupons by discount amount (highest first)
+            usort($coupons, function($a, $b) {
+                return $b['discount'] <=> $a['discount'];
+            });
+
+            return response()->json([
+                'status' => true,
+                'coupons' => $coupons
+            ]);
+
+        } catch (FirebaseException $e) {
+            \Log::error('Firebase error in MartController getMartCoupons method: ' . $e->getMessage());
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to fetch coupons',
+                'coupons' => []
+            ]);
+        }
+    }
+
+    /**
+     * Apply mart coupon
+     */
+    public function applyMartCoupon(Request $request)
+    {
+        try {
+            $couponCode = $request->input('coupon_code');
+            $cartTotal = $request->input('cart_total', 0);
+
+            if (!$couponCode) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Coupon code is required'
+                ]);
+            }
+
+            // Initialize Firebase
+            $factory = (new Factory)->withServiceAccount(
+                base_path('storage/app/firebase/credentials.json')
+            );
+            $firestore = $factory->createFirestore()->database();
+
+            // Fetch coupon from Firebase
+            $couponRef = $firestore->collection('coupons')
+                ->where('code', '==', $couponCode)
+                ->where('cType', '==', 'mart')
+                ->where('isEnabled', '==', true)
+                ->where('isPublic', '==', true)
+                ->where('expiresAt', '>=', new \DateTime())
+                ->limit(1)
+                ->documents();
+
+            $couponData = null;
+            foreach ($couponRef as $doc) {
+                if ($doc->exists()) {
+                    $couponData = $doc->data();
+                    $couponData['id'] = $doc->id();
+                    break;
+                }
+            }
+
+            if (!$couponData) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Invalid or expired coupon code'
+                ]);
+            }
+
+            // Check minimum order value
+            $minOrderValue = $couponData['item_value'] ?? 0;
+            if ($cartTotal < $minOrderValue) {
+                return response()->json([
+                    'status' => false,
+                    'message' => "Minimum order value of ₹{$minOrderValue} required for this coupon"
+                ]);
+            }
+
+            // Check usage limit
+            $usageLimit = $couponData['usageLimit'] ?? 0;
+            $usedCount = $couponData['usedCount'] ?? 0;
+            if ($usageLimit > 0 && $usedCount >= $usageLimit) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'This coupon has reached its usage limit'
+                ]);
+            }
+
+            // Calculate discount
+            $discount = $couponData['discount'] ?? 0;
+            $discountType = $couponData['discountType'] ?? 'Fix Price';
+
+            if ($discountType === 'Percentage') {
+                $discountAmount = ($cartTotal * $discount) / 100;
+            } else {
+                $discountAmount = $discount;
+            }
+
+            // Ensure discount doesn't exceed cart total
+            if ($discountAmount > $cartTotal) {
+                $discountAmount = $cartTotal;
+            }
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Coupon applied successfully',
+                'coupon' => [
+                    'id' => $couponData['id'],
+                    'code' => $couponData['code'],
+                    'discount' => $discount,
+                    'discountType' => $discountType,
+                    'discountAmount' => $discountAmount,
+                    'description' => $couponData['description'] ?? ''
+                ]
+            ]);
+
+        } catch (FirebaseException $e) {
+            \Log::error('Firebase error in MartController applyMartCoupon method: ' . $e->getMessage());
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to apply coupon'
+            ]);
+        }
     }
 }

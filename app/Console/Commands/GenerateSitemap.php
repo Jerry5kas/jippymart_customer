@@ -220,7 +220,7 @@ class GenerateSitemap extends Command
             foreach ($vendors as $vendor) {
                 if ($this->isValidVendor($vendor)) {
                     $url = "/restaurant/{$vendor['id']}/{$vendor['restaurant_slug']}/{$vendor['zone_slug']}";
-                    
+
                     $sitemap->add(
                         Url::create($url)
                             ->setLastModificationDate($this->getVendorLastMod($vendor))
@@ -256,7 +256,7 @@ class GenerateSitemap extends Command
             foreach ($products as $product) {
                 if ($this->isValidProduct($product)) {
                     $url = "/product/{$product['id']}";
-                    
+
                     $sitemap->add(
                         Url::create($url)
                             ->setLastModificationDate($this->getProductLastMod($product))
@@ -292,7 +292,7 @@ class GenerateSitemap extends Command
             foreach ($categories as $category) {
                 if ($this->isValidCategory($category)) {
                     $url = "/category/{$category['id']}";
-                    
+
                     $sitemap->add(
                         Url::create($url)
                             ->setLastModificationDate($this->getCategoryLastMod($category))
@@ -328,7 +328,7 @@ class GenerateSitemap extends Command
             foreach ($subcategories as $subcategory) {
                 if ($this->isValidSubcategory($subcategory)) {
                     $url = "/subcategory/{$subcategory['id']}";
-                    
+
                     $sitemap->add(
                         Url::create($url)
                             ->setLastModificationDate($this->getSubcategoryLastMod($subcategory))
@@ -423,8 +423,8 @@ class GenerateSitemap extends Command
      */
     private function isValidVendor(array $vendor): bool
     {
-        return isset($vendor['id']) && 
-               isset($vendor['restaurant_slug']) && 
+        return isset($vendor['id']) &&
+               isset($vendor['restaurant_slug']) &&
                isset($vendor['zone_slug']) &&
                ($vendor['isOpen'] ?? false) &&
                ($vendor['publish'] ?? false);
@@ -438,7 +438,7 @@ class GenerateSitemap extends Command
      */
     private function isValidProduct(array $product): bool
     {
-        return isset($product['id']) && 
+        return isset($product['id']) &&
                ($product['publish'] ?? false) &&
                ($product['isAvailable'] ?? false);
     }
@@ -451,7 +451,7 @@ class GenerateSitemap extends Command
      */
     private function isValidCategory(array $category): bool
     {
-        return isset($category['id']) && 
+        return isset($category['id']) &&
                ($category['publish'] ?? false);
     }
 
@@ -463,7 +463,7 @@ class GenerateSitemap extends Command
      */
     private function isValidSubcategory(array $subcategory): bool
     {
-        return isset($subcategory['id']) && 
+        return isset($subcategory['id']) &&
                ($subcategory['publish'] ?? false);
     }
 
@@ -523,3 +523,4 @@ class GenerateSitemap extends Command
         return now();
     }
 }
+

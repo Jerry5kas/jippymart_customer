@@ -58,6 +58,13 @@ Route::prefix('search')->group(function () {
     Route::get('/health', [App\Http\Controllers\SearchController::class, 'healthCheck']);
 });
 
+// Mart API Routes
+Route::prefix('mart')->group(function () {
+    // Coupon endpoints
+    Route::get('/coupons', [App\Http\Controllers\MartController::class, 'getMartCoupons']);
+    Route::post('/coupons/apply', [App\Http\Controllers\MartController::class, 'applyMartCoupon']);
+});
+
 // Razorpay API Routes
 Route::prefix('razorpay')->group(function () {
     // Public routes (no authentication required)

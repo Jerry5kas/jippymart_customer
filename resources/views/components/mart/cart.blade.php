@@ -104,10 +104,33 @@
                     </div>
                 </div>
 
+                <!-- Applied Coupon Display -->
+                <div x-show="appliedCoupon" class="bg-green-50 border border-green-200 rounded-lg p-3 mt-4">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="text-sm font-medium text-green-800">
+                                Coupon Applied: <span x-text="appliedCoupon?.code" class="font-bold"></span>
+                            </p>
+                            <p class="text-xs text-green-600" x-text="getCouponDescription(appliedCoupon)"></p>
+                        </div>
+                        <button @click="removeCoupon()" class="text-green-600 hover:text-green-800 text-sm">
+                            Remove
+                        </button>
+                    </div>
+                    <div class="mt-2 text-sm text-green-700">
+                        You saved: <span class="font-bold">₹<span x-text="appliedCoupon?.discountAmount || 0"></span></span>
+                    </div>
+                </div>
+
                 <!-- Grand Total -->
                 <div class="flex justify-between items-center border-t pt-4 mt-4">
                     <h2 class="text-lg font-bold text-gray-800">Grand Total:</h2>
-                    <span class="text-xl font-bold text-violet-600">₹<span x-text="grandTotal"></span></span>
+                    <div class="text-right">
+                        <div x-show="appliedCoupon" class="text-sm text-gray-500 line-through">
+                            ₹<span x-text="originalTotal"></span>
+                        </div>
+                        <span class="text-xl font-bold text-violet-600">₹<span x-text="finalTotal"></span></span>
+                    </div>
                 </div>
             </div>
 
@@ -156,10 +179,12 @@
                         </div>
                         <div class="text-right">
                             <p class="text-sm font-semibold text-gray-800">
-                                ₹519.74
-                                <span class="line-through text-gray-400 text-xs ml-1">₹680.74</span>
+                                ₹<span x-text="finalTotal"></span>
+                                <span x-show="appliedCoupon" class="line-through text-gray-400 text-xs ml-1">₹<span x-text="originalTotal"></span></span>
                             </p>
-                            <p class="text-xs font-medium text-green-600">SAVINGS ₹161</p>
+                            <p x-show="appliedCoupon" class="text-xs font-medium text-green-600">
+                                SAVINGS ₹<span x-text="appliedCoupon?.discountAmount || 0"></span>
+                            </p>
                         </div>
                     </button>
 
@@ -204,6 +229,12 @@
                         <!-- Divider -->
                         <hr class="my-2">
 
+                        <!-- Coupon Discount -->
+                        <div x-show="appliedCoupon" class="flex justify-between">
+                            <span>Coupon Discount (<span x-text="appliedCoupon?.code"></span>)</span>
+                            <span class="text-green-600">-₹<span x-text="appliedCoupon?.discountAmount || 0"></span></span>
+                        </div>
+
                         <!-- Final To Pay -->
                         <div class="flex justify-between items-center font-semibold text-gray-800">
                             <div>
@@ -211,12 +242,12 @@
                                 <p class="text-xs text-gray-500">Incl. all taxes and charges</p>
                             </div>
                             <div class="text-right">
-                                <p class="text-base">₹519.74
-                                    <span class="line-through text-xs text-gray-400 ml-1">₹680.74</span>
+                                <p class="text-base">₹<span x-text="finalTotal"></span>
+                                    <span x-show="appliedCoupon" class="line-through text-xs text-gray-400 ml-1">₹<span x-text="originalTotal"></span></span>
                                 </p>
-                                <span class="inline-block mt-1 text-xs font-semibold text-green-700
+                                <span x-show="appliedCoupon" class="inline-block mt-1 text-xs font-semibold text-green-700
                            bg-green-100 px-2 py-0.5 rounded-full">
-                  SAVING ₹161
+                  SAVING ₹<span x-text="appliedCoupon?.discountAmount || 0"></span>
               </span>
                             </div>
                         </div>
@@ -333,7 +364,7 @@
         <div class="p-4 border-t bg-white sticky bottom-0">
             <button
                 class="w-full bg-violet-600 text-white font-semibold py-3 rounded-lg hover:bg-violet-700 transition">
-                Click to Pay ₹1462.53
+                Click to Pay ₹<span x-text="finalTotal"></span>
             </button>
         </div>
     </div>
@@ -343,11 +374,30 @@
     document.addEventListener('alpine:init', () => {
         Alpine.store('cart', {
             items: JSON.parse(localStorage.getItem('cartItems')) || {},
+            appliedCoupon: JSON.parse(localStorage.getItem('appliedCoupon')) || null,
             save() {
                 localStorage.setItem('cartItems', JSON.stringify(this.items));
+                localStorage.setItem('appliedCoupon', JSON.stringify(this.appliedCoupon));
             },
             get grandTotal() {
                 return Object.values(this.items).reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            },
+            get originalTotal() {
+                return this.grandTotal;
+            },
+            get finalTotal() {
+                if (this.appliedCoupon) {
+                    return Math.max(0, this.grandTotal - (this.appliedCoupon.discountAmount || 0));
+                }
+                return this.grandTotal;
+            },
+            applyCoupon(coupon) {
+                this.appliedCoupon = coupon;
+                this.save();
+            },
+            removeCoupon() {
+                this.appliedCoupon = null;
+                this.save();
             }
         });
 
@@ -378,6 +428,33 @@
         Alpine.data('cartStore', () => ({
             get grandTotal() {
                 return Alpine.store('cart').grandTotal;
+            },
+            get appliedCoupon() {
+                return Alpine.store('cart').appliedCoupon;
+            },
+            get originalTotal() {
+                return Alpine.store('cart').originalTotal;
+            },
+            get finalTotal() {
+                return Alpine.store('cart').finalTotal;
+            },
+            removeCoupon() {
+                Alpine.store('cart').removeCoupon();
+            },
+            getCouponDescription(coupon) {
+                if (!coupon) return '';
+                if (coupon.discountType === 'Percentage') {
+                    return `${coupon.discount}% off on your order`;
+                } else {
+                    return `Flat ₹${coupon.discount} discount`;
+                }
+            },
+            init() {
+                // Listen for coupon application events
+                window.addEventListener('coupon-applied', (event) => {
+                    const coupon = event.detail.coupon;
+                    Alpine.store('cart').applyCoupon(coupon);
+                });
             }
         }));
     });
