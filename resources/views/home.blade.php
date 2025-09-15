@@ -69,7 +69,7 @@
                         </span>
                     </div>
                 </div>
-                
+
                 <!-- Restaurant Filter Bar -->
                 <div class="filter-bar-container mb-4">
                     <div class="filter-bar">
@@ -178,7 +178,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div id="all_stores"></div>
                 <!-- Load More Button -->
                 <div class="row fu-loadmore-btn" id="loadmore-wrapper">
@@ -347,7 +347,7 @@
         background: rgba(255,255,255,0.2);
         color: white;
     }
-    
+
     /* Restaurant Card Styles - Matching Existing Design */
     #all_stores {
         display: grid;
@@ -355,7 +355,7 @@
         gap: 1.5rem;
         margin-top: 1rem;
     }
-    
+
     /* Popular Restaurants Grid Layout */
     .restaurant-grid {
         display: grid;
@@ -363,7 +363,7 @@
         gap: 1.5rem;
         margin-top: 1rem;
     }
-    
+
     .restaurant-card {
         background: #fff;
         border-radius: 16px;
@@ -387,7 +387,7 @@
         transform: scale(0.98);
         box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
-    
+
     .restaurant-image {
         position: relative;
         height: 200px;
@@ -402,14 +402,14 @@
     .restaurant-card:hover .restaurant-image img {
         transform: scale(1.05);
     }
-    
+
     .restaurant-status {
         position: absolute;
         top: 12px;
         left: 12px;
-        padding: 8px 16px;
+        padding: 6px 10px;
         border-radius: 20px;
-        font-size: 0.8rem;
+        font-size: 0.6rem;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.8px;
@@ -436,11 +436,11 @@
     .restaurant-card:hover .restaurant-status.closed {
         background: linear-gradient(135deg, #c82333, #dc3545);
     }
-    
+
     .distance {
         position: absolute;
         bottom: 12px;
-        left: 12px;
+        right: 12px;
         background: rgba(0,0,0,0.8);
         color: white;
         padding: 4px 8px;
@@ -448,11 +448,11 @@
         font-size: 0.75rem;
         font-weight: 500;
     }
-    
+
     .restaurant-info {
         padding: 1.25rem;
     }
-    
+
     .restaurant-name {
         font-size: 1.2rem;
         font-weight: 700;
@@ -460,7 +460,7 @@
         color: #2c3e50;
         line-height: 1.3;
     }
-    
+
     .restaurant-location {
         display: flex;
         align-items: center;
@@ -491,36 +491,40 @@
     .restaurant-location:hover .location-icon svg path {
         fill: #007bff;
     }
-    
+
     .restaurant-rating {
         display: flex;
         align-items: center;
         justify-content: flex-start;
         gap: 12px;
     }
-    
+
     .rating-stars {
         display: flex;
         align-items: center;
         gap: 4px;
     }
-    
+
     .star-icon {
         color: #f39c12;
         font-size: 1.1rem;
     }
-    
+
     .rating-value {
         font-weight: 700;
-        color: #2c3e50;
+        /*color: #2c3e50;*/
+        color: white;
         font-size: 1rem;
+        background-color: #f39c12;
+        padding: 3px 4px;
+        border-radius: 10px;
     }
-    
+
     .rating-badges {
         display: flex;
         gap: 8px;
     }
-    
+
     .rating-badge {
         display: flex;
         align-items: center;
@@ -546,40 +550,40 @@
         background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
         transition: left 0.5s ease;
     }
-    
+
     .rating-badge:hover::before {
         left: 100%;
     }
-    
+
     .rating-badge:hover {
         transform: scale(1.05);
         box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
     }
-    
+
     .rating-badge:active {
         transform: scale(0.95);
     }
-    
+
     .rating-badge.badge-clicked {
         transform: scale(0.9);
         background: linear-gradient(135deg, #229954, #27ae60);
     }
-    
+
     .badge-icon {
         flex-shrink: 0;
     }
-    
+
     .badge-icon svg path {
         fill: white;
         transition: fill 0.3s ease;
     }
-    
+
     .badge-icon:hover {
         transform: scale(1.1);
     }
-    
+
     .badge-text {
-        font-weight: 700;
+        font-weight: 400;
     }
     .rating-badge:active {
         transform: translateY(0);
@@ -608,13 +612,13 @@
         transform: scale(0.95);
         background: linear-gradient(135deg, #1e7e34, #20c997);
     }
-    
+
     .restaurant-price {
         color: #27ae60;
         font-weight: 700;
         font-size: 1rem;
     }
-    
+
     /* Grid responsive adjustments */
     @media (max-width: 768px) {
         #all_stores, .restaurant-grid {
@@ -625,19 +629,19 @@
             margin: 0 0.5rem;
         }
     }
-    
+
     @media (min-width: 769px) and (max-width: 1024px) {
         #all_stores, .restaurant-grid {
             grid-template-columns: repeat(2, 1fr);
         }
     }
-    
+
     @media (min-width: 1025px) {
         #all_stores, .restaurant-grid {
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
         }
     }
-    
+
     .top-categories-slider .slide-item {
         padding: 10px;
     }
@@ -1172,21 +1176,21 @@
 
 
     var myInterval = '';
-    
+
     // Filter functionality variables
     var activeFilters = {};
     var filteredRestaurants = [];
     var originalRestaurants = [];
-    
+
     // Initialize randomized ratings object if it doesn't exist
     if (typeof window.randomizedRatings === 'undefined') {
         window.randomizedRatings = {};
     }
-    
+
     // Initialize filter functionality
     function initializeFilters() {
         console.log("Initializing restaurant filters...");
-        
+
         // Set default filters
         activeFilters = {
             sort: 'popular',
@@ -1194,11 +1198,11 @@
             delivery: 'all',
             distance_range: 'all'
         };
-        
+
         // Bind filter events
         bindFilterEvents();
     }
-    
+
     // Bind all filter events
     function bindFilterEvents() {
         // Filter option clicks
@@ -1207,28 +1211,28 @@
             var filterType = $(this).data('filter');
             var filterValue = $(this).data('value');
             var filterText = $(this).find('.option-text').text().trim();
-            
+
             // Remove checkmark from all options in this dropdown
             $(this).closest('.dropdown-menu').find('.checkmark').hide();
             $(this).closest('.dropdown-menu').find('.dropdown-item').removeClass('active');
-            
+
             // Add checkmark to selected option
             $(this).find('.checkmark').show();
             $(this).addClass('active');
-            
+
             // Update filter
             applyFilter(filterType, filterValue, filterText);
-            
+
             // Close dropdown after selection
             $(this).closest('.dropdown').removeClass('show');
         });
-        
+
         // Clear all filters
         $('#clear-all-filters').on('click', function(e) {
             e.preventDefault();
             clearAllFilters();
         });
-        
+
         // Add hover effects for dropdown arrows
         $('.filter-chip').hover(
             function() {
@@ -1242,7 +1246,7 @@
                 }
             }
         );
-        
+
         // Close dropdown when clicking outside
         $(document).on('click', function(e) {
             if (!$(e.target).closest('.dropdown').length) {
@@ -1251,24 +1255,24 @@
             }
         });
     }
-    
+
     // Apply a filter
     function applyFilter(filterType, filterValue, filterText) {
         console.log("Applying filter:", filterType, "=", filterValue);
-        
+
         // Update active filters
         activeFilters[filterType] = filterValue;
-        
+
         // Update filter chip text
         updateFilterChip(filterType, filterText);
-        
+
         // Apply filters to restaurants
         filterRestaurants();
-        
+
         // Show/hide clear all button
         updateClearAllButton();
     }
-    
+
     // Update filter chip text
     function updateFilterChip(filterType, filterText) {
         var chipMap = {
@@ -1280,27 +1284,27 @@
             'delivery': '#delivery-filter',
             'distance_range': '#distance-filter'
         };
-        
+
         var chipSelector = chipMap[filterType];
         if (chipSelector) {
             var prefix = chipSelector.replace('#', '').replace('-filter', '');
             prefix = prefix.charAt(0).toUpperCase() + prefix.slice(1);
             if (prefix === 'Sort') prefix = 'Sort By';
-            
+
             // Update the filter text span
             $(chipSelector).find('.filter-text').text(prefix + ': ' + filterText.replace(' ✓', ''));
-            
+
             // Add active class for visual feedback
             $(chipSelector).addClass('active');
         }
     }
-    
+
     // Filter restaurants based on active filters
     function filterRestaurants() {
         console.log("Filtering restaurants with:", activeFilters);
-        
+
         var filtered = [...originalRestaurants]; // Copy original array
-        
+
         // Apply status filter
         if (activeFilters.status !== 'all') {
             filtered = filtered.filter(restaurant => {
@@ -1308,16 +1312,16 @@
                 return activeFilters.status === 'open' ? isOpen : !isOpen;
             });
         }
-        
+
         // Apply delivery filter
         if (activeFilters.delivery !== 'all') {
             filtered = filtered.filter(restaurant => {
-                return activeFilters.delivery === 'self' ? 
-                    restaurant.isSelfDelivery : 
+                return activeFilters.delivery === 'self' ?
+                    restaurant.isSelfDelivery :
                     !restaurant.isSelfDelivery;
             });
         }
-        
+
         // Apply distance filter
         if (activeFilters.distance_range !== 'all' && address_lat && address_lng) {
             var maxDistance = parseInt(activeFilters.distance_range);
@@ -1329,17 +1333,17 @@
                 return distance <= maxDistance;
             });
         }
-        
+
         // Apply sorting
         filtered = sortRestaurants(filtered, activeFilters.sort);
-        
+
         filteredRestaurants = filtered;
         console.log("Filtered restaurants:", filtered.length);
-        
+
         // Re-render restaurant list
         renderFilteredRestaurants();
     }
-    
+
     // Sort restaurants based on sort type
     function sortRestaurants(restaurants, sortType) {
         switch(sortType) {
@@ -1368,7 +1372,7 @@
                 return restaurants.sort((a, b) => b.reviewsCount - a.reviewsCount);
         }
     }
-    
+
     // Check if restaurant is open
     function isRestaurantOpen(restaurant) {
         if (window.restaurantStatusManager) {
@@ -1378,28 +1382,28 @@
         }
         return false; // Fallback
     }
-    
+
     // Calculate distance between two coordinates
     function calculateDistance(lat1, lon1, lat2, lon2) {
         const R = 6371; // Radius of the Earth in kilometers
         const dLat = (lat2 - lat1) * Math.PI / 180;
         const dLon = (lon2 - lon1) * Math.PI / 180;
-        const a = 
+        const a =
             Math.sin(dLat/2) * Math.sin(dLat/2) +
-            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
             Math.sin(dLon/2) * Math.sin(dLon/2);
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
         const distance = R * c;
         return distance;
     }
-    
+
     // Render filtered restaurants
     function renderFilteredRestaurants() {
         console.log("Rendering", filteredRestaurants.length, "filtered restaurants");
-        
+
         // Clear existing restaurants
         $('#all_stores').empty();
-        
+
         if (filteredRestaurants.length === 0) {
             $('#all_stores').html(`
                 <div class="text-center py-5">
@@ -1409,21 +1413,21 @@
             `);
             return;
         }
-        
+
         // Render restaurants
         filteredRestaurants.forEach(restaurant => {
             var restaurantHtml = buildRestaurantHTML(restaurant);
             $('#all_stores').append(restaurantHtml);
         });
-        
+
         // Add interactive functionality to restaurant cards
         addRestaurantCardInteractivity();
     }
-    
+
     // Clear all filters
     function clearAllFilters() {
         console.log("Clearing all filters");
-        
+
         // Reset active filters
         activeFilters = {
             sort: 'popular',
@@ -1431,49 +1435,49 @@
             delivery: 'all',
             distance_range: 'all'
         };
-        
+
         // Reset filter chips
         $('#sort-filter .filter-text').text('Sort By: Popular');
         $('#status-filter .filter-text').text('Status: All');
         $('#delivery-filter .filter-text').text('Delivery: All');
         $('#distance-filter .filter-text').text('Distance: All');
-        
+
         // Remove active classes
         $('.filter-chip').removeClass('active');
-        
+
         // Reset dropdown selections
         $('.dropdown-item').removeClass('active');
         $('.checkmark').hide();
-        
+
         // Show default selections
         $('.dropdown-menu').each(function() {
             $(this).find('.dropdown-item').first().addClass('active');
             $(this).find('.dropdown-item').first().find('.checkmark').show();
         });
-        
+
         // Hide clear all button
         $('#clear-all-filters').hide();
-        
+
         // Reset restaurants
         filteredRestaurants = [...originalRestaurants];
         renderFilteredRestaurants();
     }
-    
+
     // Update clear all button visibility
     function updateClearAllButton() {
-        var hasActiveFilters = Object.values(activeFilters).some(value => 
+        var hasActiveFilters = Object.values(activeFilters).some(value =>
             value !== 'all' && value !== 'popular'
         );
         $('#clear-all-filters').toggle(hasActiveFilters);
     }
-    
+
     // Store original restaurants when loaded
     function storeOriginalRestaurants(restaurants) {
         originalRestaurants = restaurants;
         filteredRestaurants = [...restaurants];
         console.log("Stored", restaurants.length, "original restaurants");
     }
-    
+
     // Add interactive functionality to restaurant cards
     function addRestaurantCardInteractivity() {
         // Restaurant card click handlers
@@ -1482,55 +1486,55 @@
             if (!$(e.target).closest('.rating-badge').length) {
                 var restaurantName = $(this).find('.restaurant-name').text();
                 console.log('Restaurant clicked:', restaurantName);
-                
+
                 // Add click animation
                 $(this).addClass('card-clicked');
                 setTimeout(() => {
                     $(this).removeClass('card-clicked');
                 }, 200);
-                
+
                 // Here you can add navigation to restaurant details page
                 // window.location.href = '/restaurant/' + restaurantId;
             }
         });
-        
+
         // Rating badge click handlers
         $('.rating-badge').off('click').on('click', function(e) {
             e.stopPropagation(); // Prevent card click
-            
+
             var badgeText = $(this).text().trim();
             var badgeType = $(this).attr('title');
-            
+
             console.log('Rating badge clicked:', badgeType, badgeText);
-            
+
             // Add badge click animation
             $(this).addClass('badge-clicked');
             setTimeout(() => {
                 $(this).removeClass('badge-clicked');
             }, 300);
-            
+
             // Here you can add functionality like showing detailed reviews
             // showRestaurantReviews(restaurantId);
         });
-        
+
         // Location click handler
         $('.restaurant-location').off('click').on('click', function(e) {
             e.stopPropagation(); // Prevent card click
-            
+
             var locationText = $(this).find('.location-text').text();
             console.log('Location clicked:', locationText);
-            
+
             // Here you can add functionality like opening maps
             // openInMaps(locationText);
         });
     }
-    
+
     // Build restaurant HTML for filter display - Matching existing design
     function buildRestaurantHTML(restaurant) {
         var rating = 0;
         var reviewsCount = 0;
-        if (restaurant.hasOwnProperty('reviewsSum') && restaurant.reviewsSum != 0 && restaurant.reviewsSum != null && 
-            restaurant.reviewsSum != '' && restaurant.hasOwnProperty('reviewsCount') && 
+        if (restaurant.hasOwnProperty('reviewsSum') && restaurant.reviewsSum != 0 && restaurant.reviewsSum != null &&
+            restaurant.reviewsSum != '' && restaurant.hasOwnProperty('reviewsCount') &&
             restaurant.reviewsCount != 0 && restaurant.reviewsCount != null && restaurant.reviewsCount != '') {
             rating = (restaurant.reviewsSum / restaurant.reviewsCount);
             rating = Math.round(rating * 10) / 10;
@@ -1546,7 +1550,7 @@
                 window.randomizedRatings[restaurant.id] = { rating, reviewsCount };
             }
         }
-        
+
         // Determine restaurant status
         var status = 'Closed';
         var statusclass = "closed";
@@ -1559,29 +1563,29 @@
                 statusclass = "open";
             }
         }
-        
+
         var photo = restaurant.photo || placeholderImageSrc;
         var distance = '';
         if (address_lat && address_lng && restaurant.latitude && restaurant.longitude) {
             var dist = calculateDistance(address_lat, address_lng, restaurant.latitude, restaurant.longitude);
             distance = `<span class="distance">${dist.toFixed(1)} km</span>`;
         }
-        
+
         // Format location text (truncate if too long)
         var locationText = restaurant.location || '';
         if (locationText.length > 60) {
             locationText = locationText.substring(0, 60) + '...';
         }
-        
+
         // Create SVG location icon
         var locationIcon = `
             <svg class="location-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="#ff6b35"/>
             </svg>
         `;
-        
+
         // Rating badges are now included in the main HTML structure
-        
+
         return `
             <div class="restaurant-card">
                 <div class="restaurant-image">
@@ -1597,26 +1601,28 @@
                     </div>
                     <div class="restaurant-rating">
                         <div class="rating-stars">
-                            <span class="star-icon">★</span>
-                            <span class="rating-value">${rating}</span>
+<!--                            <span class="star-icon"></span>-->
+                            <span style="font-size: 0.6rem" class="rating-value">★ ${rating}</span>
                         </div>
                         <div class="rating-badges">
                             <div class="rating-badge" data-badge="reviewsCount">
-                                <svg class="badge-icon" viewBox="0 0 24 24" width="14" height="14">
-                                    <path d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zm4 18v-6h2.5l-2.54-7.63A1.5 1.5 0 0 0 18.54 8H16c-.8 0-1.54.37-2.01 1.01L12 11l-1.99-1.99C9.54 8.37 8.8 8 8 8H5.46c-.8 0-1.54.37-2.01 1.01L.95 16.63A1.5 1.5 0 0 0 2.5 18H5v4h2v-6h2v6h2v-6h2v6h2v-6h2v6h2z"/>
-                                </svg>
-                                <span class="badge-text">${reviewsCount}</span>
+<!--                                <svg class="badge-icon" style="color: white" viewBox="0 0 24 24" width="14" height="14">-->
+<!--                                    <path d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zm4 18v-6h2.5l-2.54-7.63A1.5 1.5 0 0 0 18.54 8H16c-.8 0-1.54.37-2.01 1.01L12 11l-1.99-1.99C9.54 8.37 8.8 8 8 8H5.46c-.8 0-1.54.37-2.01 1.01L.95 16.63A1.5 1.5 0 0 0 2.5 18H5v4h2v-6h2v6h2v-6h2v6h2v-6h2v6h2z"/>-->
+<!--                                </svg>-->
+                                <span style="font-size: 0.6rem"  class="badge-text">${reviewsCount}</span>
                             </div>
                         </div>
                     </div>
-                    <div class="restaurant-price">
-                        ${restaurant.minPrice ? `From ₹${restaurant.minPrice}` : 'Price not available'}
-                    </div>
+<!--
+                     <div class="restaurant-price">
+                         ${restaurant.minPrice ? `From ₹${restaurant.minPrice}` : 'Price not available'}
+                     </div>
+-->
                 </div>
             </div>
         `;
     }
-    
+
     // Location initialization function
     async function initializeLocation() {
         return new Promise((resolve, reject) => {
@@ -1627,14 +1633,14 @@
                             address_lat = position.coords.latitude;
                             address_lng = position.coords.longitude;
                             console.log("Location obtained:", address_lat, address_lng);
-                            
+
                             // Set cookies for future use
                             setCookie('address_lat', address_lat, 365);
                             setCookie('address_lng', address_lng, 365);
-                            
+
                             // Get zone ID for this location
                             await getUserZoneId();
-                            
+
                             resolve();
                         } catch (error) {
                             console.error("Error processing location:", error);
@@ -1663,20 +1669,20 @@
             }
         });
     }
-    
+
     // Function to get user zone ID (moved from footer.blade.php)
     async function getUserZoneId() {
         if (!address_lat || !address_lng) {
             console.log("No location available for zone detection");
             return;
         }
-        
+
         try {
             var zone_list = [];
             console.log("Fetching zones from database...");
             var snapshots = await database.collection('zone').where("publish", "==", true).get();
             console.log("Found", snapshots.docs.length, "published zones");
-            
+
             if (snapshots.docs.length > 0) {
                 snapshots.docs.forEach((snapshot) => {
                     var zone_data = snapshot.data();
@@ -1685,28 +1691,28 @@
                     console.log("Zone:", zone_data.id, "-", zone_data.title || "No title");
                 });
             }
-            
+
             if (zone_list.length > 0) {
                 console.log("Checking location", address_lat, address_lng, "against", zone_list.length, "zones...");
-                
+
                 for (i = 0; i < zone_list.length; i++) {
                     var zone = zone_list[i];
                     var vertices_x = [];
                     var vertices_y = [];
-                    
+
                     if (zone.area && zone.area.length > 0) {
                         console.log("Checking zone", zone.id, "with", zone.area.length, "boundary points");
-                        
+
                         for (j = 0; j < zone.area.length; j++) {
                             var geopoint = zone.area[j];
                             vertices_x.push(geopoint.longitude);
                             vertices_y.push(geopoint.latitude);
                         }
-                        
+
                         var points_polygon = (vertices_x.length) - 1;
                         var isInZone = is_in_polygon(points_polygon, vertices_x, vertices_y, address_lng, address_lat);
                         console.log("Zone", zone.id, "polygon test result:", isInZone);
-                        
+
                         if (isInZone) {
                             user_zone_id = zone.id;
                             console.log("✅ Zone detected:", user_zone_id, "-", zone.title || "No title");
@@ -1719,7 +1725,7 @@
             } else {
                 console.log("❌ No published zones found in database");
             }
-            
+
             // If no zone found, try fallback approaches
             if (!user_zone_id) {
                 console.log("No zone found for current location. Trying fallback approaches...");
@@ -1741,14 +1747,14 @@
                     callStore();
                 }, 1000);
             }
-            
+
         } catch (error) {
             console.error("Error getting zone ID:", error);
             // Try fallback on error too
             await tryFallbackZoneAssignment();
         }
     }
-    
+
     // Polygon point-in-polygon test function (moved from footer.blade.php)
     function is_in_polygon($points_polygon, $vertices_x, $vertices_y, $longitude_x, $latitude_y) {
         $i = $j = $c = $point = 0;
@@ -1763,15 +1769,15 @@
         }
         return $c;
     }
-    
+
     // Function to try fallback zone assignment
     async function tryFallbackZoneAssignment() {
         try {
             console.log("Attempting fallback zone assignment...");
-            
+
             // First, try to get any published zone (as a fallback)
             var snapshots = await database.collection('zone').where("publish", "==", true).get();
-            
+
             if (snapshots.docs.length > 0) {
                 // Use the first available zone as fallback
                 var firstZone = snapshots.docs[0];
@@ -1789,20 +1795,20 @@
             return false;
         }
     }
-    
+
     // Function to try fallback location (default city center)
     async function tryFallbackLocation() {
         return new Promise((resolve, reject) => {
             // Use a default location - Chennai, India coordinates (based on your detected location)
             address_lat = 12.9716; // Chennai latitude
             address_lng = 80.2206; // Chennai longitude
-            
+
             console.log("Using fallback location:", address_lat, address_lng);
-            
+
             // Set cookies for the fallback location
             setCookie('address_lat', address_lat, 365);
             setCookie('address_lng', address_lng, 365);
-            
+
             // Try to get zone ID for fallback location
             getUserZoneId().then(() => {
                 resolve();
@@ -1811,13 +1817,13 @@
             });
         });
     }
-    
+
     // Function to show location error
     function showLocationError() {
         console.log("Showing location error message");
         jQuery(".section-content").remove();
         jQuery(".zone-error").show();
-        
+
         // Add more helpful error message
         var errorHtml = `
             <div class="zone-error m-5 p-5 text-center">
@@ -1841,7 +1847,7 @@
         `;
         jQuery(".zone-error").html(errorHtml);
     }
-    
+
     $(document).ready(async function() {
         console.log("Initial user_zone_id:", typeof user_zone_id, user_zone_id);
         console.log("Initial address_lat:", typeof address_lat, address_lat);
@@ -1870,7 +1876,7 @@
 
         // Fetch and render top banners
         getBanners();
-        
+
         // Replace constant polling with event-driven updates
         // This prevents the server from hitting process limits
         initializeEfficientStoreUpdates();
@@ -1913,13 +1919,13 @@
             callStore();
             lastUpdateTime = Date.now();
         }, 2000);
-        
+
         // Retry mechanism for location detection - improved
         let locationRetryCount = 0;
         const maxLocationRetries = 15; // Increased retries
         const locationRetryInterval = setInterval(() => {
-            if (typeof address_lat !== 'undefined' && typeof address_lng !== 'undefined' && 
-                address_lat !== null && address_lng !== null && 
+            if (typeof address_lat !== 'undefined' && typeof address_lng !== 'undefined' &&
+                address_lat !== null && address_lng !== null &&
                 typeof user_zone_id !== 'undefined' && user_zone_id !== null) {
                 clearInterval(locationRetryInterval);
                 console.log("Location and zone detected, initializing data...");
@@ -1952,7 +1958,7 @@
 
     async function callStore() {
         console.log("callStore - address_lat:", typeof address_lat, address_lat, "address_lng:", typeof address_lng, address_lng, "user_zone_id:", typeof user_zone_id, user_zone_id);
-        
+
         // Check if location variables are defined and valid
         if (typeof address_lat === 'undefined' || typeof address_lng === 'undefined' || typeof user_zone_id === 'undefined' ||
             address_lat == '' || address_lng == '' || address_lng == NaN || address_lat == NaN || address_lat == null || address_lng == null ||
@@ -1981,7 +1987,7 @@
             // Load critical content first
             getItemCategories();
             getMostPopularStores();
-            
+
             // Load restaurants after a short delay
             setTimeout(() => {
                 getAllStore();
@@ -2007,17 +2013,17 @@
 
     async function getAllStore() {
         console.log("Loading restaurants with optimized query...");
-        
+
         // Simplified query to avoid complex index requirements
         var nearestRestauantRefnew = geoFirestore.collection('vendors')
             .where('zoneId', '==', user_zone_id)
             .where('vType', '==', 'restaurant')
             .limit(initialLoadSize);
-        
+
         nearestRestauantRefnew.get().then(async function(snapshots) {
             if (snapshots.docs.length > 0) {
                 console.log("Initial restaurants loaded:", snapshots.docs.length);
-                
+
                 // Initialize vendors array for initial display
                 let vendors = [];
                 snapshots.docs.forEach((listval) => {
@@ -2039,13 +2045,13 @@
                 // Store vendors data
                 allVendorsData = vendors;
                 console.log("Initial vendors stored:", allVendorsData.length);
-                
+
                 // Store restaurants for filter functionality
                 storeOriginalRestaurants(vendors);
-                
+
                 // Display initial restaurants using filter system
                 renderFilteredRestaurants();
-                
+
                 // Load more data in background (non-blocking)
                 setTimeout(() => {
                     loadMoreRestaurantsInBackground();
@@ -2081,13 +2087,13 @@
                                 vendors.push(datas);
                             }
                         });
-                        
+
                         if (vendors.length > 0) {
                             const minPrices = await getAllVendorMinPrices(vendors);
                             vendors.forEach(vendor => {
                                 vendor.minPrice = minPrices.get(vendor.id) || 0;
                             });
-                            
+
                             allVendorsData = vendors;
                             console.log("Fallback vendors stored:", allVendorsData.length);
                             displayRestaurants();
@@ -2107,7 +2113,7 @@
     // Cache for vendor delivery status
     let vendorDeliveryCache = new Map();
     let initialDataLoaded = false;
-    
+
     // Background loading function for additional restaurants
     async function loadMoreRestaurantsInBackground() {
         console.log("Loading more restaurants in background...");
@@ -2118,7 +2124,7 @@
                 .where('zoneId', '==', user_zone_id)
                 .where('vType', '==', 'restaurant')
                 .limit(50);
-            
+
             const moreSnapshots = await moreRestaurantsRef.get();
             moreSnapshots.docs.forEach((doc) => {
                 const data = doc.data();
@@ -2129,17 +2135,17 @@
                     additionalRestaurants.push(data);
                 }
             });
-            
+
             // Add to existing data
             allVendorsData = allVendorsData.concat(additionalRestaurants);
             console.log("Background loading complete. Total restaurants:", allVendorsData.length);
-            
+
             // Update the load more button visibility after background loading
             if (allVendorsData.length > currentDisplayCount) {
                 $('#loadmore').show();
                 console.log("Showing load more button after background loading");
             }
-            
+
         } catch (error) {
             console.log("Background loading failed:", error);
         }
@@ -2151,17 +2157,17 @@
 
         try {
             const vendorIds = window.vendorsData.docs.map(doc => doc.id);
-            
+
             // Firebase 'in' operator has a limit of 10 elements, so we need to batch the queries
             const batchSize = 10;
             const batches = [];
-            
+
             for (let i = 0; i < vendorIds.length; i += batchSize) {
                 batches.push(vendorIds.slice(i, i + batchSize));
             }
 
             // Execute all batches in parallel
-            const batchPromises = batches.map(batch => 
+            const batchPromises = batches.map(batch =>
                 database.collection('vendors')
                     .where(firebase.firestore.FieldPath.documentId(), 'in', batch)
                     .get()
@@ -2202,7 +2208,7 @@
 
     // Optimized function to get minimum prices for vendors (with caching)
     const priceCache = new Map();
-    
+
     async function getAllVendorMinPrices(vendors) {
         const vendorIds = vendors.map(v => v.id);
         const minPrices = new Map();
@@ -2210,7 +2216,7 @@
         try {
             // Check cache first
             const uncachedVendors = vendorIds.filter(id => !priceCache.has(id));
-            
+
             if (uncachedVendors.length === 0) {
                 // All prices are cached
                 vendorIds.forEach(id => {
@@ -2222,13 +2228,13 @@
             // Firebase 'in' operator has a limit of 10 elements, so we need to batch the queries
             const batchSize = 10;
             const batches = [];
-            
+
             for (let i = 0; i < uncachedVendors.length; i += batchSize) {
                 batches.push(uncachedVendors.slice(i, i + batchSize));
             }
 
             // Execute all batches in parallel
-            const batchPromises = batches.map(batch => 
+            const batchPromises = batches.map(batch =>
                 database.collection('vendor_products')
                     .where('vendorID', 'in', batch)
                     .where('publish', '==', true)
@@ -2483,10 +2489,10 @@
             alldata.forEach((val) => {
                 // Use the unified buildRestaurantHTML function
                 html += buildRestaurantHTML(val);
-                
+
                 // Keep the existing checkSelfDeliveryForVendor call
                 checkSelfDeliveryForVendor(val.id);
-                
+
                 // Keep the existing getMinDiscount call
                 getMinDiscount(val.id);
             });
@@ -2580,13 +2586,13 @@
         if (popularStoresList.length > 0) {
             var popularStoresListnw = [];
             most_popular_item = document.getElementById('most_popular_item');
-            
+
             // Check if element exists (Popular Items section was removed)
             if (!most_popular_item) {
                 console.log("Popular Items section not found, skipping...");
                 return;
             }
-            
+
             most_popular_item.innerHTML = '';
             var from = 0;
             var total = 0;
@@ -2653,7 +2659,7 @@
                                 restaurants.push({ id: doc.id, data: () => data });
                             }
                         });
-                        
+
                         if (restaurants.length > 0) {
                             // Create a mock snapshot object
                             const mockSnapshot = {
@@ -2920,34 +2926,34 @@
                 alldata.push(datas);
             }
         });
-        
+
         if (alldata.length) {
             alldata = sortArrayOfObjects(alldata, "rating");
             alldata = alldata.slice(0, 4);
             var popularItemCount = 0;
-            
+
             // Add grid container for popular restaurants
             html += '<div class="restaurant-grid">';
-            
+
             alldata.forEach((val) => {
                 if (popularItemCount < 10) {
                     popularItemCount++;
                     popularStoresList.push(val.id);
                 }
-                
+
                 // Use the unified buildRestaurantHTML function
                 html += buildRestaurantHTML(val);
-                
+
                 // Keep the existing getMinDiscount call
                 getMinDiscount(val.id);
             });
-            
+
             // Close grid container
             html += '</div>';
         } else {
             html = '<p class="text-danger text-center">{{ trans('lang.no_results') }}</p>';
         }
-        
+
         getPopularItem();
         getCouponsList();
         return html;
@@ -3121,13 +3127,13 @@
             couponsRef2.get().then(async function(couponListSnapshot) {
                 if (couponListSnapshot.docs.length > 0) {
                     offers_coupons = document.getElementById('offers_coupons');
-                    
+
                     // Check if element exists (Offers & Coupons section was removed)
                     if (!offers_coupons) {
                         console.log("Offers & Coupons section not found, skipping...");
                         return;
                     }
-                    
+
                     offers_coupons.innerHTML = '';
                     var couponlistHTML = buildHTMLCouponList(couponListSnapshot);
                     offers_coupons.innerHTML = couponlistHTML;
@@ -3305,14 +3311,14 @@
     function displayRestaurants() {
         console.log("Displaying restaurants. Total vendors:", allVendorsData.length);
         console.log("Current display count:", currentDisplayCount);
-        
+
         // Since we're already filtering restaurants in the query, just use allVendorsData directly
         const restaurants = allVendorsData; // Already filtered to restaurants only
         const displayData = restaurants.slice(0, currentDisplayCount);
-        
+
         console.log("Displaying restaurants:", displayData.length);
         console.log("Remaining restaurants:", restaurants.length - currentDisplayCount);
-        
+
         const html = buildAllStoresHTMLFromArray(displayData);
         $('#all_stores').html(html);
 
@@ -3334,7 +3340,7 @@
         // Show/hide load more button based on remaining restaurants
         const remainingCount = restaurants.length - currentDisplayCount;
         console.log("Remaining restaurants for load more:", remainingCount);
-        
+
         if (remainingCount > 0) {
             $('#loadmore').show();
             console.log("Showing load more button");
@@ -3348,13 +3354,13 @@
     function loadMoreRestaurants() {
         console.log("Load more clicked. Current count:", currentDisplayCount);
         console.log("Total available restaurants:", allVendorsData.length);
-        
+
         // Since we're already filtering restaurants in the query, just use allVendorsData directly
         const restaurants = allVendorsData; // Already filtered to restaurants only
         const remainingCount = restaurants.length - currentDisplayCount;
-        
+
         console.log("Remaining restaurants:", remainingCount);
-        
+
         if (remainingCount > 0) {
             currentDisplayCount += Math.min(loadMoreStep, remainingCount);
             console.log("New display count:", currentDisplayCount);

@@ -30,7 +30,7 @@
                             </div>
                             <p class="mt-3 text-muted">Loading restaurants...</p>
                         </div>
-                        
+
                         <!-- Context Loading Message -->
                         <div id="context-loading" class="text-center py-3" style="display: none;">
                             <div class="alert alert-info">
@@ -38,9 +38,9 @@
                                 <span id="context-message">Detecting your location and finding nearby restaurants...</span>
                             </div>
                         </div>
-                        
+
                         <div id="all_stores" class="res-search-list-1"></div>
-                        
+
                         <!-- Pagination Controls -->
                         <div class="pagination-wrapper mt-4" id="pagination-wrapper" style="display: none;">
                             <div class="row">
@@ -64,7 +64,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <!-- Load More Button (for backward compatibility) -->
                         <div class="row fu-loadmore-btn" id="loadmore-wrapper" style="display: none;">
                             <a class="page-link loadmore-btn" href="javascript:void(0);" onclick="loadMoreRestaurants()" data-dt-idx="0" tabindex="0" id="loadmore">{{ trans('lang.see') }} {{ trans('lang.more') }}</a>
@@ -112,7 +112,7 @@
     var all_stores=document.getElementById('all_stores');
     all_stores.innerHTML='';
     var inValidVendors = new Set();
-    
+
     // Show loading indicators
     function showLoading() {
         $('#loading-spinner').show();
@@ -120,21 +120,21 @@
         $('#all_stores').hide();
         $('#pagination-wrapper').hide();
     }
-    
+
     // Hide loading indicators
     function hideLoading() {
         $('#loading-spinner').hide();
         $('#context-loading').hide();
         $('#all_stores').show();
     }
-    
+
     // Update context message
     function updateContextMessage(message) {
         $('#context-message').text(message);
     }
     var isSelfDeliveryGlobally = false;
     var refGlobal = database.collection('settings').doc("globalSettings");
-    
+
     // Pagination variables
     var currentPage = 1;
     var totalPages = 1;
@@ -142,7 +142,7 @@
     var allVendorsData = []; // Store all vendors data
     var filteredVendorsData = []; // Store filtered vendors data
     var paginationEnabled = true; // Toggle for pagination vs load more
-    
+
     refGlobal.get().then(async function(
         settingSnapshots) {
         if (settingSnapshots.data()) {
@@ -157,16 +157,16 @@
         placeholderImageSrc=placeHolderImageData.image;
     })
     var radiusUnit = 'km';
-    
+
     // Initialize randomized ratings object if it doesn't exist
     if (typeof window.randomizedRatings === 'undefined') {
         window.randomizedRatings = {};
     }
-    
+
     // Show initial loading state
     showLoading();
     updateContextMessage('Initializing restaurant search...');
-    
+
     callRestaurant();
     async function callRestaurant() {
         if(address_lat==''||address_lng==''||address_lng==NaN||address_lat==NaN||address_lat==null||address_lng==null) {
@@ -174,7 +174,7 @@
             hideLoading();
             return false;
         }
-        
+
         updateContextMessage('Getting restaurant search radius...');
         DriverNearByRef.get().then(async function(DriverNearByRefSnapshots) {
             var DriverNearByRefData=DriverNearByRefSnapshots.data();
@@ -182,7 +182,7 @@
             address_lat=parseFloat(address_lat);
             address_lng=parseFloat(address_lng);
             radiusUnit=DriverNearByRefData.distanceType;
-           
+
             if (radiusUnit == 'miles') {
                 RestaurantNearBy = parseInt(RestaurantNearBy * 1.60934)
             }
@@ -196,9 +196,9 @@
         await checkVendors().then(expiredStores => {
            inValidVendors=expiredStores;
         });
-        
+
         updateContextMessage('Searching for restaurants in your area...');
-        
+
         if(RestaurantNearBy) {
             nearestRestauantRefnew=geoFirestore.collection('vendors').near({
                 center: new firebase.firestore.GeoPoint(address_lat,address_lng),
@@ -214,11 +214,11 @@
         <?php } ?>
         nearestRestauantRefnew.then(async function(nearestRestauantSnapshot) {
             updateContextMessage('Processing restaurant data...');
-            
+
             if(nearestRestauantSnapshot.docs.length>0) {
                 // Store the data globally for pagination
                 window.vendorsData = nearestRestauantSnapshot;
-                
+
                 // Process all vendors data
                 let vendors = [];
                 nearestRestauantSnapshot.docs.forEach((listval) => {
@@ -239,13 +239,13 @@
 
                 // Initialize pagination system
                 initializePagination();
-                
+
                 // Display first page
                 displayCurrentPage();
-                
+
                 // Add interactive functionality to restaurant cards
                 addRestaurantCardInteractivity();
-                
+
                 // Hide loading and show results
                 hideLoading();
 
@@ -269,7 +269,7 @@
             return a[key]-b[key];
         });
     };
-    
+
     // ==================== PAGINATION FUNCTIONS ====================
 
     // Function to initialize pagination
@@ -282,7 +282,7 @@
 
         $('#pagination-wrapper').show();
         $('#loadmore-wrapper').hide();
-        
+
         // Reset pagination state
         currentPage = 1;
         updatePaginationControls();
@@ -292,11 +292,11 @@
     function updatePaginationControls() {
         const startIndex = (currentPage - 1) * pagesize + 1;
         const endIndex = Math.min(currentPage * pagesize, totalRestaurants);
-        
+
         $('#pagination-info').text(`Showing ${startIndex}-${endIndex} of ${totalRestaurants} restaurants`);
         $('#current-page').text(currentPage);
         $('#total-pages').text(totalPages);
-        
+
         // Update button states
         $('#prev-page').prop('disabled', currentPage === 1);
         $('#next-page').prop('disabled', currentPage === totalPages);
@@ -305,7 +305,7 @@
     // Function to go to specific page
     function goToPage(page) {
         if (page < 1 || page > totalPages) return;
-        
+
         currentPage = page;
         displayCurrentPage();
         updatePaginationControls();
@@ -316,10 +316,10 @@
         const startIndex = (currentPage - 1) * pagesize;
         const endIndex = startIndex + pagesize;
         const pageData = filteredVendorsData.slice(startIndex, endIndex);
-        
+
         const html = buildHTMLNearestRestaurantFromArray(pageData);
         all_stores.innerHTML = html;
-        
+
         // Add interactive functionality to the new cards
         addRestaurantCardInteractivity();
     }
@@ -328,8 +328,8 @@
     function buildRestaurantHTML(restaurant) {
                     var rating = 0;
                     var reviewsCount = 0;
-        if (restaurant.hasOwnProperty('reviewsSum') && restaurant.reviewsSum != 0 && restaurant.reviewsSum != null && 
-            restaurant.reviewsSum != '' && restaurant.hasOwnProperty('reviewsCount') && 
+        if (restaurant.hasOwnProperty('reviewsSum') && restaurant.reviewsSum != 0 && restaurant.reviewsSum != null &&
+            restaurant.reviewsSum != '' && restaurant.hasOwnProperty('reviewsCount') &&
             restaurant.reviewsCount != 0 && restaurant.reviewsCount != null && restaurant.reviewsCount != '') {
             rating = (restaurant.reviewsSum / restaurant.reviewsCount);
                         rating = Math.round(rating * 10) / 10;
@@ -345,7 +345,7 @@
                 window.randomizedRatings[restaurant.id] = { rating, reviewsCount };
                     }
                     }
-        
+
         // Determine restaurant status
                     var status = '{{trans("lang.closed")}}';
                     var statusclass = "closed";
@@ -393,10 +393,10 @@
 
         // Calculate distance if coordinates are available
         var distance = '';
-        if (restaurant.hasOwnProperty('latitude') && restaurant.hasOwnProperty('longitude') && 
+        if (restaurant.hasOwnProperty('latitude') && restaurant.hasOwnProperty('longitude') &&
             typeof address_lat !== 'undefined' && typeof address_lng !== 'undefined') {
             var dist = calculateDistance(address_lat, address_lng, restaurant.latitude, restaurant.longitude);
-            distance = radiusUnit === 'miles' 
+            distance = radiusUnit === 'miles'
                 ? (dist / 1.60934).toFixed(1) + ' mi'
                 : dist.toFixed(1) + ' km';
         }
@@ -456,9 +456,9 @@
         const R = 6371; // Radius of the Earth in kilometers
         const dLat = (lat2 - lat1) * Math.PI / 180;
         const dLon = (lon2 - lon1) * Math.PI / 180;
-        const a = 
+        const a =
             Math.sin(dLat/2) * Math.sin(dLat/2) +
-            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
             Math.sin(dLon/2) * Math.sin(dLon/2);
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
         const distance = R * c;
@@ -472,13 +472,13 @@
             e.preventDefault();
             const card = $(this);
             const link = card.find('.restaurant-link');
-            
+
             // Add click animation
             card.addClass('card-clicked');
             setTimeout(() => {
                 card.removeClass('card-clicked');
             }, 150);
-            
+
             // Navigate to restaurant page after animation
             setTimeout(() => {
                 if (link.length) {
@@ -486,27 +486,27 @@
                 }
             }, 200);
         });
-        
+
         // Add click handlers for rating badges
         $('.rating-badge').off('click').on('click', function(e) {
             e.stopPropagation(); // Prevent card click
             const badge = $(this);
-            
+
             // Add click animation
             badge.addClass('badge-clicked');
             setTimeout(() => {
                 badge.removeClass('badge-clicked');
             }, 150);
-            
+
             // You can add functionality here for rating badge clicks
             console.log('Rating badge clicked:', badge.data('badge'));
         });
-        
+
         // Add click handlers for location elements
         $('.restaurant-location').off('click').on('click', function(e) {
             e.stopPropagation(); // Prevent card click
             const locationText = $(this).find('.location-text').text();
-            
+
             // You can add functionality here for location clicks
             console.log('Location clicked:', locationText);
             // Example: open in maps, copy to clipboard, etc.
@@ -516,7 +516,7 @@
     // Function to build HTML from array (for pagination) - Using Unified UI
     function buildHTMLNearestRestaurantFromArray(alldata) {
         var html = '';
-        
+
         if(alldata.length) {
             alldata.forEach((val) => {
                 var checkDineinPlan = true;
@@ -636,7 +636,7 @@
                     // Use failproof status logic
                     var status='{{trans("lang.closed")}}';
                     var statusclass="closed";
-                    
+
                     if (window.restaurantStatusManager) {
                         const workingHours = val.workingHours || [];
                         const isOpen = val.isOpen !== undefined ? val.isOpen : null;
@@ -777,7 +777,7 @@
         gap: 1.5rem;
         margin-top: 1rem;
     }
-    
+
     .restaurant-card {
         background: #fff;
         border-radius: 16px;
@@ -786,38 +786,38 @@
         transition: all 0.3s ease;
         cursor: pointer;
     }
-    
+
     .restaurant-card:hover {
         transform: translateY(-4px);
         box-shadow: 0 8px 25px rgba(0,0,0,0.15);
     }
-    
+
     .restaurant-card:active {
         transform: translateY(-2px);
     }
-    
+
     .restaurant-card.card-clicked {
         transform: scale(0.98);
         box-shadow: 0 2px 8px rgba(0,0,0,0.2);
     }
-    
+
     .restaurant-image {
         position: relative;
         height: 200px;
         overflow: hidden;
     }
-    
+
     .restaurant-image img {
         width: 100%;
         height: 100%;
         object-fit: cover;
         transition: transform 0.3s ease;
     }
-    
+
     .restaurant-card:hover .restaurant-image img {
         transform: scale(1.05);
     }
-    
+
     .restaurant-status {
         position: absolute;
         top: 12px;
@@ -833,34 +833,34 @@
         box-shadow: 0 2px 8px rgba(0,0,0,0.15);
         backdrop-filter: blur(10px);
     }
-    
+
     .restaurant-status.open {
         background: linear-gradient(135deg, #28a745, #20c997);
         border-color: rgba(255,255,255,0.2);
     }
-    
+
     .restaurant-status.closed {
         background: linear-gradient(135deg, #dc3545, #c82333);
         border-color: rgba(255,255,255,0.2);
     }
-    
+
     .restaurant-card:hover .restaurant-status {
         transform: scale(1.05);
         box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     }
-    
+
     .restaurant-card:hover .restaurant-status.open {
         background: linear-gradient(135deg, #20c997, #28a745);
     }
-    
+
     .restaurant-card:hover .restaurant-status.closed {
         background: linear-gradient(135deg, #c82333, #dc3545);
     }
-    
+
     .distance {
         position: absolute;
         bottom: 12px;
-        left: 12px;
+        right: 12px;
         background: rgba(0,0,0,0.8);
         color: white;
         padding: 6px 12px;
@@ -868,28 +868,28 @@
         font-size: 0.8rem;
         font-weight: 600;
     }
-    
+
     .restaurant-info {
         padding: 20px;
     }
-    
+
     .restaurant-title {
         margin: 0 0 12px 0;
         font-size: 1.2rem;
         font-weight: 700;
         color: #2c3e50;
     }
-    
+
     .restaurant-title a {
         color: inherit;
         text-decoration: none;
         transition: color 0.3s ease;
     }
-    
+
     .restaurant-title a:hover {
         color: #3498db;
     }
-    
+
     .restaurant-location {
         display: flex;
         align-items: center;
@@ -899,61 +899,61 @@
         cursor: pointer;
         transition: color 0.3s ease;
     }
-    
+
     .restaurant-location:hover {
         color: #3498db;
     }
-    
+
     .restaurant-location:hover .location-icon svg path {
         fill: #3498db;
     }
-    
+
     .location-icon {
         margin-right: 8px;
         flex-shrink: 0;
     }
-    
+
     .location-icon svg path {
         fill: #95a5a6;
         transition: fill 0.3s ease;
     }
-    
+
     .location-text {
         flex: 1;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
     }
-    
+
     .restaurant-rating {
         display: flex;
         align-items: center;
         justify-content: flex-start;
         gap: 12px;
     }
-    
+
     .rating-stars {
         display: flex;
         align-items: center;
         gap: 4px;
     }
-    
+
     .star-icon {
         color: #f39c12;
         font-size: 1.1rem;
     }
-    
+
     .rating-value {
         font-weight: 700;
         color: #2c3e50;
         font-size: 1rem;
     }
-    
+
     .rating-badges {
         display: flex;
         gap: 8px;
     }
-    
+
     .rating-badge {
         display: flex;
         align-items: center;
@@ -969,7 +969,7 @@
         position: relative;
         overflow: hidden;
     }
-    
+
     .rating-badge::before {
         content: '';
         position: absolute;
@@ -980,42 +980,42 @@
         background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
         transition: left 0.5s ease;
     }
-    
+
     .rating-badge:hover::before {
         left: 100%;
     }
-    
+
     .rating-badge:hover {
         transform: scale(1.05);
         box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
     }
-    
+
     .rating-badge:active {
         transform: scale(0.95);
     }
-    
+
     .rating-badge.badge-clicked {
         transform: scale(0.9);
         background: linear-gradient(135deg, #229954, #27ae60);
     }
-    
+
     .badge-icon {
         flex-shrink: 0;
     }
-    
+
     .badge-icon svg path {
         fill: white;
         transition: fill 0.3s ease;
     }
-    
+
     .badge-icon:hover {
         transform: scale(1.1);
     }
-    
+
     .badge-text {
         font-weight: 700;
     }
-    
+
     /* Grid responsive adjustments */
     @media (max-width: 768px) {
         #all_stores {
@@ -1026,13 +1026,13 @@
             margin: 0 0.5rem;
         }
     }
-    
+
     @media (min-width: 769px) and (max-width: 1024px) {
         #all_stores {
             grid-template-columns: repeat(2, 1fr);
         }
     }
-    
+
     @media (min-width: 1025px) {
         #all_stores {
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
