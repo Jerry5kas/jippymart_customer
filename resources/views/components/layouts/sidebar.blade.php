@@ -7,6 +7,7 @@
         @if(!empty($categoryTitle))
             <p class="text-sm text-gray-500 mt-1">in {{ $categoryTitle }}</p>
         @endif
+        <p class="text-xs text-gray-400 mt-1">Sorted by item count (high to low)</p>
     </div>
 
     <nav class="space-y-2">
@@ -23,7 +24,7 @@
                             @endif -->
                         </span>
                     </div>
-                    <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                    <span class="text-xs font-semibold {{ $subcategory['itemCount'] > 0 ? 'text-green-600 bg-green-100' : 'text-gray-500 bg-gray-100' }} px-2 py-1 rounded-full">
                         {{ $subcategory['itemCount'] ?? 0 }}
                     </span>
                 </a>
@@ -41,6 +42,7 @@
             @if(!empty($categoryTitle))
                 <p class="text-sm text-gray-500 mt-1">in {{ $categoryTitle }}</p>
             @endif
+            <p class="text-xs text-gray-400 mt-1">Sorted by item count (high to low)</p>
         </div>
         <nav class="space-y-2">
             @foreach($subcategories as $subcategory)
@@ -57,7 +59,7 @@
                             @endif
                         </span>
                     </div>
-                    <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                    <span class="text-xs font-semibold {{ $subcategory['itemCount'] > 0 ? 'text-green-600 bg-green-100' : 'text-gray-500 bg-gray-100' }} px-2 py-1 rounded-full">
                         {{ $subcategory['itemCount'] ?? 0 }}
                     </span>
                 </a>

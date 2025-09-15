@@ -3,11 +3,11 @@
     'title' => 'Products'
 ])
 
-<div x-data="{ scroll: 0 }" class="md:w-1/2 w-full mt-8 px-4 rounded-2xl">
+<div x-data="{ scroll: 0 }" class="md:w-full w-full mt-8 px-4 rounded-2xl">
 
     <!-- Banner (Fixed) -->
     <div class="h-40 bg-[#007F73] flex items-center justify-center rounded-t-2xl">
-        <h1 class="text-2xl text-white font-bold">{{$title}}</h1>
+        <h1 class="text-xl px-2 text-center text-white font-bold">{{$title}}</h1>
     </div>
 
     <!-- Featured Products Carousel -->
@@ -26,14 +26,29 @@
             class="flex space-x-4 bg-[#007F73] overflow-x-auto scrollbar-hide scroll-smooth snap-x snap-mandatory pb-6 px-2 rounded-2xl ">
 
             @foreach($products as $product)
-                <x-mart.small-cat-card
-                    :src="$product['photo']"
-                    :title="$product['name']"
-                    :price="$product['price']"
-                    :disPrice="$product['disPrice']"
-                    :rating="$product['rating']"
-                    :reviews="$product['reviews']"
-                />
+                @if(!empty($product['subcategoryTitle']))
+                    <a href="{{ route('mart.items.by.subcategory', ['subcategoryTitle' => $product['subcategoryTitle']]) }}" class="block">
+                        <x-mart.small-cat-card
+                            :src="$product['photo']"
+                            :title="$product['name']"
+                            :price="$product['price']"
+                            :disPrice="$product['disPrice']"
+                            :rating="$product['rating']"
+                            :reviews="$product['reviews']"
+                        />
+                    </a>
+                @else
+                    <div class="block">
+                        <x-mart.small-cat-card
+                            :src="$product['photo']"
+                            :title="$product['name']"
+                            :price="$product['price']"
+                            :disPrice="$product['disPrice']"
+                            :rating="$product['rating']"
+                            :reviews="$product['reviews']"
+                        />
+                    </div>
+                @endif
             @endforeach
 
         </div>

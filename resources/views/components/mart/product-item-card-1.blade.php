@@ -10,78 +10,91 @@
     'grams' => 200,
     'subcategoryTitle' => 'fruits',
     ])
-<div class="relative shadow-lg rounded-xl">
-    <img
-        src="{{ is_array($src) ? $src[0] : $src }}"
-        alt="product Image"
-        class="rounded-xl w-full object-cover">
-    <!-- Add Button -->
-    <div x-data="{ qty: 0 }" class="relative inline-block p-2">
 
-        <!-- If not added yet, show ADD button -->
-        <button x-show="qty === 0"
-                @click="qty = 1"
-                class="px-4 py-1.5 rounded-xl border border-b-2 border-r-2 border-[#007F73]
-                   text-[#007F73] text-[11px] font-semibold bg-white hover:bg-[#E8F8DB] transition">
-            ADD
-        </button>
 
-        <!-- If added, show increment/decrement -->
-        <div x-show="qty > 0" class="flex items-center gap-2 bg-[#007F73] text-white px-3 py-1.5 rounded-xl text-sm font-semibold">
-            <button @click="if(qty > 0) qty--" class="px-2">−</button>
-            <span x-text="qty"></span>
-            <button @click="qty++" class="px-2">+</button>
+
+
+
+<div class="relative rounded-xl bg-white overflow-hidden group w-full h-full">
+    <!-- Product Image -->
+    <div class="relative">
+        <img
+            src="{{ is_array($src) ? $src[0] : $src }}"
+            alt="product Image"
+            class="rounded-t-xl w-full h-40 object-cover group-hover:scale-105 transition-transform duration-300">
+
+        <!-- Floating Add/Qty Button -->
+        <div x-data="{ qty: 0 }" class="absolute bottom-2 right-2">
+            <!-- If not added yet -->
+            <button x-show="qty === 0"
+                    @click="qty = 1"
+                    class="px-5 py-1.5 rounded-full border border-[#007F73]
+                   text-[#007F73] text-xs font-semibold bg-white shadow-md hover:bg-[#E8F8DB] transition">
+                ADD
+            </button>
+
+            <!-- If added, show increment/decrement -->
+            <div x-show="qty > 0"
+                 x-transition
+                 class="flex items-center gap-2 bg-[#007F73] text-white px-3 py-1.5 rounded-full text-xs font-semibold shadow-md">
+                <button @click="if(qty > 0) qty--" class="px-2">−</button>
+                <span x-text="qty"></span>
+                <button @click="qty++" class="px-2">+</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Product Info -->
+    <div class="p-3 space-y-2">
+        <!-- Price & Save -->
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-1">
+                <span class="text-base font-bold text-green-600">₹{{$disPrice}}</span>
+                <span class="text-gray-400 line-through text-red-600 text-xs">₹{{$price}}</span>
+            </div>
+            <span class="bg-[#E8F8DB] text-[#007F73] text-[10px] px-2 py-0.5 rounded-full font-semibold inline-flex items-center gap-x-1">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                     fill="currentColor" class="w-3 h-3">
+                    <path fill-rule="evenodd"
+                          d="M5.25 2.25a3 3 0 0 0-3 3v4.318a3 3 0 0 0 .879 2.121l9.58 9.581c.92.92 2.39 1.186 3.548.428a18.849 18.849 0 0 0 5.441-5.44c.758-1.16.492-2.629-.428-3.548l-9.58-9.581a3 3 0 0 0-2.122-.879H5.25ZM6.375 7.5a1.125 1.125 0 1 0 0-2.25 1.125 1.125 0 0 0 0 2.25Z"
+                          clip-rule="evenodd"/>
+                </svg>
+                SAVE ₹{{$save}}
+            </span>
         </div>
 
-    </div>
-
-</div>
-<div class="mt-2">
-    <div class="w-full flex items-center justify-between space-x-1">
-        <div class="flex items-center space-x-1">
-            <span class="text-sm font-bold text-[#007F73]">₹{{$disPrice}}</span>
-            <span class="text-red-400 line-through text-[9px]">₹{{$price}}</span>
+        <!-- Product Title & Gram -->
+        <div>
+            <h3 class="text-sm font-semibold text-gray-700 truncate">{{$title}}</h3>
+            <p class="text-gray-400 text-[12px] line-clamp-2">{{$description}} g</p>
         </div>
-        <span
-            class="self-end bg-gradient-to-r from-[#E8F8DB] to-white text-[#007F73] text-[9px] px-2 font-semibold p-0.5 rounded-sm inline-flex items-center gap-x-1">
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                                                 fill="currentColor" class="size-3">
-                                              <path fill-rule="evenodd"
-                                                    d="M5.25 2.25a3 3 0 0 0-3 3v4.318a3 3 0 0 0 .879 2.121l9.58 9.581c.92.92 2.39 1.186 3.548.428a18.849 18.849 0 0 0 5.441-5.44c.758-1.16.492-2.629-.428-3.548l-9.58-9.581a3 3 0 0 0-2.122-.879H5.25ZM6.375 7.5a1.125 1.125 0 1 0 0-2.25 1.125 1.125 0 0 0 0 2.25Z"
-                                                    clip-rule="evenodd"/>
-                                            </svg>
-                                             SAVE ₹{{$save}}</span>
-    </div>
 
-    <p class="text-gray-500 text-[9px]">{{$grams}}</p>
-</div>
-<h3 class="mt-1 text-xs font-medium font-semibold text-gray-600">{{$title}}</h3>
-{{--<p class="mt-1 text-[9px] font-medium font-semibold line-clamp-2 text-gray-400">{{$description}}</p>--}}
-<!-- Rating -->
-<div class="flex items-center justify-between space-x-1 my-1 text-[9px]">
-                                    <span
-                                        class="bg-[#E8F8DB] text-[#007F73] px-2 rounded-sm max-w-max text-[9px] font-semibold">{{$subcategoryTitle}}</span>
-    <div
-        class="flex items-center space-x-1 bg-gradient-to-r from-gray-200 to-white rounded-full px-1">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-             fill="currentColor" class="w-2.5 h-2.5">
-            <path fill-rule="evenodd"
-                  d="M14.615 1.595a.75.75 0 0 1 .359.852L12.982 9.75h7.268a.75.75 0 0 1 .548 1.262l-10.5 11.25a.75.75 0 0 1-1.272-.71l1.992-7.302H3.75a.75.75 0 0 1-.548-1.262l10.5-11.25a.75.75 0 0 1 .913-.143Z"
-                  clip-rule="evenodd"/>
-        </svg>
-        <span>15 mins</span>
+        <!-- Category & Delivery Time -->
+        <div class="flex items-center justify-between text-[10px]">
+            <span class="bg-[#E8F8DB] text-[#007F73] px-2 py-0.5 rounded-full font-semibold">{{$subcategoryTitle}}</span>
+            <div class="flex items-center gap-1 bg-gray-100 rounded-full px-2 py-0.5">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                     fill="currentColor" class="w-3 h-3">
+                    <path fill-rule="evenodd"
+                          d="M14.615 1.595a.75.75 0 0 1 .359.852L12.982 9.75h7.268a.75.75 0 0 1 .548 1.262l-10.5 11.25a.75.75 0 0 1-1.272-.71l1.992-7.302H3.75a.75.75 0 0 1-.548-1.262l10.5-11.25a.75.75 0 0 1 .913-.143Z"
+                          clip-rule="evenodd"/>
+                </svg>
+                <span>15 mins</span>
+            </div>
+        </div>
+
+        <!-- Rating -->
+        <div class="flex items-center gap-1">
+            <span class="bg-yellow-100 text-yellow-600 px-2 py-0.5 text-[10px] inline-flex items-center gap-x-1 rounded-full font-semibold">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                     fill="currentColor" class="w-3 h-3">
+                    <path fill-rule="evenodd"
+                          d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z"
+                          clip-rule="evenodd"/>
+                </svg>
+                {{$rating}}
+            </span>
+            <span class="text-gray-500 text-[10px]">({{$reviews}})</span>
+        </div>
     </div>
-</div>
-<div class="flex items-center space-x-1">
-                                    <span
-                                        class="bg-yellow-100 text-yellow-600 px-2 py-0.5 text-[9px] inline-flex items-center gap-x-1 rounded-full font-semibold">
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
-                                             class="w-3 h-3">
-                                          <path fill-rule="evenodd"
-                                                d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z"
-                                                clip-rule="evenodd"/>
-                                        </svg>
-                                        {{$rating}}
-                                    </span>
-    <span class="text-gray-500 text-[9px]">({{$reviews}})</span>
 </div>

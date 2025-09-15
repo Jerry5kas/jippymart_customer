@@ -30,7 +30,7 @@
 
 <body class="font-sans">
 <x-navbar/>
-<div>
+<div class="bg-[#F9F9ED]">
     {{$slot}}
 </div>
 <x-footer/>

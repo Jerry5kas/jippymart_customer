@@ -1,5 +1,7 @@
 @props([
-  "products" => []
+  "products" => [],
+  'header' => '',
+  'idea' => '',
 ])
 
 <style>
@@ -12,52 +14,107 @@
         -ms-overflow-style: none;
         scrollbar-width: none;
     }
+
+    /* Ensure proper spacing and prevent collision */
+    .banner-carousel {
+        scroll-behavior: smooth;
+        scroll-snap-type: x mandatory;
+    }
+
+    .banner-carousel > * {
+        scroll-snap-align: center;
+    }
+
+    /* Ensure cards maintain consistent spacing */
+    .product-card-container {
+        min-width: 192px; /* w-48 equivalent */
+        max-width: 192px;
+        flex-shrink: 0;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .product-card-container {
+            min-width: 160px;
+            max-width: 160px;
+        }
+    }
 </style>
 
-<div class="sm:w-[90%] w-full mx-auto my-10 " x-data>
-    <div class="bg-orange-50 rounded-2xl p-4 sm:p-6 w-full flex-shrink-0 bg-cover bg-center"
-         style="background-image: url('https://static.vecteezy.com/system/resources/thumbnails/005/715/816/small/banner-abstract-background-board-for-text-and-message-design-modern-free-vector.jpg')">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-center">
+<div class="max-w-7xl w-full mx-auto my-10" x-data>
+    <div class="bg-[#E8F8DB] rounded-2xl p-4 sm:p-6 w-full flex-shrink-0 bg-cover bg-center"
+         style="background-image: url('/')">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-center bg-[#E8F8DB] min-h-[200px]">
 
             <!-- Left Banner -->
             <div class="md:col-span-1 flex flex-col justify-between space-y-4">
                 <div>
-                    <p class="uppercase tracking-widest text-sm text-gray-500">hey this a mart </p>
-                    <h2 class="text-2xl sm:text-3xl font-bold leading-snug text-gray-900 mt-2">
-                        go go
+                    <p class="uppercase tracking-widest text-sm text-gray-600">{{$header}}</p>
+                    <h2 class="text-2xl sm:text-3xl font-bold leading-snug text-gray-600 mt-2">
+                        {{$idea}}
                     </h2>
                 </div>
-                <button
-                    class="bg-[#007F73] hover:bg-[#005f56] text-white px-4 py-2 rounded-lg text-sm font-semibold w-max">
-                    More Items →
-                </button>
+                @if(!empty($products) && count($products) > 0 && !empty($products[0]['subcategoryTitle']))
+                    <a href="{{ route('mart.items.by.subcategory', ['subcategoryTitle' => $products[0]['subcategoryTitle']]) }}"
+                       class="bg-[#007F73] hover:bg-[#005f56] text-white px-4 py-2 rounded-lg text-sm font-semibold w-max inline-block transition-colors">
+                        More Items →
+                    </a>
+                @else
+                    <a href="{{ route('mart.index') }}"
+                       class="bg-[#007F73] hover:bg-[#005f56] text-white px-4 py-2 rounded-lg text-sm font-semibold w-max inline-block transition-colors">
+                        More Items →
+                    </a>
+                @endif
             </div>
 
             <!-- Right Carousel -->
-            <div class="md:col-span-3 relative">
+            <div class="md:col-span-3 relative overflow-hidden">
                 <!-- Left Arrow -->
                 <button
-                    @click="$refs.scroller.scrollBy({ left: -220, behavior: 'smooth' })"
-                    class="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow rounded-full p-1 text-xs text-gray-400">
-                    ◀
+                    @click="$refs.scroller.scrollBy({ left: -240, behavior: 'smooth' })"
+                    class="hidden md:flex absolute left-2 top-1/2 -translate-y-1/2 z-20 bg-white shadow-lg rounded-full p-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                    </svg>
                 </button>
 
                 <!-- Scroller -->
                 <div
                     x-ref="scroller"
-                    class="flex space-x-4 overflow-x-auto scrollbar-hide scroll-smooth snap-x snap-mandatory pb-4 px-2">
+                    class="flex gap-4 overflow-x-auto scrollbar-hide banner-carousel pb-4 px-8 md:px-12">
 
-{{--                    <!-- Product Card -->--}}
-{{--                    <template x-for="i in 10" :key="i">--}}
-{{--                        <div class="w-40 flex-shrink-0 snap-center">--}}
                     @forelse ($products ?? [] as $product)
-                    <div class="bg-white rounded-2xl flex flex-col space-y-1 p-1" x-data="{ added: false }">
-                                <x-mart.product-item-card :disPrice="$product['disPrice']" :price="$product['price']" :title="$product['name']" :description="$product['description']"
-                                                          :src="$product['photo']" :grams="$product['grams']" :rating="$product['rating']" :reviews="$product['reviews']"
-                                                          :subcategoryTitle="$product['subcategoryTitle']"/>
-                            </div>
-{{--                        </div>--}}
-{{--                    </template>--}}
+                        <div class="product-card-container snap-center" x-data="{ added: false }">
+                            @if(!empty($product['subcategoryTitle']))
+                                <a href="{{ route('mart.items.by.subcategory', ['subcategoryTitle' => $product['subcategoryTitle']]) }}" class="block hover:scale-105 transition-transform duration-300">
+                                    <x-mart.product-item-card-2 
+                                        :disPrice="$product['disPrice']" 
+                                        :price="$product['price']" 
+                                        :title="$product['name']" 
+                                        :description="$product['description']"
+                                        :src="$product['photo']" 
+                                        :grams="$product['grams']" 
+                                        :rating="$product['rating']" 
+                                        :reviews="$product['reviews']"
+                                        :subcategoryTitle="$product['subcategoryTitle']"
+                                    />
+                                </a>
+                            @else
+                                <div class="block">
+                                    <x-mart.product-item-card-2 
+                                        :disPrice="$product['disPrice']" 
+                                        :price="$product['price']" 
+                                        :title="$product['name']" 
+                                        :description="$product['description']"
+                                        :src="$product['photo']" 
+                                        :grams="$product['grams']" 
+                                        :rating="$product['rating']" 
+                                        :reviews="$product['reviews']"
+                                        :subcategoryTitle="$product['subcategoryTitle'] ?? 'General'"
+                                    />
+                                </div>
+                            @endif
+                        </div>
                     @empty
                         <div class="w-full flex-shrink-0">
                             <div class="text-center text-gray-500 py-8">
@@ -69,9 +126,11 @@
 
                 <!-- Right Arrow -->
                 <button
-                    @click="$refs.scroller.scrollBy({ left: 220, behavior: 'smooth' })"
-                    class="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow rounded-full p-1 text-xs text-gray-400">
-                    ▶
+                    @click="$refs.scroller.scrollBy({ left: 240, behavior: 'smooth' })"
+                    class="hidden md:flex absolute right-2 top-1/2 -translate-y-1/2 z-20 bg-white shadow-lg rounded-full p-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                    </svg>
                 </button>
             </div>
         </div>

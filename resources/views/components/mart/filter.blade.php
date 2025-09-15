@@ -1,7 +1,7 @@
 <div x-data="{ openFilter: false }" class="relative ">
     <!-- Filter Button -->
     <button @click="openFilter = !openFilter"
-            class="flex items-center gap-2 px-4 py-2 bg-[#007F73] text-white rounded-full shadow-md hover:bg-[#005f56] transition">
+            class="flex items-center gap-2 px-4 py-2 bg-[#007F73] text-gray-100 rounded-full shadow-md hover:bg-[#005f56] transition">
         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L15 14.414V20a1 1 0 01-1.447.894l-4-2A1 1 0 019 18v-3.586L3.293 6.707A1 1 0 013 6V4z"/>
@@ -73,7 +73,7 @@
         <!-- Apply / Reset Buttons -->
         <div class="flex justify-between pt-3 border-t border-gray-100">
             <button class="px-3 py-1 text-sm text-gray-600 hover:text-gray-800">Reset</button>
-            <button class="px-4 py-1.5 bg-[#007F73] text-white rounded-lg hover:bg-[#005f56] text-sm">Apply</button>
+            <button class="px-4 py-1.5 bg-[#007F73] text-gray-100 rounded-lg hover:bg-[#005f56] text-sm">Apply</button>
         </div>
     </div>
 </div>

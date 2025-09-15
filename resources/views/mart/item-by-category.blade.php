@@ -1,5 +1,46 @@
 @props(['items' => [], 'subcategoryTitle' => '', 'subcategories' => [], 'categoryTitle' => ''])
 
+<style>
+    /* Enhanced grid layout for product cards */
+    .product-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 1.5rem;
+    }
+
+    @media (max-width: 640px) {
+        .product-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+    }
+
+    @media (min-width: 641px) and (max-width: 1024px) {
+        .product-grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+
+    @media (min-width: 1025px) and (max-width: 1280px) {
+        .product-grid {
+            grid-template-columns: repeat(4, 1fr);
+        }
+    }
+
+    @media (min-width: 1281px) {
+        .product-grid {
+            grid-template-columns: repeat(5, 1fr);
+        }
+    }
+
+    /* Ensure cards maintain consistent height */
+    .product-card-wrapper {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+</style>
+
 <x-layouts.app>
 
     <div
@@ -38,16 +79,16 @@
         <!-- Main content -->
         <div class="flex-1 overflow-y-auto">
             <!-- Top bar -->
-            <header class="flex items-center justify-between p-4 bg-white border-b shadow-md">
+            <header class="flex items-center justify-between p-6 bg-gradient-to-r from-[#007F73] to-[#00A86B] text-white shadow-lg">
                 <div>
-                    <h1 class="text-xl font-bold text-gray-800">{{ $subcategoryTitle ?: 'Groceries' }}</h1>
+                    <h1 class="text-2xl font-bold">{{ $subcategoryTitle ?: 'Groceries' }}</h1>
                     @if(!empty($categoryTitle))
-                        <p class="text-sm text-gray-500 mt-1">Category: {{ $categoryTitle }}</p>
+                        <p class="text-sm text-green-100 mt-1">Category: {{ $categoryTitle }}</p>
                     @endif
                 </div>
-                <div class="inline-flex items-center gap-x-2">
+                <div class="inline-flex items-center gap-x-3">
                     <x-mart.filter/>
-                    <button class="md:hidden px-3 py-2 border rounded-lg" @click="sidebarOpen = true">
+                    <button class="md:hidden px-4 py-2 bg-white/20 backdrop-blur-sm border border-white/30 rounded-lg hover:bg-white/30 transition-colors" @click="sidebarOpen = true">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                              stroke="currentColor" class="size-6">
                             <path stroke-linecap="round" stroke-linejoin="round"
@@ -58,92 +99,38 @@
             </header>
 
             <!-- Products -->
-            <main class="p-4">
+            <main class="p-6 bg-gray-50 min-h-screen">
                 @if(count($items) > 0)
-                    <div class="mb-4 text-sm text-gray-600">
-                        Showing {{ count($items) }} items in {{ $subcategoryTitle }}
+                    <div class="mb-6 p-4 bg-white rounded-lg shadow-sm border-l-4 border-[#007F73]">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h2 class="text-lg font-semibold text-gray-800">Product Collection</h2>
+                                <p class="text-sm text-gray-600">Showing {{ count($items) }} items in {{ $subcategoryTitle }}</p>
+                            </div>
+                            <div class="text-right">
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                    </svg>
+                                    {{ count($items) }} Available
+                                </span>
+                            </div>
+                        </div>
                     </div>
-                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 gap-y-8">
+                    <div class="product-grid">
                         @foreach($items as $item)
-                            <div class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-                                <!-- Product Image -->
-                                <div class="relative">
-                                    <img src="{{ $item['photo'] }}" alt="{{ $item['name'] }}"
-                                         class="w-full h-40 object-cover rounded-t-xl">
-                                    <!-- ADD Button -->
-                                    <div class="absolute bottom-2 left-2" x-data="{ qty: 0 }">
-                                        <button x-show="qty === 0" @click="qty = 1"
-                                                class="px-3 py-1.5 bg-white text-violet-600 border border-violet-400 rounded-full text-xs font-semibold hover:bg-violet-50 transition">
-                                            ADD
-                                        </button>
-                                        <div x-show="qty > 0" class="flex items-center space-x-2 bg-violet-600 text-white rounded-full px-3 py-1 text-xs font-semibold">
-                                            <button @click="if(qty > 0) qty--" class="px-2">−</button>
-                                            <span x-text="qty"></span>
-                                            <button @click="qty++" class="px-2">+</button>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Price and Save Info -->
-                                <div class="p-3 space-y-1">
-                                    <div class="flex items-center justify-between">
-                                        <div class="flex items-center space-x-1">
-                                            <span class="text-sm font-bold text-green-900">₹{{ $item['disPrice'] }}</span>
-                                            @if($item['price'] > $item['disPrice'])
-                                                <span class="text-xs text-red-400 line-through">₹{{ $item['price'] }}</span>
-                                            @endif
-                                        </div>
-                                                                            <span
-                                            class="self-end bg-gradient-to-r from-green-200 to-white text-green-600 text-[9px] px-2 font-semibold p-0.5 rounded-sm inline-flex items-center gap-x-1">
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                                                 fill="currentColor" class="size-3">
-                                              <path fill-rule="evenodd"
-                                                    d="M5.25 2.25a3 3 0 0 0-3 3v4.318a3 3 0 0 0 .879 2.121l9.58 9.581c.92.92 2.39 1.186 3.548.428a18.849 18.849 0 0 0 5.441-5.44c.758-1.16.492-2.629-.428-3.548l-9.58-9.581a3 3 0 0 0-2.122-.879H5.25ZM6.375 7.5a1.125 1.125 0 1 0 0-2.25 1.125 1.125 0 0 0 0 2.25Z"
-                                                    clip-rule="evenodd"/>
-                                            </svg>
-                                             SAVE ₹30</span>
-                                    </div>
-                                    <div class="flex items-center space-x-1 text-xs text-gray-500">
-                                            <span>{{ $item['grams'] }}</span>
-                                        </div>
-
-                                        <h3 class="text-sm font-medium text-gray-700 truncate text-xs">{{ $item['name'] }}</h3>
-
-                                    <!-- Delivery Time -->
-                                    <div class="flex items-center justify-between bg-gray-100 rounded-full px-3 py-1 text-xs text-gray-500">
-                                        <!-- Grams -->
-                                        
-
-                                        <!-- Time -->
-                                        <div class="flex items-center space-x-1">
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none"
-                                                 stroke="currentColor" stroke-width="2"
-                                                 class="w-3 h-3 text-gray-600" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round"
-                                                      d="M12 8v4l3 3"/>
-                                                <circle cx="12" cy="12" r="9"/>
-                                            </svg>
-                                            <span>15 mins</span>
-                                        </div>
-                                    </div>
-                                    <!-- Name -->
-                                    
-
-                                    <!-- Ratings and Reviews -->
-                                    <div class="flex items-center justify-between text-xs text-gray-500 mt-2">
-                                        <!-- Rating -->
-                                        <div class="flex items-end space-x-1 text-xs text-gray-500">
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor"
-                                                 class="w-3 h-3 text-yellow-400" viewBox="0 0 20 20">
-                                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.963a1 1 0 00.95.69h4.162c.969 0 1.371 1.24.588 1.81l-3.37 2.448a1 1 0 00-.364 1.118l1.287 3.963c.3.921-.755 1.688-1.538 1.118L10 13.347l-3.37 2.448c-.783.57-1.838-.197-1.538-1.118l1.287-3.963a1 1 0 00-.364-1.118L3.645 9.39c-.783-.57-.38-1.81.588-1.81h4.162a1 1 0 00.95-.69l1.286-3.963z"/>
-                                            </svg>
-                                            <span class="leading-none">{{ $item['reviewSum'] }}</span>
-                                        </div>
-                                        <div>
-                                            <span class="leading-none text-gray-600">({{ $item['reviewCount'] }})</span>
-                                        </div>
-                                    </div>
-                                </div>
+                            <div class="product-card-wrapper">
+                                <x-mart.product-item-card-3
+                                    :src="$item['photo']"
+                                    :price="$item['price']"
+                                    :disPrice="$item['disPrice']"
+                                    :title="$item['name']"
+                                    :description="$item['description']"
+                                    :reviews="$item['reviewCount']"
+                                    :rating="$item['reviewSum']"
+                                    :grams="$item['grams']"
+                                    :subcategoryTitle="$item['subcategoryTitle']"
+                                />
                             </div>
                         @endforeach
                     </div>

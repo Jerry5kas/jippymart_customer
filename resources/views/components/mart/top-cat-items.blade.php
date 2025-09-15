@@ -1,7 +1,7 @@
 @props([
     'categories' => 'categories'
 ])
-<div x-data="{ 
+<div x-data="{
     active: '{{ $categories[0]['title'] ?? '' }}',
     scrollToTop() {
         // Smooth scroll to the top of the categories section
@@ -13,7 +13,7 @@
 }" class="w-full pb-5 pt-16">
 
     <!-- Categories Navigation -->
-    <div class="fixed z-40 w-full border-b bg-white">
+    <div class="fixed z-40 w-full border-b bg-[#F9FDF6]">
         <div class="sm:w-[90%] mx-auto w-full px-4">
             <div class="flex items-center space-x-6 overflow-x-auto scrollbar-hide py-3">
                 @foreach($categories as $category)
@@ -34,7 +34,7 @@
             <div x-show="active === '{{ $category['title'] }}'" class="flex space-x-6 overflow-x-auto px-4 py-5 scrollbar-hide sm:w-[90%] mx-auto w-full text-xs">
                 @foreach($category['subcategories'] as $sub)
                 <a href="{{ route('mart.items.by.subcategory', ['subcategoryTitle' => $sub['title']]) }}">
-                    <div class="flex-shrink-0 w-20 rounded-full bg-white text-center">
+                    <div class="flex-shrink-0 w-20 rounded-full bg-[#F9FDF6] text-center">
                         <img src="{{ $sub['photo'] }}" alt="{{ $sub['title'] }}"
                              class="w-20 h-20 mx-auto object-cover rounded-full shadow-lg">
                         <p class="mt-2 text-xs font-semibold text-[#007F73]">{{ $sub['title'] }}</p>

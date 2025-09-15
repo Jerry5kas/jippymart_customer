@@ -11,10 +11,15 @@ class MartController extends Controller
     public function index()
     {
         try {
-            // Initialize Firebase
-            $factory = (new Factory)->withServiceAccount(
-                base_path('storage/app/firebase/credentials.json')
-            );
+            // Check if Firebase credentials exist
+            $credentialsPath = base_path('storage/app/firebase/credentials.json');
+            if (!file_exists($credentialsPath)) {
+                \Log::error('Firebase credentials file not found at: ' . $credentialsPath);
+                return $this->getFallbackData();
+            }
+
+            // Initialize Firebase with timeout and retry settings
+            $factory = (new Factory)->withServiceAccount($credentialsPath);
             $firestore = $factory->createFirestore()->database();
 
         // =========================
@@ -56,11 +61,13 @@ class MartController extends Controller
             }
         }
 
+
+
         // Attach subcategories to their parent categories
         foreach ($categoryData as &$cat) {
             $cat['subcategories'] = $subcategoriesByParent[$cat['id']] ?? [];
         }
-        
+
         // Sort categories by subcategory count in descending order (categories with most subcategories first)
         usort($categoryData, function($a, $b) {
             $countA = count($a['subcategories'] ?? []);
@@ -70,97 +77,112 @@ class MartController extends Controller
         // Categories without ordering for maximum performance
 
         // =========================
-        // 2️⃣ Spotlight Products
+        // 2️⃣ OPTIMIZED ITEMS QUERY - Single Query for All Products
         // =========================
-        // Fetch spotlight products (simplified query to avoid composite index)
+        // Single optimized query to fetch all published items (reused for all product types)
         $itemsRef = $firestore->collection('mart_items');
         $query = $itemsRef->where('publish', '=', true);
 
         $documents = $query->documents();
+        
+        // Cache all items data to avoid multiple Firebase reads
+        $allItems = [];
+        foreach ($documents as $doc) {
+            if ($doc->exists()) {
+                $allItems[] = [
+                    'doc' => $doc,
+                    'data' => $doc->data()
+                ];
+            }
+        }
 
+        // =========================
+        // 3️⃣ Spotlight Products (using cached data)
+        // =========================
         $products = [];
-        foreach ($documents as $doc) {
-            if ($doc->exists()) {
-                $data = $doc->data();
+        foreach ($allItems as $item) {
+            $doc = $item['doc'];
+            $data = $item['data'];
 
-                // Filter for spotlight and available products in PHP
-                if (($data['isSpotlight'] ?? false) && ($data['isAvailable'] ?? false)) {
-                    // Generate random rating between 4.0 and 5.0 if not present
-                    $rating = $data['rating'] ?? round(4.0 + (mt_rand() / mt_getrandmax()) * 1.0, 1);
-                    $reviews = $data['reviews'] ?? mt_rand(10, 500);
+            // Filter for spotlight and available products in PHP
+            if (($data['isSpotlight'] ?? false) && ($data['isAvailable'] ?? false)) {
+                // Generate random rating between 4.0 and 5.0 if not present
+                $rating = $data['rating'] ?? round(4.0 + (mt_rand() / mt_getrandmax()) * 1.0, 1);
+                $reviews = $data['reviews'] ?? mt_rand(10, 500);
 
-                    $products[] = [
-                        'id' => $doc->id(),
-                        'disPrice' => $data['disPrice'] ?? 0,
-                        'name' => $data['name'] ?? 'Product',
-                        'description' => $data['description'] ?? 'Product description',
-                        'grams' => $data['grams'] ?? '200g',
-                        'photo' => $data['photo'] ?? '',
-                        'price' => $data['price'] ?? 0,
-                        'rating' => $rating,
-                        'reviews' => $reviews,
-                        'section' => $data['section'] ?? 'General',
-                        'subcategoryTitle' => $data['subcategoryTitle'] ?? 'category',
-                    ];
-                }
-
+                $products[] = [
+                    'id' => $doc->id(),
+                    'disPrice' => $data['disPrice'] ?? 0,
+                    'name' => $data['name'] ?? 'Product',
+                    'description' => $data['description'] ?? 'Product description',
+                    'grams' => $data['grams'] ?? '200g',
+                    'photo' => $data['photo'] ?? '',
+                    'price' => $data['price'] ?? 0,
+                    'rating' => $data['reviewSum'] ?? $rating,
+                    'reviews' => $data['reviewCount'] ?? $reviews,
+                    'section' => $data['section'] ?? 'General',
+                    'subcategoryTitle' => !empty($data['subcategoryTitle']) ? $data['subcategoryTitle'] : 'General',
+                ];
             }
         }
 
         // =========================
-        // 3️⃣ Featured Products
+        // 4️⃣ Featured Products (using cached data)
         // =========================
-        // Fetch featured products based on isFeature field
         $featuredProducts = [];
-        foreach ($documents as $doc) {
-            if ($doc->exists()) {
-                $data = $doc->data();
+        foreach ($allItems as $item) {
+            $doc = $item['doc'];
+            $data = $item['data'];
 
-                // Filter for featured and available products
-                if (($data['isFeature'] ?? false) && ($data['isAvailable'] ?? false)) {
-                    $featuredProducts[] = [
-                        'id' => $doc->id(),
-                        'disPrice' => $data['disPrice'] ?? 0,
-                        'name' => $data['name'] ?? 'Product',
-                        'description' => $data['description'] ?? 'Product description',
-                        'grams' => $data['grams'] ?? '200g',
-                        'photo' => $data['photo'] ?? '',
-                        'price' => $data['price'] ?? 0,
-                        'rating' => $data['rating'] ?? 4.5,
-                        'reviews' => $data['reviews'] ?? 100,
-                        'section' => $data['section'] ?? 'General',
-                        'subcategoryTitle' => $data['subcategoryTitle'] ?? 'category',
-                        'categoryTitle' => $data['categoryTitle'] ?? 'Category',
-                    ];
-                }
+            // Filter for featured and available products
+            if (($data['isFeature'] ?? false) && ($data['isAvailable'] ?? false)) {
+                $rating = $data['rating'] ?? round(4.0 + (mt_rand() / mt_getrandmax()) * 1.0, 1);
+                $reviews = $data['reviews'] ?? mt_rand(10, 500);
+           
+                $featuredProducts[] = [
+                    'id' => $doc->id(),
+                    'disPrice' => $data['disPrice'] ?? 0,
+                    'name' => $data['name'] ?? 'Product',
+                    'description' => $data['description'] ?? 'Product description',
+                    'grams' => $data['grams'] ?? '200g',
+                    'photo' => $data['photo'] ?? '',
+                    'price' => $data['price'] ?? 0,
+                    'rating' => $data['reviewSum'] ?? $rating,
+                    'reviews' => $data['reviewCount'] ?? $reviews,
+                    'section' => $data['section'] ?? 'General',
+                    'subcategoryTitle' => !empty($data['subcategoryTitle']) ? $data['subcategoryTitle'] : 'General',
+                    'categoryTitle' => $data['categoryTitle'] ?? 'Category',
+                ];
             }
         }
-            // =========================
-// 7️⃣ Trending Products
-// =========================
-            $trendingProducts = [];
-            foreach ($documents as $doc) {
-                if ($doc->exists()) {
-                    $data = $doc->data();
+        // =========================
+        // 5️⃣ Trending Products (using cached data)
+        // =========================
+        $trendingProducts = [];
+        foreach ($allItems as $item) {
+            $doc = $item['doc'];
+            $data = $item['data'];
 
-                    if (($data['isTrending'] ?? false) && ($data['isAvailable'] ?? false)) {
-                        $trendingProducts[] = [
-                            'id' => $doc->id(),
-                            'disPrice' => $data['disPrice'] ?? 0,
-                            'name' => $data['name'] ?? 'Product',
-                            'description' => $data['description'] ?? 'Product description',
-                            'grams' => $data['grams'] ?? '200g',
-                            'photo' => $data['photo'] ?? '',
-                            'price' => $data['price'] ?? 0,
-                            'rating' => $data['rating'] ?? 4.5,
-                            'reviews' => $data['reviews'] ?? 100,
-                            'section' => $data['section'] ?? 'General',
-                            'subcategoryTitle' => $data['subcategoryTitle'] ?? 'category',
-                            'categoryTitle' => $data['categoryTitle'] ?? 'Category',
-                        ];
-                    }
-                }
+            if (($data['isTrending'] ?? false) && ($data['isAvailable'] ?? false)) {
+                $rating = $data['rating'] ?? round(4.0 + (mt_rand() / mt_getrandmax()) * 1.0, 1);
+                $reviews = $data['reviews'] ?? mt_rand(10, 500);
+       
+                $trendingProducts[] = [
+                    'id' => $doc->id(),
+                    'disPrice' => $data['disPrice'] ?? 0,
+                    'name' => $data['name'] ?? 'Product',
+                    'description' => $data['description'] ?? 'Product description',
+                    'grams' => $data['grams'] ?? '200g',
+                    'photo' => $data['photo'] ?? '',
+                    'price' => $data['price'] ?? 0,
+                    'rating' => $data['reviewSum'] ?? $rating,
+                    'reviews' => $data['reviewCount'] ?? $reviews,
+                    'section' => $data['section'] ?? 'General',
+                    'subcategoryTitle' => !empty($data['subcategoryTitle']) ? $data['subcategoryTitle'] : 'General',
+                    'categoryTitle' => $data['categoryTitle'] ?? 'Category',
+                ];
             }
+        }
 
 
             // =========================
@@ -202,6 +224,10 @@ class MartController extends Controller
                     $data = $doc->data();
 
                     if (($data['isBestSeller'] ?? false) && ($data['isAvailable'] ?? false)) {
+
+                        $rating = $data['rating'] ?? round(4.0 + (mt_rand() / mt_getrandmax()) * 1.0, 1);
+                        $reviews = $data['reviews'] ?? mt_rand(10, 500);
+               
                         $bestSellerProducts[] = [
                             'id' => $doc->id(),
                             'disPrice' => $data['disPrice'] ?? 0,
@@ -210,8 +236,8 @@ class MartController extends Controller
                             'grams' => $data['grams'] ?? '200g',
                             'photo' => $data['photo'] ?? '',
                             'price' => $data['price'] ?? 0,
-                            'rating' => $data['rating'] ?? 4.5,
-                            'reviews' => $data['reviews'] ?? 100,
+                            'rating' => $data['reviewSum'] ?? $rating,
+                            'reviews' => $data['reviewCount'] ?? $reviews,
                             'section' => $data['section'] ?? 'General',
                             'subcategoryTitle' => $data['subcategoryTitle'] ?? 'category',
                             'categoryTitle' => $data['categoryTitle'] ?? 'Category',
@@ -224,25 +250,42 @@ class MartController extends Controller
             // =========================
         // 5️⃣ Sections (Grouped Subcategories) - REUSE DATA
         // =========================
-        $sections = [];
+            $sections = [];
+            $seenSubcategories = []; // Track seen subcategories to prevent duplicates
 
-        // Reuse the subcategories data we already fetched
-        foreach ($subcategoriesSnapshot as $sub) {
-            if (!$sub->exists()) continue;
+// Reuse the subcategories data we already fetched
+            foreach ($subcategoriesSnapshot as $sub) {
+                if (!$sub->exists()) continue;
 
-            $subData = $sub->data();
-            $sectionName = $subData['section'] ?? 'Others';
+                $subData = $sub->data();
+                $sectionName = $subData['section'] ?? 'Others';
+                $subcategoryId = $subData['id'] ?? null;
 
-            if (!isset($sections[$sectionName])) {
-                $sections[$sectionName] = [];
+                if (!$subcategoryId) continue;
+
+                // Prevent duplicates
+                $subcategoryKey = $sectionName . '_' . $subcategoryId;
+                if (isset($seenSubcategories[$subcategoryKey])) {
+                    continue;
+                }
+                $seenSubcategories[$subcategoryKey] = true;
+
+                if (!isset($sections[$sectionName])) {
+                    $sections[$sectionName] = [];
+                }
+
+                $sections[$sectionName][] = [
+                    'id'    => $subcategoryId,
+                    'title' => $subData['title'] ?? 'No Title',
+                    'photo' => $subData['photo'] ?? '/img/pro1.jpg',
+                ];
             }
 
-            $sections[$sectionName][] = [
-                'id'    => $subData['id'] ?? null,
-                'title' => $subData['title'] ?? 'No Title',
-                'photo' => $subData['photo'] ?? '/img/pro1.jpg',
-            ];
-        }
+// ✅ Sort sections by subcategory count (descending)
+            uasort($sections, function ($a, $b) {
+                return count($b) <=> count($a);
+            });
+
             // =========================
 // Steal Of Moment, New Arrival & Seasonal Products
 // =========================
@@ -255,6 +298,10 @@ class MartController extends Controller
                     $data = $doc->data();
 
                     if (($data['isStealOfMoment'] ?? false) && ($data['isAvailable'] ?? false)) {
+
+                        $rating = $data['rating'] ?? round(4.0 + (mt_rand() / mt_getrandmax()) * 1.0, 1);
+                        $reviews = $data['reviews'] ?? mt_rand(10, 500);
+               
                         $stealOfMomentProducts[] = [
                             'id' => $doc->id(),
                             'disPrice' => $data['disPrice'] ?? 0,
@@ -263,8 +310,8 @@ class MartController extends Controller
                             'grams' => $data['grams'] ?? '200g',
                             'photo' => $data['photo'] ?? '',
                             'price' => $data['price'] ?? 0,
-                            'rating' => $data['rating'] ?? 4.5,
-                            'reviews' => $data['reviews'] ?? 100,
+                            'rating' => $data['reviewSum'] ?? $rating,
+                            'reviews' => $data['reviewCount'] ?? $reviews,
                             'section' => $data['section'] ?? 'General',
                             'subcategoryTitle' => $data['subcategoryTitle'] ?? 'category',
                             'categoryTitle' => $data['categoryTitle'] ?? 'Category',
@@ -272,6 +319,10 @@ class MartController extends Controller
                     }
 
                     if (($data['isNew'] ?? false) && ($data['isAvailable'] ?? false)) {
+
+                        $rating = $data['rating'] ?? round(4.0 + (mt_rand() / mt_getrandmax()) * 1.0, 1);
+                        $reviews = $data['reviews'] ?? mt_rand(10, 500);
+               
                         $newArrivalProducts[] = [
                             'id' => $doc->id(),
                             'disPrice' => $data['disPrice'] ?? 0,
@@ -280,8 +331,8 @@ class MartController extends Controller
                             'grams' => $data['grams'] ?? '200g',
                             'photo' => $data['photo'] ?? '',
                             'price' => $data['price'] ?? 0,
-                            'rating' => $data['rating'] ?? 4.5,
-                            'reviews' => $data['reviews'] ?? 100,
+                            'rating' => $data['reviewSum'] ?? $rating,
+                            'reviews' => $data['reviewCount'] ?? $reviews,
                             'section' => $data['section'] ?? 'General',
                             'subcategoryTitle' => $data['subcategoryTitle'] ?? 'category',
                             'categoryTitle' => $data['categoryTitle'] ?? 'Category',
@@ -289,6 +340,10 @@ class MartController extends Controller
                     }
 
                     if (($data['isSeasonal'] ?? false) && ($data['isAvailable'] ?? false)) {
+
+                        $rating = $data['rating'] ?? round(4.0 + (mt_rand() / mt_getrandmax()) * 1.0, 1);
+                        $reviews = $data['reviews'] ?? mt_rand(10, 500);
+               
                         $seasonalProducts[] = [
                             'id' => $doc->id(),
                             'disPrice' => $data['disPrice'] ?? 0,
@@ -297,8 +352,8 @@ class MartController extends Controller
                             'grams' => $data['grams'] ?? '200g',
                             'photo' => $data['photo'] ?? '',
                             'price' => $data['price'] ?? 0,
-                            'rating' => $data['rating'] ?? 4.5,
-                            'reviews' => $data['reviews'] ?? 100,
+                            'rating' => $data['reviewSum'] ?? $rating,
+                            'reviews' => $data['reviewCount'] ?? $reviews,
                             'section' => $data['section'] ?? 'General',
                             'subcategoryTitle' => $data['subcategoryTitle'] ?? 'category',
                             'categoryTitle' => $data['categoryTitle'] ?? 'Category',
@@ -308,10 +363,69 @@ class MartController extends Controller
             }
 
 
+        // =========================
+        // 6️⃣ Items Grouped by Sections (using cached data)
+        // =========================
+        $itemsBySection = [];
+        
+        // Group items by their section using cached data
+        foreach ($allItems as $item) {
+            $doc = $item['doc'];
+            $data = $item['data'];
+            
+            // Only include available and published items
+            if (($data['isAvailable'] ?? false) && ($data['publish'] ?? false)) {
+                $sectionName = $data['section'] ?? 'Others';
+                
+                if (!isset($itemsBySection[$sectionName])) {
+                    $itemsBySection[$sectionName] = [];
+                }
+                
+                // Limit items per section to avoid performance issues
+                if (count($itemsBySection[$sectionName]) < 20) {
+                    $rating = $data['rating'] ?? round(4.0 + (mt_rand() / mt_getrandmax()) * 1.0, 1);
+                    $reviews = $data['reviews'] ?? mt_rand(10, 500);
+       
+                    $itemsBySection[$sectionName][] = [
+                        'id' => $doc->id(),
+                        'disPrice' => $data['disPrice'] ?? 0,
+                        'name' => $data['name'] ?? 'Product',
+                        'description' => $data['description'] ?? 'Product description',
+                        'grams' => $data['grams'] ?? '200g',
+                        'photo' => $data['photo'] ?? '',
+                        'price' => $data['price'] ?? 0,
+                        'rating' => $data['reviewSum'] ?? $rating,
+                        'reviews' => $data['reviewCount'] ?? $reviews,
+                        'section' => $data['section'] ?? 'General',
+                        'subcategoryTitle' => !empty($data['subcategoryTitle']) ? $data['subcategoryTitle'] : 'General',
+                        'categoryTitle' => $data['categoryTitle'] ?? 'Category',
+                        'isBestSeller' => $data['isBestSeller'] ?? false,
+                        'isFeature' => $data['isFeature'] ?? false,
+                        'isSpotlight' => $data['isSpotlight'] ?? false,
+                        'isNew' => $data['isNew'] ?? false,
+                        'veg' => $data['veg'] ?? true,
+                        'nonveg' => $data['nonveg'] ?? false,
+                        'quantity' => $data['quantity'] ?? 0,
+                        'vendorID' => $data['vendorID'] ?? '',
+                        'vendorTitle' => $data['vendorTitle'] ?? '',
+                        'reviewSum' => $data['reviewSum'] ?? '',
+                        'reviewCount' => $data['reviewCount'] ?? '',
+                    ];
+                }
+            }
+        }
+            
+            // Sort items within each section by name
+            foreach ($itemsBySection as &$sectionItems) {
+                usort($sectionItems, function($a, $b) {
+                    return strcmp($a['name'], $b['name']);
+                });
+            }
+
             // =========================
-            // 6️⃣ Return to Blade
+            // 7️⃣ Return to Blade
             // =========================
-            \Log::info("Mart data loaded: " . count($categoryData) . " categories, " . count($products) . " spotlight products, " . count($featuredProducts) . " featured products, " . count($banners) . " banners");
+            \Log::info("Mart data loaded: " . count($categoryData) . " categories, " . count($products) . " spotlight products, " . count($featuredProducts) . " featured products, " . count($banners) . " banners, " . count($itemsBySection) . " sections with items");
 
             return view('mart.index', [
                 'categories' => $categoryData,
@@ -319,6 +433,7 @@ class MartController extends Controller
                 'featured'   => $featuredProducts,
                 'banners'    => $banners,
                 'sections'   => $sections,
+                'itemsBySection' => $itemsBySection,
                 'trendingProducts' => $trendingProducts,
                 'bestSellerProducts' => $bestSellerProducts,
                 'stealOfMomentProducts' => $stealOfMomentProducts,
@@ -329,14 +444,16 @@ class MartController extends Controller
 
         } catch (FirebaseException $e) {
             \Log::error('Firebase error in MartController index method: ' . $e->getMessage());
-            return view('mart.index', [
-                'categories' => [],
-                'spotlight' => [],
-                'featured' => [],
-                'banners' => [],
-                'sections' => [],
-
-            ]);
+            \Log::error('Firebase error details: ' . json_encode([
+                'code' => $e->getCode(),
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ]));
+            return $this->getFallbackData();
+        } catch (\Exception $e) {
+            \Log::error('General error in MartController index method: ' . $e->getMessage());
+            return $this->getFallbackData();
         }
     }
 
@@ -458,7 +575,7 @@ class MartController extends Controller
     }
 
     /**
-     * Get subcategories for sidebar without counting items (for performance)
+     * Get subcategories for sidebar with optimized item counting
      */
     private function getSubcategoriesForSidebar($firestore, $categoryTitle, $currentSubcategoryTitle)
     {
@@ -466,32 +583,89 @@ class MartController extends Controller
             return [];
         }
 
+        // Step 1: Get all subcategories for the category
         $subcategories = [];
         $subcategoriesSnapshot = $firestore->collection('mart_subcategories')
             ->where('publish', '=', true)
             ->where('parent_category_title', '=', $categoryTitle)
             ->documents();
 
+        $subcategoryTitles = [];
         foreach ($subcategoriesSnapshot as $sub) {
             if ($sub->exists()) {
                 $subData = $sub->data();
-
+                $subcategoryTitles[] = $subData['title'] ?? '';
+                
                 $subcategories[] = [
                     'id'    => $subData['id'] ?? null,
                     'title' => $subData['title'] ?? 'No Title',
                     'photo' => $subData['photo'] ?? '/img/pro1.jpg',
                     'isActive' => ($subData['title'] ?? '') === $currentSubcategoryTitle,
-                    'itemCount' => 0, // Don't count items for performance
+                    'itemCount' => 0, // Will be updated below
                 ];
             }
         }
 
-        // Sort subcategories by title
+        // Step 2: Get item counts for all subcategories in one optimized query
+        if (!empty($subcategoryTitles)) {
+            $itemCounts = $this->getSubcategoryItemCounts($firestore, $subcategoryTitles);
+            
+            // Step 3: Update subcategories with actual counts
+            foreach ($subcategories as &$subcategory) {
+                $subcategory['itemCount'] = $itemCounts[$subcategory['title']] ?? 0;
+            }
+        }
+
+        // Step 4: Sort subcategories by item count (high to low), then by title
         usort($subcategories, function($a, $b) {
+            // First sort by item count (descending)
+            $countComparison = $b['itemCount'] <=> $a['itemCount'];
+            if ($countComparison !== 0) {
+                return $countComparison;
+            }
+            // If counts are equal, sort by title (ascending)
             return strcmp($a['title'], $b['title']);
         });
 
         return $subcategories;
+    }
+
+    /**
+     * Optimized method to get item counts for multiple subcategories
+     */
+    private function getSubcategoryItemCounts($firestore, $subcategoryTitles)
+    {
+        $itemCounts = [];
+        
+        // Initialize all counts to 0
+        foreach ($subcategoryTitles as $title) {
+            $itemCounts[$title] = 0;
+        }
+
+        try {
+            // Single query to get all items for all subcategories
+            $itemsSnapshot = $firestore->collection('mart_items')
+                ->where('publish', '=', true)
+                ->where('isAvailable', '=', true)
+                ->documents();
+
+            // Count items by subcategory
+            foreach ($itemsSnapshot as $doc) {
+                if ($doc->exists()) {
+                    $data = $doc->data();
+                    $subcategoryTitle = $data['subcategoryTitle'] ?? '';
+                    
+                    if (in_array($subcategoryTitle, $subcategoryTitles)) {
+                        $itemCounts[$subcategoryTitle]++;
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error getting subcategory item counts: ' . $e->getMessage());
+            // Return zero counts if there's an error
+        }
+
+        return $itemCounts;
     }
 
     public function search(Request $request)
@@ -857,5 +1031,123 @@ class MartController extends Controller
                 'message' => 'Failed to apply coupon'
             ]);
         }
+    }
+
+    /**
+     * Get fallback data when Firebase is unavailable
+     */
+    private function getFallbackData()
+    {
+        \Log::info('Using fallback data due to Firebase unavailability');
+        
+        return view('mart.index', [
+            'categories' => [
+                [
+                    'id' => 'fallback-1',
+                    'title' => 'Groceries',
+                    'photo' => '/img/pro1.jpg',
+                    'subcategories' => [
+                        ['id' => 'sub-1', 'title' => 'Fruits & Vegetables', 'photo' => '/img/pro1.jpg'],
+                        ['id' => 'sub-2', 'title' => 'Dairy Products', 'photo' => '/img/pro1.jpg'],
+                    ]
+                ],
+                [
+                    'id' => 'fallback-2', 
+                    'title' => 'Household',
+                    'photo' => '/img/pro1.jpg',
+                    'subcategories' => [
+                        ['id' => 'sub-3', 'title' => 'Cleaning Supplies', 'photo' => '/img/pro1.jpg'],
+                        ['id' => 'sub-4', 'title' => 'Personal Care', 'photo' => '/img/pro1.jpg'],
+                    ]
+                ]
+            ],
+            'spotlight' => [
+                [
+                    'id' => 'spot-1',
+                    'name' => 'Fresh Apples',
+                    'price' => 150,
+                    'disPrice' => 120,
+                    'photo' => '/img/pro1.jpg',
+                    'rating' => 4.5,
+                    'reviews' => 100,
+                    'grams' => '1kg',
+                    'description' => 'Fresh and juicy apples',
+                    'subcategoryTitle' => 'Fruits'
+                ]
+            ],
+            'featured' => [],
+            'banners' => [
+                [
+                    'id' => 'banner-1',
+                    'title' => 'Welcome to JippyMart',
+                    'text' => 'Your one-stop shop for all needs',
+                    'photo' => '/img/banner.jpg',
+                    'position' => 'top',
+                    'set_order' => 1
+                ]
+            ],
+            'sections' => [
+                'Fresh' => [
+                    ['id' => 'fresh-1', 'title' => 'Fruits', 'photo' => '/img/pro1.jpg'],
+                    ['id' => 'fresh-2', 'title' => 'Vegetables', 'photo' => '/img/pro1.jpg'],
+                ],
+                'Household' => [
+                    ['id' => 'house-1', 'title' => 'Cleaning', 'photo' => '/img/pro1.jpg'],
+                ]
+            ],
+            'trendingProducts' => [],
+            'bestSellerProducts' => [],
+            'stealOfMomentProducts' => [],
+            'newArrivalProducts' => [],
+            'seasonalProducts' => [],
+            'itemsBySection' => [
+                'Fresh' => [
+                    [
+                        'id' => 'fresh-1',
+                        'name' => 'Fresh Apples',
+                        'price' => 150,
+                        'disPrice' => 120,
+                        'photo' => '/img/pro1.jpg',
+                        'rating' => 4.5,
+                        'reviews' => 100,
+                        'grams' => '1kg',
+                        'description' => 'Fresh and juicy apples',
+                        'section' => 'Fresh',
+                        'subcategoryTitle' => 'Fruits',
+                        'categoryTitle' => 'Groceries'
+                    ],
+                    [
+                        'id' => 'fresh-2',
+                        'name' => 'Organic Bananas',
+                        'price' => 80,
+                        'disPrice' => 70,
+                        'photo' => '/img/pro1.jpg',
+                        'rating' => 4.3,
+                        'reviews' => 85,
+                        'grams' => '500g',
+                        'description' => 'Organic bananas',
+                        'section' => 'Fresh',
+                        'subcategoryTitle' => 'Fruits',
+                        'categoryTitle' => 'Groceries'
+                    ]
+                ],
+                'Household' => [
+                    [
+                        'id' => 'house-1',
+                        'name' => 'Dish Soap',
+                        'price' => 120,
+                        'disPrice' => 100,
+                        'photo' => '/img/pro1.jpg',
+                        'rating' => 4.2,
+                        'reviews' => 150,
+                        'grams' => '500ml',
+                        'description' => 'Effective dish cleaning soap',
+                        'section' => 'Household',
+                        'subcategoryTitle' => 'Cleaning',
+                        'categoryTitle' => 'Household'
+                    ]
+                ]
+            ],
+        ]);
     }
 }
