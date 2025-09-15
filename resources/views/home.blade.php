@@ -3521,6 +3521,12 @@
 
     // Function to check location and navigate to Mart
     function checkLocationAndNavigate(event) {
+        // BYPASS LOCATION CHECK FOR NOW - Allow direct access to Mart
+        console.log('Bypassing location check - allowing access to Mart');
+        return true;
+        
+        // Original location check code (commented out for now)
+        /*
         // Check if location variables are defined and valid
         if (typeof address_lat === 'undefined' || typeof address_lng === 'undefined' || typeof user_zone_id === 'undefined' ||
             address_lat == '' || address_lng == '' || address_lat == null || address_lng == null ||
@@ -3553,12 +3559,20 @@
         
         // Location is set, allow navigation
         return true;
+        */
     }
 
     // Update floating button appearance based on location status
     function updateFloatingButtonStatus() {
         const floatingBtn = document.getElementById('mart-floating-btn');
         if (floatingBtn) {
+            // BYPASS LOCATION CHECK - Always show button as enabled
+            floatingBtn.style.opacity = '1';
+            floatingBtn.style.cursor = 'pointer';
+            floatingBtn.title = 'Go to Mart';
+            
+            // Original location check code (commented out for now)
+            /*
             if (typeof address_lat === 'undefined' || typeof address_lng === 'undefined' || typeof user_zone_id === 'undefined' ||
                 address_lat == '' || address_lng == '' || address_lat == null || address_lng == null ||
                 user_zone_id == null || user_zone_id == '') {
@@ -3571,6 +3585,7 @@
                 floatingBtn.style.cursor = 'pointer';
                 floatingBtn.title = 'Go to Mart';
             }
+            */
         }
     }
 
