@@ -17,7 +17,7 @@
 
 <div class="sm:w-[90%] w-full mx-auto" x-data>
 
-    <div class="text-2xl font-semibold mb-4 px-4">{{$headings}}</div>
+    <div class="text-2xl font-semibold mb-4 px-4 text-[#007F73]">{{$headings}}</div>
     <!-- Slider wrapper -->
     <div class="relative">
         <div

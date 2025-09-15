@@ -7,5 +7,5 @@
     <div class="w-20 h-20 rounded-full bg-gray-100 shadow-lg hover:shadow-xl cursor-pointer transition">
         <img src="{{$image}}" alt="{{$title}}" class="w-full h-full object-cover mb-2 rounded-full">
     </div>
-    <div class="text-[10px] text-center font-medium text-gray-500">{{$title}}</div>
+    <div class="text-[10px] text-center font-medium text-[#007F73]">{{$title}}</div>
 </a>

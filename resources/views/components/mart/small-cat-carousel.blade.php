@@ -6,13 +6,13 @@
 <div x-data="{ scroll: 0 }" class="md:w-1/2 w-full mt-8 px-4 rounded-2xl">
 
     <!-- Banner (Fixed) -->
-    <div class="h-40 bg-black flex items-center justify-center rounded-t-2xl">
+    <div class="h-40 bg-[#007F73] flex items-center justify-center rounded-t-2xl">
         <h1 class="text-2xl text-white font-bold">{{$title}}</h1>
     </div>
 
     <!-- Featured Products Carousel -->
     @if(count($products) > 0)
-    <div class="relative px-4 bg-black" x-data="{ scroll: 0 } rounded-2xl mb-5">
+    <div class="relative px-4 bg-[#007F73]" x-data="{ scroll: 0 } rounded-2xl mb-5">
         <!-- Left Button -->
         <button
             @click="$refs.scroller.scrollBy({ left: -200, behavior: 'smooth' })"
@@ -23,7 +23,7 @@
         <!-- Featured Products -->
         <div
             x-ref="scroller"
-            class="flex space-x-4 bg-black overflow-x-auto scrollbar-hide scroll-smooth snap-x snap-mandatory pb-6 px-2 rounded-2xl ">
+            class="flex space-x-4 bg-[#007F73] overflow-x-auto scrollbar-hide scroll-smooth snap-x snap-mandatory pb-6 px-2 rounded-2xl ">
 
             @foreach($products as $product)
                 <x-mart.small-cat-card
@@ -47,7 +47,7 @@
     </div>
     @else
     <!-- No Featured Products Message -->
-    <div class="relative px-4 bg-black rounded-2xl mb-5 py-8">
+    <div class="relative px-4 bg-[#007F73] rounded-2xl mb-5 py-8">
         <div class="text-center text-white">
             <p class="text-lg">No featured products available</p>
             <p class="text-sm text-gray-400">Check back later for exciting offers!</p>

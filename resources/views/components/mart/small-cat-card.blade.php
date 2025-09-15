@@ -34,7 +34,7 @@
         <div class="flex items-center justify-between">
             @if($disPrice > 0 && $disPrice < $price)
                 <div class="flex flex-col">
-                    <span class="text-xs font-bold text-green-600">₹{{ number_format($disPrice) }}</span>
+                    <span class="text-xs font-bold text-[#007F73]">₹{{ number_format($disPrice) }}</span>
                     <span class="text-xs text-gray-500 line-through">₹{{ number_format($price) }}</span>
                 </div>
             @else

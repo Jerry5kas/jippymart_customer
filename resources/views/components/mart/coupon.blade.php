@@ -5,7 +5,7 @@
          class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 flex items-center justify-between cursor-pointer hover:bg-yellow-100 transition">
         <div>
             <p class="font-medium text-gray-800">
-                You have unlocked <span class="text-violet-600" x-text="coupons.length + ' new coupons'"></span>
+                You have unlocked <span class="text-[#007F73]" x-text="coupons.length + ' new coupons'"></span>
             </p>
             <p class="text-xs text-gray-600">Explore Now</p>
         </div>
@@ -38,10 +38,10 @@
                 <input type="text" 
                        x-model="manualCouponCode"
                        placeholder="Enter Coupon Code"
-                       class="flex-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                       class="flex-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#007F73] focus:outline-none">
                 <button @click="applyManualCoupon()" 
                         :disabled="loading"
-                        class="px-4 py-2 bg-violet-600 text-white rounded-lg text-sm font-medium hover:bg-violet-700 disabled:opacity-50">
+                        class="px-4 py-2 bg-[#007F73] text-white rounded-lg text-sm font-medium hover:bg-[#005f56] disabled:opacity-50">
                     <span x-show="!loading">APPLY</span>
                     <span x-show="loading">...</span>
                 </button>
@@ -56,7 +56,7 @@
 
             <!-- Loading State -->
             <div x-show="loading" class="text-center py-4">
-                <div class="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-violet-600"></div>
+                <div class="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-[#007F73]"></div>
                 <p class="text-sm text-gray-600 mt-2">Loading coupons...</p>
             </div>
 
@@ -65,11 +65,11 @@
                 <template x-for="coupon in coupons" :key="coupon.id">
                     <div class="p-4 border rounded-lg flex flex-col gap-2">
                         <div class="flex justify-between items-center">
-                            <span class="px-2 py-1 text-xs bg-purple-100 text-purple-600 font-bold rounded" 
+                            <span class="px-2 py-1 text-xs bg-[#E8F8DB] text-[#007F73] font-bold rounded" 
                                   x-text="coupon.code"></span>
                             <button @click="applyCoupon(coupon.code)" 
                                     :disabled="loading"
-                                    class="text-purple-600 font-semibold text-sm hover:underline disabled:opacity-50">
+                                    class="text-[#007F73] font-semibold text-sm hover:underline disabled:opacity-50">
                                 APPLY
                             </button>
                         </div>

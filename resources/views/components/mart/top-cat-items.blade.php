@@ -13,13 +13,13 @@
 }" class="w-full pb-5 pt-16">
 
     <!-- Categories Navigation -->
-    <div class="fixed z-40 w-full border-b bg-gradient-to-t from-slate-50 to-white">
+    <div class="fixed z-40 w-full border-b bg-white">
         <div class="sm:w-[90%] mx-auto w-full px-4">
             <div class="flex items-center space-x-6 overflow-x-auto scrollbar-hide py-3">
                 @foreach($categories as $category)
                     <button
                         class="flex items-center space-x-1 text-gray-600 font-medium flex-shrink-0 px-2 pb-1 border-b-2 transition"
-                        :class="active === '{{ $category['title'] }}' ? 'text-purple-600 border-purple-600' : 'border-transparent hover:text-purple-500'"
+                        :class="active === '{{ $category['title'] }}' ? 'text-[#007F73] border-[#007F73]' : 'border-transparent hover:text-[#007F73]'"
                         @click="active = '{{ $category['title'] }}'; scrollToTop()">
                         <span>{{ $category['title'] }}</span>
                     </button>
@@ -37,7 +37,7 @@
                     <div class="flex-shrink-0 w-20 rounded-full bg-white text-center">
                         <img src="{{ $sub['photo'] }}" alt="{{ $sub['title'] }}"
                              class="w-20 h-20 mx-auto object-cover rounded-full shadow-lg">
-                        <p class="mt-2 text-xs font-semibold text-gray-800">{{ $sub['title'] }}</p>
+                        <p class="mt-2 text-xs font-semibold text-[#007F73]">{{ $sub['title'] }}</p>
                     </div>
                     </a>
                 @endforeach

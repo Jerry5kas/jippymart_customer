@@ -1,5 +1,5 @@
 <!-- Navbar -->
-<header class="fixed z-40 w-full text-sm bg-gradient-to-b from-purple-100 to-white"
+<header class="fixed z-40 w-full text-sm bg-gradient-to-b from-[#E8F8DB] to-white"
         x-data="{ mobileMenu: false, cartOpen: false, locationSet: false, currentLocation: 'Select Location' }"
         x-init="
             // Check if location is set from cookies
@@ -149,7 +149,7 @@
             <!-- Left section -->
             <div class="flex items-center space-x-4">
                 <a href="/mart" 
-                   class="text-2xl font-extrabold text-purple-600"
+                   class="text-2xl font-extrabold text-[#007F73]"
                    x-bind:class="{ 'opacity-50 cursor-not-allowed': !locationSet }"
                    x-on:click="!locationSet ? ($event.preventDefault(), window.location.href = '{{ url('set-location') }}') : null"
                    x-bind:title="locationSet ? 'Go to Mart' : 'Please set your location first'">
@@ -214,7 +214,7 @@
                 <div class="relative">
                     <input type="text"
                            class="w-2/3 border border-gray-300 rounded-lg py-3 pl-12 pr-4 text-sm
-                      focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500
+                      focus:outline-none focus:ring-2 focus:ring-[#007F73] focus:border-[#007F73]
                       transition-all duration-500"
                            placeholder="">
 
@@ -272,7 +272,7 @@
                     <!-- Notification Badge -->
                     <span x-show="cartCount > 0"
                           x-text="cartCount"
-                          class="absolute -top-1 -right-1 bg-purple-600 text-white text-[10px] font-bold
+                          class="absolute -top-1 -right-1 bg-[#007F73] text-white text-[10px] font-bold
                  w-5 h-5 flex items-center justify-center rounded-full shadow-lg">
     </span>
                 </div>

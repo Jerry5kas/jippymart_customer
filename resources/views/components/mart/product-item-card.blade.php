@@ -21,13 +21,13 @@
         <!-- If not added yet, show ADD button -->
         <button x-show="qty === 0"
                 @click="qty = 1"
-                class="px-4 py-1.5 rounded-xl border border-b-2 border-r-2 border-violet-500
-                   text-violet-500 text-[11px] font-semibold bg-white hover:bg-violet-50 transition">
+                class="px-4 py-1.5 rounded-xl border border-b-2 border-r-2 border-[#007F73]
+                   text-[#007F73] text-[11px] font-semibold bg-white hover:bg-[#E8F8DB] transition">
             ADD
         </button>
 
         <!-- If added, show increment/decrement -->
-        <div x-show="qty > 0" class="flex items-center gap-2 bg-violet-600 text-white px-3 py-1.5 rounded-xl text-sm font-semibold">
+        <div x-show="qty > 0" class="flex items-center gap-2 bg-[#007F73] text-white px-3 py-1.5 rounded-xl text-sm font-semibold">
             <button @click="if(qty > 0) qty--" class="px-2">−</button>
             <span x-text="qty"></span>
             <button @click="qty++" class="px-2">+</button>
@@ -39,11 +39,11 @@
 <div class="mt-2">
     <div class="w-full flex items-center justify-between space-x-1">
         <div class="flex items-center space-x-1">
-            <span class="text-sm font-bold text-green-900">₹{{$disPrice}}</span>
+            <span class="text-sm font-bold text-[#007F73]">₹{{$disPrice}}</span>
             <span class="text-red-400 line-through text-[9px]">₹{{$price}}</span>
         </div>
         <span
-            class="self-end bg-gradient-to-r from-green-200 to-white text-green-600 text-[9px] px-2 font-semibold p-0.5 rounded-sm inline-flex items-center gap-x-1">
+            class="self-end bg-gradient-to-r from-[#E8F8DB] to-white text-[#007F73] text-[9px] px-2 font-semibold p-0.5 rounded-sm inline-flex items-center gap-x-1">
                                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
                                                  fill="currentColor" class="size-3">
                                               <path fill-rule="evenodd"
@@ -60,7 +60,7 @@
 <!-- Rating -->
 <div class="flex items-center justify-between space-x-1 my-1 text-[9px]">
                                     <span
-                                        class="bg-blue-100 text-blue-600 px-2 rounded-sm max-w-max text-[9px] font-semibold">{{$subcategoryTitle}}</span>
+                                        class="bg-[#E8F8DB] text-[#007F73] px-2 rounded-sm max-w-max text-[9px] font-semibold">{{$subcategoryTitle}}</span>
     <div
         class="flex items-center space-x-1 bg-gradient-to-r from-gray-200 to-white rounded-full px-1">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"

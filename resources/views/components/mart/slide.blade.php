@@ -14,7 +14,7 @@
             <p class="text-sm uppercase font-semibold">{{$text1}}</p>
             <h1 class="text-3xl md:text-5xl font-bold mt-2">{{$text2}}</h1>
             <p class="mt-4 text-lg">{{$text3}}<span class="font-bold">{{$text4}}</span></p>
-            <button class="mt-6 px-5 py-2 bg-pink-600 text-white rounded-xl shadow hover:bg-pink-700">
+            <button class="mt-6 px-5 py-2 bg-[#007F73] text-white rounded-xl shadow hover:bg-[#005f56]">
                 {{$button}}
             </button>
         </div>

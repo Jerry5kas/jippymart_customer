@@ -74,9 +74,9 @@
                     <div class="flex items-center space-x-3">
                         <!-- Quantity controls -->
                         <div class="flex items-center border rounded-lg px-2">
-                            <button @click="decrease" class="text-violet-500 px-2 text-lg font-bold">−</button>
+                            <button @click="decrease" class="text-[#007F73] px-2 text-lg font-bold">−</button>
                             <span class="px-2 text-gray-700" x-text="quantity"></span>
-                            <button @click="increase" class="text-violet-500 px-2 text-lg font-bold">+</button>
+                            <button @click="increase" class="text-[#007F73] px-2 text-lg font-bold">+</button>
                         </div>
                         <span class="text-gray-900 font-semibold">₹<span x-text="totalPrice"></span></span>
                     </div>
@@ -96,9 +96,9 @@
                     <div class="flex items-center space-x-3">
                         <!-- Quantity controls -->
                         <div class="flex items-center border rounded-lg px-2">
-                            <button @click="decrease" class="text-violet-500 px-2 text-lg font-bold">−</button>
+                            <button @click="decrease" class="text-[#007F73] px-2 text-lg font-bold">−</button>
                             <span class="px-2 text-gray-700" x-text="quantity"></span>
-                            <button @click="increase" class="text-violet-500 px-2 text-lg font-bold">+</button>
+                            <button @click="increase" class="text-[#007F73] px-2 text-lg font-bold">+</button>
                         </div>
                         <span class="text-gray-900 font-semibold">₹<span x-text="totalPrice"></span></span>
                     </div>
@@ -129,7 +129,7 @@
                         <div x-show="appliedCoupon" class="text-sm text-gray-500 line-through">
                             ₹<span x-text="originalTotal"></span>
                         </div>
-                        <span class="text-xl font-bold text-violet-600">₹<span x-text="finalTotal"></span></span>
+                        <span class="text-xl font-bold text-[#007F73]">₹<span x-text="finalTotal"></span></span>
                     </div>
                 </div>
             </div>
@@ -337,9 +337,9 @@
 
 
                 <!-- GST Invoice -->
-                <div class="bg-violet-50 border border-violet-200 rounded-lg p-4 flex items-center justify-between">
+                <div class="bg-[#E8F8DB] border border-[#007F73] rounded-lg p-4 flex items-center justify-between">
                     <div>
-                        <p class="font-medium text-violet-600">Get GST Invoice</p>
+                        <p class="font-medium text-[#007F73]">Get GST Invoice</p>
                         <p class="text-xs text-gray-600">Claim upto 28% with the GST Invoice</p>
                     </div>
                     <button class="text-gray-400">✎</button>
@@ -347,9 +347,9 @@
 
                 <!-- Ordering Info -->
                 <div class="bg-white border rounded-lg p-4">
-                    <p class="text-sm text-gray-600">Ordering for <span class="text-violet-600 font-medium">Jerry</span>,
+                    <p class="text-sm text-gray-600">Ordering for <span class="text-[#007F73] font-medium">Jerry</span>,
                         7092936243</p>
-                    <button class="text-xs text-violet-600 mt-1">Edit</button>
+                    <button class="text-xs text-[#007F73] mt-1">Edit</button>
                 </div>
             </div>
         </div>
@@ -363,7 +363,7 @@
         <!-- Footer Checkout -->
         <div class="p-4 border-t bg-white sticky bottom-0">
             <button
-                class="w-full bg-violet-600 text-white font-semibold py-3 rounded-lg hover:bg-violet-700 transition">
+                class="w-full bg-[#007F73] text-white font-semibold py-3 rounded-lg hover:bg-[#005f56] transition">
                 Click to Pay ₹<span x-text="finalTotal"></span>
             </button>
         </div>
