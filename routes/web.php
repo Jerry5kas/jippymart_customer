@@ -920,6 +920,7 @@ Route::get('/debug-session-delivery', function () {
 
 Route::prefix('mart')->group(function () {
     Route::get('/', [MartController::class, 'index'])->name('mart.index');
+    Route::get('/all-items', [MartController::class, 'allItems'])->name('mart.all.items');
     Route::get('/items-by-category', function () {
         return view('mart.item-by-category');
     });

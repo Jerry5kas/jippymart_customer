@@ -15,7 +15,7 @@
 
 
 
-<div class="relative shadow-md hover:shadow-xl transition-all duration-300 rounded-xl bg-white overflow-hidden group w-60 h-full">
+<div class="relative shadow-md hover:shadow-xl transition-all duration-300 rounded-xl bg-white overflow-hidden group w-full h-full">
     <!-- Product Image -->
     <div class="relative">
         <img

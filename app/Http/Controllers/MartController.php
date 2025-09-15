@@ -84,7 +84,7 @@ class MartController extends Controller
         $query = $itemsRef->where('publish', '=', true);
 
         $documents = $query->documents();
-        
+
         // Cache all items data to avoid multiple Firebase reads
         $allItems = [];
         foreach ($documents as $doc) {
@@ -104,25 +104,25 @@ class MartController extends Controller
             $doc = $item['doc'];
             $data = $item['data'];
 
-            // Filter for spotlight and available products in PHP
-            if (($data['isSpotlight'] ?? false) && ($data['isAvailable'] ?? false)) {
-                // Generate random rating between 4.0 and 5.0 if not present
-                $rating = $data['rating'] ?? round(4.0 + (mt_rand() / mt_getrandmax()) * 1.0, 1);
-                $reviews = $data['reviews'] ?? mt_rand(10, 500);
+                // Filter for spotlight and available products in PHP
+                if (($data['isSpotlight'] ?? false) && ($data['isAvailable'] ?? false)) {
+                    // Generate random rating between 4.0 and 5.0 if not present
+                    $rating = $data['rating'] ?? round(4.0 + (mt_rand() / mt_getrandmax()) * 1.0, 1);
+                    $reviews = $data['reviews'] ?? mt_rand(10, 500);
 
-                $products[] = [
-                    'id' => $doc->id(),
-                    'disPrice' => $data['disPrice'] ?? 0,
-                    'name' => $data['name'] ?? 'Product',
-                    'description' => $data['description'] ?? 'Product description',
-                    'grams' => $data['grams'] ?? '200g',
-                    'photo' => $data['photo'] ?? '',
-                    'price' => $data['price'] ?? 0,
+                    $products[] = [
+                        'id' => $doc->id(),
+                        'disPrice' => $data['disPrice'] ?? 0,
+                        'name' => $data['name'] ?? 'Product',
+                        'description' => $data['description'] ?? 'Product description',
+                        'grams' => $data['grams'] ?? '200g',
+                        'photo' => $data['photo'] ?? '',
+                        'price' => $data['price'] ?? 0,
                     'rating' => $data['reviewSum'] ?? $rating,
                     'reviews' => $data['reviewCount'] ?? $reviews,
-                    'section' => $data['section'] ?? 'General',
+                        'section' => $data['section'] ?? 'General',
                     'subcategoryTitle' => !empty($data['subcategoryTitle']) ? $data['subcategoryTitle'] : 'General',
-                ];
+                    ];
             }
         }
 
@@ -134,55 +134,55 @@ class MartController extends Controller
             $doc = $item['doc'];
             $data = $item['data'];
 
-            // Filter for featured and available products
-            if (($data['isFeature'] ?? false) && ($data['isAvailable'] ?? false)) {
+                // Filter for featured and available products
+                if (($data['isFeature'] ?? false) && ($data['isAvailable'] ?? false)) {
                 $rating = $data['rating'] ?? round(4.0 + (mt_rand() / mt_getrandmax()) * 1.0, 1);
                 $reviews = $data['reviews'] ?? mt_rand(10, 500);
            
-                $featuredProducts[] = [
-                    'id' => $doc->id(),
-                    'disPrice' => $data['disPrice'] ?? 0,
-                    'name' => $data['name'] ?? 'Product',
-                    'description' => $data['description'] ?? 'Product description',
-                    'grams' => $data['grams'] ?? '200g',
-                    'photo' => $data['photo'] ?? '',
-                    'price' => $data['price'] ?? 0,
+                    $featuredProducts[] = [
+                        'id' => $doc->id(),
+                        'disPrice' => $data['disPrice'] ?? 0,
+                        'name' => $data['name'] ?? 'Product',
+                        'description' => $data['description'] ?? 'Product description',
+                        'grams' => $data['grams'] ?? '200g',
+                        'photo' => $data['photo'] ?? '',
+                        'price' => $data['price'] ?? 0,
                     'rating' => $data['reviewSum'] ?? $rating,
                     'reviews' => $data['reviewCount'] ?? $reviews,
-                    'section' => $data['section'] ?? 'General',
+                        'section' => $data['section'] ?? 'General',
                     'subcategoryTitle' => !empty($data['subcategoryTitle']) ? $data['subcategoryTitle'] : 'General',
-                    'categoryTitle' => $data['categoryTitle'] ?? 'Category',
-                ];
+                        'categoryTitle' => $data['categoryTitle'] ?? 'Category',
+                    ];
             }
         }
-        // =========================
+            // =========================
         // 5️⃣ Trending Products (using cached data)
-        // =========================
-        $trendingProducts = [];
+// =========================
+            $trendingProducts = [];
         foreach ($allItems as $item) {
             $doc = $item['doc'];
             $data = $item['data'];
 
-            if (($data['isTrending'] ?? false) && ($data['isAvailable'] ?? false)) {
+                    if (($data['isTrending'] ?? false) && ($data['isAvailable'] ?? false)) {
                 $rating = $data['rating'] ?? round(4.0 + (mt_rand() / mt_getrandmax()) * 1.0, 1);
                 $reviews = $data['reviews'] ?? mt_rand(10, 500);
        
-                $trendingProducts[] = [
-                    'id' => $doc->id(),
-                    'disPrice' => $data['disPrice'] ?? 0,
-                    'name' => $data['name'] ?? 'Product',
-                    'description' => $data['description'] ?? 'Product description',
-                    'grams' => $data['grams'] ?? '200g',
-                    'photo' => $data['photo'] ?? '',
-                    'price' => $data['price'] ?? 0,
+                        $trendingProducts[] = [
+                            'id' => $doc->id(),
+                            'disPrice' => $data['disPrice'] ?? 0,
+                            'name' => $data['name'] ?? 'Product',
+                            'description' => $data['description'] ?? 'Product description',
+                            'grams' => $data['grams'] ?? '200g',
+                            'photo' => $data['photo'] ?? '',
+                            'price' => $data['price'] ?? 0,
                     'rating' => $data['reviewSum'] ?? $rating,
                     'reviews' => $data['reviewCount'] ?? $reviews,
-                    'section' => $data['section'] ?? 'General',
+                            'section' => $data['section'] ?? 'General',
                     'subcategoryTitle' => !empty($data['subcategoryTitle']) ? $data['subcategoryTitle'] : 'General',
-                    'categoryTitle' => $data['categoryTitle'] ?? 'Category',
-                ];
+                            'categoryTitle' => $data['categoryTitle'] ?? 'Category',
+                        ];
+                }
             }
-        }
 
 
             // =========================
@@ -363,9 +363,9 @@ class MartController extends Controller
             }
 
 
-        // =========================
+            // =========================
         // 6️⃣ Items Grouped by Sections (using cached data)
-        // =========================
+            // =========================
         $itemsBySection = [];
         
         // Group items by their section using cached data
@@ -454,6 +454,189 @@ class MartController extends Controller
         } catch (\Exception $e) {
             \Log::error('General error in MartController index method: ' . $e->getMessage());
             return $this->getFallbackData();
+        }
+    }
+
+    public function allItems(Request $request)
+    {
+        try {
+            // Initialize Firebase
+            $factory = (new Factory)->withServiceAccount(
+                base_path('storage/app/firebase/credentials.json')
+            );
+            $firestore = $factory->createFirestore()->database();
+
+            // Get filter parameters
+            $categoryFilter = $request->get('category', '');
+            $subcategoryFilter = $request->get('subcategory', '');
+            $priceMin = $request->get('price_min', '');
+            $priceMax = $request->get('price_max', '');
+            $sortBy = $request->get('sort', 'name'); // name, price_low, price_high, rating
+            $search = $request->get('search', '');
+
+            // Fetch all published and available items
+            $itemsRef = $firestore->collection('mart_items');
+            $query = $itemsRef->where('publish', '=', true)
+                             ->where('isAvailable', '=', true);
+
+            $documents = $query->documents();
+
+            $items = [];
+            foreach ($documents as $doc) {
+                if ($doc->exists()) {
+                    $data = $doc->data();
+
+                    // Apply filters
+                    if (!empty($categoryFilter) && ($data['categoryTitle'] ?? '') !== $categoryFilter) {
+                        continue;
+                    }
+                    if (!empty($subcategoryFilter) && ($data['subcategoryTitle'] ?? '') !== $subcategoryFilter) {
+                        continue;
+                    }
+                    if (!empty($search) && stripos($data['name'] ?? '', $search) === false) {
+                        continue;
+                    }
+
+                    $price = floatval($data['price'] ?? 0);
+                    if (!empty($priceMin) && $price < floatval($priceMin)) {
+                        continue;
+                    }
+                    if (!empty($priceMax) && $price > floatval($priceMax)) {
+                        continue;
+                    }
+
+                    $items[] = [
+                        'id' => $doc->id(),
+                        'disPrice' => $data['disPrice'] ?? 0,
+                        'name' => $data['name'] ?? 'Product',
+                        'description' => $data['description'] ?? 'Product description',
+                        'grams' => $data['grams'] ?? '200g',
+                        'photo' => $data['photo'] ?? '',
+                        'price' => $data['price'] ?? 0,
+                        'section' => $data['section'] ?? 'General',
+                        'subcategoryTitle' => !empty($data['subcategoryTitle']) ? $data['subcategoryTitle'] : 'General',
+                        'categoryTitle' => $data['categoryTitle'] ?? 'Category',
+                        'isBestSeller' => $data['isBestSeller'] ?? false,
+                        'isFeature' => $data['isFeature'] ?? false,
+                        'isSpotlight' => $data['isSpotlight'] ?? false,
+                        'isNew' => $data['isNew'] ?? false,
+                        'veg' => $data['veg'] ?? true,
+                        'nonveg' => $data['nonveg'] ?? false,
+                        'quantity' => $data['quantity'] ?? 0,
+                        'vendorID' => $data['vendorID'] ?? '',
+                        'vendorTitle' => $data['vendorTitle'] ?? '',
+                        'reviewSum' => $data['reviewSum'] ?? 0,
+                        'reviewCount' => $data['reviewCount'] ?? 0,
+                    ];
+                }
+            }
+
+            // Apply sorting
+            switch ($sortBy) {
+                case 'price_low':
+                    usort($items, function($a, $b) {
+                        return floatval($a['price']) <=> floatval($b['price']);
+                    });
+                    break;
+                case 'price_high':
+                    usort($items, function($a, $b) {
+                        return floatval($b['price']) <=> floatval($a['price']);
+                    });
+                    break;
+                case 'rating':
+                    usort($items, function($a, $b) {
+                        return floatval($b['reviewSum']) <=> floatval($a['reviewSum']);
+                    });
+                    break;
+                default: // name
+                    usort($items, function($a, $b) {
+                        return strcmp($a['name'], $b['name']);
+                    });
+                    break;
+            }
+
+            // Get all categories for filter dropdown
+            $categoriesSnapshot = $firestore->collection('mart_categories')
+                ->where('publish', '=', true)
+                ->documents();
+
+            $categories = [];
+            foreach ($categoriesSnapshot as $category) {
+                if ($category->exists()) {
+                    $cat = $category->data();
+                    $categories[] = [
+                        'id' => $cat['id'] ?? null,
+                        'title' => $cat['title'] ?? 'No Title',
+                    ];
+                }
+            }
+
+            // Get all subcategories for filter dropdown
+            $subcategoriesSnapshot = $firestore->collection('mart_subcategories')
+                ->where('publish', '=', true)
+                ->documents();
+
+            $subcategories = [];
+            foreach ($subcategoriesSnapshot as $sub) {
+                if ($sub->exists()) {
+                    $subData = $sub->data();
+                    $subcategories[] = [
+                        'id' => $subData['id'] ?? null,
+                        'title' => $subData['title'] ?? 'No Title',
+                        'parent_category_title' => $subData['parent_category_title'] ?? '',
+                    ];
+                }
+            }
+
+            \Log::info("All items loaded: " . count($items) . " items with filters applied");
+
+            return view('mart.all-items', [
+                'items' => $items,
+                'categories' => $categories,
+                'subcategories' => $subcategories,
+                'filters' => [
+                    'category' => $categoryFilter,
+                    'subcategory' => $subcategoryFilter,
+                    'price_min' => $priceMin,
+                    'price_max' => $priceMax,
+                    'sort' => $sortBy,
+                    'search' => $search,
+                ],
+                'totalItems' => count($items),
+            ]);
+
+        } catch (FirebaseException $e) {
+            \Log::error('Firebase error in MartController allItems method: ' . $e->getMessage());
+            return view('mart.all-items', [
+                'items' => [],
+                'categories' => [],
+                'subcategories' => [],
+                'filters' => [
+                    'category' => '',
+                    'subcategory' => '',
+                    'price_min' => '',
+                    'price_max' => '',
+                    'sort' => 'name',
+                    'search' => '',
+                ],
+                'totalItems' => 0,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('General error in MartController allItems method: ' . $e->getMessage());
+            return view('mart.all-items', [
+                'items' => [],
+                'categories' => [],
+                'subcategories' => [],
+                'filters' => [
+                    'category' => '',
+                    'subcategory' => '',
+                    'price_min' => '',
+                    'price_max' => '',
+                    'sort' => 'name',
+                    'search' => '',
+                ],
+                'totalItems' => 0,
+            ]);
         }
     }
 
@@ -595,7 +778,7 @@ class MartController extends Controller
             if ($sub->exists()) {
                 $subData = $sub->data();
                 $subcategoryTitles[] = $subData['title'] ?? '';
-                
+
                 $subcategories[] = [
                     'id'    => $subData['id'] ?? null,
                     'title' => $subData['title'] ?? 'No Title',
