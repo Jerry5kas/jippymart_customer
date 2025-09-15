@@ -262,7 +262,7 @@
                     <!-- Sidebar Content -->
                     <div class="sidebar-content">
                         @foreach($subcategories as $subcategory)
-                            <a href="{{ route('mart.items.by.subcategory', ['subcategoryTitle' => $subcategory['title']]) }}" 
+                            <a href="{{ route('mart.items.by.subcategory', ['subcategoryTitle' => $subcategory['title']]) }}"
                                class="subcategory-item {{ $subcategoryTitle === $subcategory['title'] ? 'active' : '' }}">
                                 <div class="flex items-center gap-3">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -293,16 +293,16 @@
                         </p>
                     @endif
                 </div>
-                <div class="inline-flex items-center gap-x-3">
-                    <x-mart.filter/>
-                    <button class="lg:hidden filter-button" @click="sidebarOpen = true">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                             stroke="currentColor" class="size-5">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                  d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75"/>
-                        </svg>
-                    </button>
-                </div>
+{{--                <div class="inline-flex items-center gap-x-3">--}}
+{{--                    <x-mart.filter/>--}}
+{{--                    <button class="lg:hidden filter-button" @click="sidebarOpen = true">--}}
+{{--                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"--}}
+{{--                             stroke="currentColor" class="size-5">--}}
+{{--                            <path stroke-linecap="round" stroke-linejoin="round"--}}
+{{--                                  d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75"/>--}}
+{{--                        </svg>--}}
+{{--                    </button>--}}
+{{--                </div>--}}
             </header>
 
             <!-- Enhanced Products Section -->
@@ -378,4 +378,7 @@
             </main>
         </div>
     </div>
+    
+    <!-- Cart Popup -->
+    <x-mart.cart-popup />
 </x-layouts.app>

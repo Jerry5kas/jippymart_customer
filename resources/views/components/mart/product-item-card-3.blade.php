@@ -24,22 +24,30 @@
             class="rounded-t-xl w-full h-40 object-cover group-hover:scale-105 transition-transform duration-300">
 
         <!-- Floating Add/Qty Button -->
-        <div x-data="{ qty: 0 }" class="absolute bottom-2 right-2">
+        <div x-data="martCartItem('{{ $title }}', {{ $disPrice }}, {{ $price }}, '{{ $src }}', '{{ $subcategoryTitle }}', '{{ $description }}', '{{ $grams }}', {{ $rating }}, {{ $reviews }})" class="absolute bottom-2 right-2">
+            <!-- Loading state -->
+            <div x-show="isLoading" class="px-5 py-1.5 rounded-full bg-[#007F73] text-white text-xs font-semibold shadow-md">
+                <div class="flex items-center gap-1">
+                    <div class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>Adding...</span>
+                </div>
+            </div>
+
             <!-- If not added yet -->
-            <button x-show="qty === 0"
-                    @click="qty = 1"
+            <button x-show="!isLoading && quantity === 0"
+                    @click="addToCart()"
                     class="px-5 py-1.5 rounded-full border border-[#007F73]
                    text-[#007F73] text-xs font-semibold bg-white shadow-md hover:bg-[#E8F8DB] transition">
                 ADD
             </button>
 
             <!-- If added, show increment/decrement -->
-            <div x-show="qty > 0"
+            <div x-show="!isLoading && quantity > 0"
                  x-transition
                  class="flex items-center gap-2 bg-[#007F73] text-white px-3 py-1.5 rounded-full text-xs font-semibold shadow-md">
-                <button @click="if(qty > 0) qty--" class="px-2">−</button>
-                <span x-text="qty"></span>
-                <button @click="qty++" class="px-2">+</button>
+                <button @click="decreaseQuantity()" class="px-2 hover:bg-[#005f56] rounded">−</button>
+                <span x-text="quantity"></span>
+                <button @click="increaseQuantity()" class="px-2 hover:bg-[#005f56] rounded">+</button>
             </div>
         </div>
     </div>
@@ -98,3 +106,120 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('alpine:init', () => {
+    Alpine.data('martCartItem', (id, name, price, disPrice, photo, subcategoryTitle, description, grams, rating, reviews) => ({
+        id: id,
+        name: name,
+        price: price,
+        disPrice: disPrice,
+        photo: photo,
+        subcategoryTitle: subcategoryTitle,
+        description: description,
+        grams: grams,
+        rating: rating,
+        reviews: reviews,
+        quantity: 0,
+        isLoading: false,
+        
+        init() {
+            this.loadCartState();
+        },
+        
+        loadCartState() {
+            // Load cart state from local storage
+            const cartData = localStorage.getItem('mart_cart');
+            if (cartData) {
+                const cart = JSON.parse(cartData);
+                if (cart[this.id]) {
+                    this.quantity = cart[this.id].quantity;
+                }
+            }
+        },
+        
+        addToCart() {
+            this.isLoading = true;
+            
+            const productData = {
+                id: this.id,
+                name: this.name,
+                price: this.price,
+                disPrice: this.disPrice,
+                photo: this.photo,
+                subcategoryTitle: this.subcategoryTitle,
+                description: this.description,
+                grams: this.grams,
+                rating: this.rating,
+                reviews: this.reviews
+            };
+            
+            // Add to local storage
+            const cartData = localStorage.getItem('mart_cart') || '{}';
+            const cart = JSON.parse(cartData);
+            
+            if (cart[this.id]) {
+                cart[this.id].quantity++;
+            } else {
+                cart[this.id] = { ...productData, quantity: 1 };
+            }
+            
+            localStorage.setItem('mart_cart', JSON.stringify(cart));
+            this.quantity = cart[this.id].quantity;
+            
+            // Dispatch events
+            this.dispatchCartUpdate();
+            this.dispatchItemAdded(cart[this.id]);
+            
+            this.isLoading = false;
+        },
+        
+        increaseQuantity() {
+            this.isLoading = true;
+            
+            const cartData = localStorage.getItem('mart_cart') || '{}';
+            const cart = JSON.parse(cartData);
+            
+            if (cart[this.id]) {
+                cart[this.id].quantity++;
+                localStorage.setItem('mart_cart', JSON.stringify(cart));
+                this.quantity = cart[this.id].quantity;
+                this.dispatchCartUpdate();
+            }
+            
+            this.isLoading = false;
+        },
+        
+        decreaseQuantity() {
+            this.isLoading = true;
+            
+            const cartData = localStorage.getItem('mart_cart') || '{}';
+            const cart = JSON.parse(cartData);
+            
+            if (cart[this.id] && cart[this.id].quantity > 0) {
+                cart[this.id].quantity--;
+                if (cart[this.id].quantity === 0) {
+                    delete cart[this.id];
+                }
+                localStorage.setItem('mart_cart', JSON.stringify(cart));
+                this.quantity = cart[this.id] ? cart[this.id].quantity : 0;
+                this.dispatchCartUpdate();
+            }
+            
+            this.isLoading = false;
+        },
+        
+        dispatchCartUpdate() {
+            // Dispatch event to update cart count in navbar
+            window.dispatchEvent(new CustomEvent('cart-updated'));
+        },
+        
+        dispatchItemAdded(item) {
+            // Dispatch event to show cart popup
+            window.dispatchEvent(new CustomEvent('item-added-to-cart', {
+                detail: { item: item }
+            }));
+        }
+    }));
+});
+</script>

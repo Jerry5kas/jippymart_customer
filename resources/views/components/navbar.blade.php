@@ -115,25 +115,26 @@
                     <span class="text-xs">Profile</span>
                 </a>
 
-                <!-- Cart Trigger -->
-                <div x-data="{ cartCount: 1 }" class="relative">
-                    <!-- Cart Button -->
-                    <button @click="cartOpen = true" class="flex flex-col items-center text-gray-800 relative">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                             stroke-width="1.5" stroke="currentColor" class="w-7 h-7">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                  d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"/>
-                        </svg>
-                        <span class="text-xs">Cart</span>
-                    </button>
+       <!-- Cart Trigger -->
+       <div x-data="martCartNavbar()" class="relative">
+           <!-- Cart Button -->
+           <button @click="openCart()" class="flex flex-col items-center text-gray-800 relative hover:text-[#007F73] transition-colors">
+               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                    stroke-width="1.5" stroke="currentColor" class="w-7 h-7">
+                   <path stroke-linecap="round" stroke-linejoin="round"
+                         d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"/>
+               </svg>
+               <span class="text-xs">Cart</span>
+           </button>
 
-                    <!-- Notification Badge -->
-                    <span x-show="cartCount > 0"
-                          x-text="cartCount"
-                          class="absolute -top-1 -right-1 bg-[#007F73] text-white text-[10px] font-bold
-                 w-5 h-5 flex items-center justify-center rounded-full shadow-lg">
-    </span>
-                </div>
+           <!-- Notification Badge -->
+           <span x-show="cartCount > 0"
+                 x-text="cartCount"
+                 x-transition
+                 class="absolute -top-1 -right-1 bg-[#007F73] text-white text-[10px] font-bold
+                w-5 h-5 flex items-center justify-center rounded-full shadow-lg animate-pulse">
+           </span>
+       </div>
 
             </div>
 
@@ -150,5 +151,43 @@
         </div>
     </div>
 
-    <x-mart.cart/>
+    <x-mart.cart />
 </header>
+
+<script>
+document.addEventListener('alpine:init', () => {
+    Alpine.data('martCartNavbar', () => ({
+        cartCount: 0,
+        
+        init() {
+            this.updateCartCount();
+            
+            // Listen for cart updates
+            window.addEventListener('cart-updated', () => {
+                this.updateCartCount();
+            });
+            
+            // Listen for item added events
+            window.addEventListener('item-added-to-cart', () => {
+                this.updateCartCount();
+            });
+        },
+        
+        updateCartCount() {
+            // Get cart count from local storage
+            const cartData = localStorage.getItem('mart_cart');
+            if (cartData) {
+                const cart = JSON.parse(cartData);
+                this.cartCount = Object.keys(cart).length;
+            } else {
+                this.cartCount = 0;
+            }
+        },
+        
+        openCart() {
+            // Trigger cart drawer to open
+            window.dispatchEvent(new CustomEvent('open-cart'));
+        }
+    }));
+});
+</script>

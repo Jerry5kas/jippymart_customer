@@ -639,4 +639,7 @@
             </div>
         </div>
     </div>
+    
+    <!-- Cart Popup -->
+    <x-mart.cart-popup />
 </x-layouts.app>

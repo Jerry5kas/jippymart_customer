@@ -925,4 +925,11 @@ Route::prefix('mart')->group(function () {
         return view('mart.item-by-category');
     });
     Route::get('/items-by-subcategory/{subcategoryTitle}', [MartController::class, 'itemsBySubcategory'])->name('mart.items.by.subcategory');
+    
+    // Cart routes
+    Route::post('/cart/add', [App\Http\Controllers\MartCartController::class, 'addToCart'])->name('mart.cart.add');
+    Route::post('/cart/update', [App\Http\Controllers\MartCartController::class, 'updateQuantity'])->name('mart.cart.update');
+    Route::post('/cart/remove', [App\Http\Controllers\MartCartController::class, 'removeFromCart'])->name('mart.cart.remove');
+    Route::get('/cart', [App\Http\Controllers\MartCartController::class, 'getCart'])->name('mart.cart.get');
+    Route::delete('/cart/clear', [App\Http\Controllers\MartCartController::class, 'clearCart'])->name('mart.cart.clear');
 });

@@ -1,5 +1,5 @@
 <!-- Slide-in Cart Drawer -->
-<div x-show="cartOpen" class="fixed inset-0 z-50 flex justify-end"
+<div x-data="cartStore" x-show="cartOpen" class="fixed inset-0 z-50 flex justify-end"
      x-transition:enter="transition ease-out duration-300"
      x-transition:enter-start="opacity-0"
      x-transition:enter-end="opacity-100"
@@ -59,49 +59,40 @@
             </div>
 
             <!-- Cart Items -->
-            <div x-data="cartStore" class="max-w-2xl mx-auto space-y-4 p-4">
-                <!-- Item 1 -->
-                <div
-                    x-data="cartItem(1, 'Nandini Standardised Fresh Milk (Pouch Orange)', 27, 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRdsRzPKr0V-bgrsSqZ5vehrlapAeXhuWDeEg&s')"
-                    class="flex items-center justify-between bg-white p-4 rounded-xl shadow">
-                    <div class="flex items-center space-x-3">
-                        <img :src="image" class="w-12 h-12 rounded-md border">
-                        <div>
-                            <h3 class="text-[10px] font-semibold text-gray-800" x-text="name"></h3>
-                            <p class="text-[10px] text-gray-500">1 pack (500 ml)</p>
+            <div class="max-w-2xl mx-auto space-y-4 p-4">
+                <!-- Dynamic Cart Items -->
+                <template x-for="item in cartItems" :key="item.id">
+                    <div class="flex items-center justify-between bg-white p-4 rounded-xl shadow">
+                        <div class="flex items-center space-x-3">
+                            <img :src="item.photo || 'data:image/jpeg;base64,/9j/4AAQSkAAAH/2Q=='" class="w-12 h-12 rounded-md border">
+                            <div>
+                                <h3 class="text-[10px] font-semibold text-gray-800" x-text="item.name"></h3>
+                                <p class="text-[10px] text-gray-500" x-text="item.grams || '1 Piece'"></p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <!-- Quantity controls -->
+                            <div class="flex items-center border rounded-lg px-2">
+                                <button @click="decreaseQuantity(item.id)" class="text-[#007F73] px-2 text-lg font-bold">−</button>
+                                <span class="px-2 text-gray-700" x-text="item.quantity"></span>
+                                <button @click="increaseQuantity(item.id)" class="text-[#007F73] px-2 text-lg font-bold">+</button>
+                            </div>
+                            <span class="text-gray-900 font-semibold">
+                                ₹<span x-text="(item.disPrice || item.price) * item.quantity"></span>
+                            </span>
                         </div>
                     </div>
-                    <div class="flex items-center space-x-3">
-                        <!-- Quantity controls -->
-                        <div class="flex items-center border rounded-lg px-2">
-                            <button @click="decrease" class="text-[#007F73] px-2 text-lg font-bold">−</button>
-                            <span class="px-2 text-gray-700" x-text="quantity"></span>
-                            <button @click="increase" class="text-[#007F73] px-2 text-lg font-bold">+</button>
-                        </div>
-                        <span class="text-gray-900 font-semibold">₹<span x-text="totalPrice"></span></span>
+                </template>
+                
+                <!-- Empty Cart Message -->
+                <div x-show="cartItems.length === 0" class="text-center py-8">
+                    <div class="text-gray-400 mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m8 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01"/>
+                        </svg>
                     </div>
-                </div>
-
-                <!-- Item 2 -->
-                <div
-                    x-data="cartItem(2, 'Amul Taaza Toned Milk', 30, 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRdsRzPKr0V-bgrsSqZ5vehrlapAeXhuWDeEg&s')"
-                    class="flex items-center justify-between bg-white p-4 rounded-xl shadow">
-                    <div class="flex items-center space-x-3">
-                        <img :src="image" class="w-12 h-12 rounded-md border">
-                        <div>
-                            <h3 class="text-[10px] font-semibold text-gray-800" x-text="name"></h3>
-                            <p class="text-[10px] text-gray-500">1 pack (500 ml)</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center space-x-3">
-                        <!-- Quantity controls -->
-                        <div class="flex items-center border rounded-lg px-2">
-                            <button @click="decrease" class="text-[#007F73] px-2 text-lg font-bold">−</button>
-                            <span class="px-2 text-gray-700" x-text="quantity"></span>
-                            <button @click="increase" class="text-[#007F73] px-2 text-lg font-bold">+</button>
-                        </div>
-                        <span class="text-gray-900 font-semibold">₹<span x-text="totalPrice"></span></span>
-                    </div>
+                    <p class="text-gray-500 text-sm">Your cart is empty</p>
+                    <p class="text-gray-400 text-xs">Add some items to get started</p>
                 </div>
 
                 <!-- Applied Coupon Display -->
@@ -201,8 +192,8 @@
                         <div class="flex justify-between">
                             <span>Item Total</span>
                             <span>
-              ₹498
-              <span class="line-through text-xs text-gray-400 ml-1">₹614</span>
+              ₹<span x-text="grandTotal"></span>
+              <span x-show="appliedCoupon" class="line-through text-xs text-gray-400 ml-1">₹<span x-text="originalTotal"></span></span>
           </span>
                         </div>
 
@@ -426,21 +417,97 @@
         }));
 
         Alpine.data('cartStore', () => ({
+            cartItems: [],
+            appliedCoupon: null,
+            cartOpen: false,
+            
             get grandTotal() {
-                return Alpine.store('cart').grandTotal;
-            },
-            get appliedCoupon() {
-                return Alpine.store('cart').appliedCoupon;
+                return this.cartItems.reduce((sum, item) => sum + ((item.disPrice || item.price) * item.quantity), 0);
             },
             get originalTotal() {
-                return Alpine.store('cart').originalTotal;
+                return this.grandTotal;
             },
             get finalTotal() {
-                return Alpine.store('cart').finalTotal;
+                if (this.appliedCoupon) {
+                    return Math.max(0, this.grandTotal - (this.appliedCoupon.discountAmount || 0));
+                }
+                return this.grandTotal;
             },
+            
+            init() {
+                this.loadCartItems();
+                this.loadAppliedCoupon();
+                
+                // Listen for cart updates
+                window.addEventListener('cart-updated', () => {
+                    this.loadCartItems();
+                });
+                
+                // Listen for coupon application events
+                window.addEventListener('coupon-applied', (event) => {
+                    const coupon = event.detail.coupon;
+                    this.applyCoupon(coupon);
+                });
+                
+                // Listen for cart open events
+                window.addEventListener('open-cart', () => {
+                    this.cartOpen = true;
+                });
+            },
+            
+            loadCartItems() {
+                const cartData = localStorage.getItem('mart_cart');
+                if (cartData) {
+                    this.cartItems = Object.values(JSON.parse(cartData));
+                } else {
+                    this.cartItems = [];
+                }
+            },
+            
+            loadAppliedCoupon() {
+                const couponData = localStorage.getItem('appliedCoupon');
+                if (couponData) {
+                    this.appliedCoupon = JSON.parse(couponData);
+                }
+            },
+            
+            increaseQuantity(itemId) {
+                const cartData = localStorage.getItem('mart_cart') || '{}';
+                const cart = JSON.parse(cartData);
+                
+                if (cart[itemId]) {
+                    cart[itemId].quantity++;
+                    localStorage.setItem('mart_cart', JSON.stringify(cart));
+                    this.loadCartItems();
+                    window.dispatchEvent(new CustomEvent('cart-updated'));
+                }
+            },
+            
+            decreaseQuantity(itemId) {
+                const cartData = localStorage.getItem('mart_cart') || '{}';
+                const cart = JSON.parse(cartData);
+                
+                if (cart[itemId] && cart[itemId].quantity > 0) {
+                    cart[itemId].quantity--;
+                    if (cart[itemId].quantity === 0) {
+                        delete cart[itemId];
+                    }
+                    localStorage.setItem('mart_cart', JSON.stringify(cart));
+                    this.loadCartItems();
+                    window.dispatchEvent(new CustomEvent('cart-updated'));
+                }
+            },
+            
+            applyCoupon(coupon) {
+                this.appliedCoupon = coupon;
+                localStorage.setItem('appliedCoupon', JSON.stringify(coupon));
+            },
+            
             removeCoupon() {
-                Alpine.store('cart').removeCoupon();
+                this.appliedCoupon = null;
+                localStorage.removeItem('appliedCoupon');
             },
+            
             getCouponDescription(coupon) {
                 if (!coupon) return '';
                 if (coupon.discountType === 'Percentage') {
@@ -448,13 +515,6 @@
                 } else {
                     return `Flat ₹${coupon.discount} discount`;
                 }
-            },
-            init() {
-                // Listen for coupon application events
-                window.addEventListener('coupon-applied', (event) => {
-                    const coupon = event.detail.coupon;
-                    Alpine.store('cart').applyCoupon(coupon);
-                });
             }
         }));
     });

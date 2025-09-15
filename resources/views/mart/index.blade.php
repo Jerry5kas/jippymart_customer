@@ -331,3 +331,6 @@
     };
 </script>
 
+<!-- Cart Popup -->
+<x-mart.cart-popup />
+
