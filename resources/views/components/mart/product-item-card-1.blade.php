@@ -24,7 +24,7 @@
             class="rounded-t-xl w-full h-40 object-cover group-hover:scale-105 transition-transform duration-300">
 
         <!-- Floating Add/Qty Button -->
-        <div x-data="martCartItem('{{ $title }}', {{ $disPrice }}, {{ $price }}, '{{ $src }}', '{{ $subcategoryTitle }}', '{{ $description }}', '{{ $grams }}', {{ $rating }}, {{ $reviews }})" class="absolute bottom-2 right-2">
+        <div x-data="martCartItem('{{ addslashes($title) }}', {{ $disPrice }}, {{ $price }}, '{{ addslashes($src) }}', '{{ addslashes($subcategoryTitle) }}', '{{ addslashes($description) }}', '{{ $grams }}', {{ $rating }}, {{ $reviews }})" class="absolute bottom-2 right-2">
             <!-- Loading state -->
             <div x-show="isLoading" class="px-5 py-1.5 rounded-full bg-[#007F73] text-white text-xs font-semibold shadow-md">
                 <div class="flex items-center gap-1">
@@ -109,8 +109,8 @@
 
 <script>
 document.addEventListener('alpine:init', () => {
-    Alpine.data('martCartItem', (id, name, price, disPrice, photo, subcategoryTitle, description, grams, rating, reviews) => ({
-        id: id,
+    Alpine.data('martCartItem', (name, disPrice, price, photo, subcategoryTitle, description, grams, rating, reviews) => ({
+        id: name, // Use name as unique identifier
         name: name,
         price: price,
         disPrice: disPrice,

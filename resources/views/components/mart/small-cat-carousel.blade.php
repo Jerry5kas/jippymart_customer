@@ -12,7 +12,7 @@
 
     <!-- Featured Products Carousel -->
     @if(count($products) > 0)
-    <div class="relative px-4 bg-[#007F73]" x-data="{ scroll: 0 } rounded-2xl mb-5">
+    <div class="relative px-4 bg-[#007F73] rounded-2xl mb-5" x-data="{ scroll: 0 }">
         <!-- Left Button -->
         <button
             @click="$refs.scroller.scrollBy({ left: -200, behavior: 'smooth' })"
