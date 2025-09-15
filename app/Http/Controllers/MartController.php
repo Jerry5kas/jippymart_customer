@@ -60,10 +60,13 @@ class MartController extends Controller
         foreach ($categoryData as &$cat) {
             $cat['subcategories'] = $subcategoriesByParent[$cat['id']] ?? [];
         }
-            // Sort banners by set_order ascending
-            usort($categoryData, function($b, $a) {
-                return ($b['set_order'] ?? 0) <=> ($a['set_order'] ?? 0);
-            });
+        
+        // Sort categories by subcategory count in descending order (categories with most subcategories first)
+        usort($categoryData, function($a, $b) {
+            $countA = count($a['subcategories'] ?? []);
+            $countB = count($b['subcategories'] ?? []);
+            return $countB <=> $countA; // Descending order
+        });
         // Categories without ordering for maximum performance
 
         // =========================

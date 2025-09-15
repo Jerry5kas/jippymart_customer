@@ -323,6 +323,10 @@
             setCookie('address_city', address_city, 365);
             setCookie('address_state', address_state, 365);
             setCookie('address_country', address_country, 365);
+            
+            // Save location data for mart page compatibility
+            setCookie('user_address', address_name, 365);
+            setCookie('user_zone_id', '1', 365);
             <?php } ?>
             window.location.reload();
         });
@@ -494,6 +498,17 @@
                                     setCookie('address_city', address_city, 365);
                                     setCookie('address_state', address_state, 365);
                                     setCookie('address_country', address_country, 365);
+                                    
+                                    // Save location data for mart page compatibility
+                                    setCookie('user_address', address_name, 365);
+                                    setCookie('user_zone_id', '1', 365); // Default zone ID
+                                    
+                                    console.log('Location saved for mart page:', {
+                                        address_lat: address_lat,
+                                        address_lng: address_lng,
+                                        user_address: address_name,
+                                        user_zone_id: '1'
+                                    });
                                     if (type == 'reload') {
                                         window.location.reload(true);
                                     }
@@ -558,6 +573,18 @@
                 setCookie('address_city', address_city, 365);
                 setCookie('address_state', address_state, 365);
                 setCookie('address_country', address_country, 365);
+                
+                // Save location data for mart page compatibility
+                setCookie('user_address', address_name, 365);
+                setCookie('user_zone_id', '1', 365); // Default zone ID
+                
+                console.log('Location saved for mart page (non-Google):', {
+                    address_lat: address_lat,
+                    address_lng: address_lng,
+                    user_address: address_name,
+                    user_zone_id: '1'
+                });
+                
                 if (type == 'reload') {
                     window.location.reload(true);
                 }

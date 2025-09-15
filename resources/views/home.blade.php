@@ -1638,6 +1638,9 @@
                             setCookie('address_lat', address_lat, 365);
                             setCookie('address_lng', address_lng, 365);
 
+                            // Get address from coordinates
+                            await getAddressFromCoordinates(address_lat, address_lng);
+
                             // Get zone ID for this location
                             await getUserZoneId();
 
@@ -1649,6 +1652,44 @@
                     },
                     function(error) {
                         console.error("Geolocation error:", error);
+                        let errorMessage = "Unable to get your location";
+                        
+                        switch(error.code) {
+                            case error.PERMISSION_DENIED:
+                                errorMessage = "Location access denied. Please allow location access or set location manually.";
+                                break;
+                            case error.POSITION_UNAVAILABLE:
+                                errorMessage = "Location information unavailable.";
+                                break;
+                            case error.TIMEOUT:
+                                errorMessage = "Location request timed out.";
+                                break;
+                        }
+                        
+                        console.log(errorMessage);
+                        
+                        // Show user-friendly message
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                title: 'Location Required',
+                                text: errorMessage,
+                                icon: 'warning',
+                                showCancelButton: true,
+                                confirmButtonText: 'Set Location Manually',
+                                cancelButtonText: 'Try Again',
+                                allowOutsideClick: false
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    window.location.href = '{{ url('set-location') }}';
+                                } else if (result.dismiss === Swal.DismissReason.cancel) {
+                                    // Try again
+                                    initializeLocation();
+                                }
+                            });
+                        } else {
+                            alert(errorMessage);
+                        }
+                        
                         // Try to use a default location as fallback
                         console.log("Trying fallback location...");
                         tryFallbackLocation().then(resolve).catch(() => {
@@ -1658,7 +1699,7 @@
                     },
                     {
                         enableHighAccuracy: true,
-                        timeout: 10000,
+                        timeout: 15000,
                         maximumAge: 300000 // 5 minutes
                     }
                 );
@@ -1809,6 +1850,9 @@
             setCookie('address_lat', address_lat, 365);
             setCookie('address_lng', address_lng, 365);
 
+            // Get address from coordinates
+            getAddressFromCoordinates(address_lat, address_lng);
+
             // Try to get zone ID for fallback location
             getUserZoneId().then(() => {
                 resolve();
@@ -1816,6 +1860,51 @@
                 reject();
             });
         });
+    }
+
+    // Function to set cookie
+    function setCookie(name, value, days) {
+        const expires = new Date();
+        expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
+        document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/`;
+    }
+
+    // Function to get address from coordinates using reverse geocoding
+    async function getAddressFromCoordinates(lat, lng) {
+        try {
+            // Try using browser's geolocation API first (if available)
+            if (navigator.geolocation && 'geolocation' in navigator) {
+                // Use a simple reverse geocoding service
+                const response = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`);
+                const data = await response.json();
+                
+                if (data && data.localityInfo && data.localityInfo.administrative) {
+                    const address = data.localityInfo.administrative
+                        .filter(admin => admin.order <= 3) // Get city, state, country
+                        .map(admin => admin.name)
+                        .join(', ');
+                    
+                    if (address) {
+                        setCookie('user_address', address, 365);
+                        console.log("Address saved:", address);
+                        return address;
+                    }
+                }
+            }
+            
+            // Fallback: create a simple address from coordinates
+            const fallbackAddress = `Location: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+            setCookie('user_address', fallbackAddress, 365);
+            console.log("Fallback address saved:", fallbackAddress);
+            return fallbackAddress;
+            
+        } catch (error) {
+            console.error("Error getting address from coordinates:", error);
+            // Fallback: create a simple address from coordinates
+            const fallbackAddress = `Location: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+            setCookie('user_address', fallbackAddress, 365);
+            return fallbackAddress;
+        }
     }
 
     // Function to show location error
@@ -3430,6 +3519,83 @@
         setupLazyLoading();
     });
 
+    // Function to check location and navigate to Mart
+    function checkLocationAndNavigate(event) {
+        // Check if location variables are defined and valid
+        if (typeof address_lat === 'undefined' || typeof address_lng === 'undefined' || typeof user_zone_id === 'undefined' ||
+            address_lat == '' || address_lng == '' || address_lat == null || address_lng == null ||
+            user_zone_id == null || user_zone_id == '') {
+            
+            event.preventDefault();
+            
+            // Show alert to user
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Location Required',
+                    text: 'Please set your location first to access the Mart section.',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Set Location',
+                    cancelButtonText: 'Cancel'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = '{{ url('set-location') }}';
+                    }
+                });
+            } else {
+                // Fallback if SweetAlert is not available
+                if (confirm('Please set your location first to access the Mart section. Would you like to set your location now?')) {
+                    window.location.href = '{{ url('set-location') }}';
+                }
+            }
+            return false;
+        }
+        
+        // Location is set, allow navigation
+        return true;
+    }
+
+    // Update floating button appearance based on location status
+    function updateFloatingButtonStatus() {
+        const floatingBtn = document.getElementById('mart-floating-btn');
+        if (floatingBtn) {
+            if (typeof address_lat === 'undefined' || typeof address_lng === 'undefined' || typeof user_zone_id === 'undefined' ||
+                address_lat == '' || address_lng == '' || address_lat == null || address_lng == null ||
+                user_zone_id == null || user_zone_id == '') {
+                
+                floatingBtn.style.opacity = '0.6';
+                floatingBtn.style.cursor = 'not-allowed';
+                floatingBtn.title = 'Please set your location first';
+            } else {
+                floatingBtn.style.opacity = '1';
+                floatingBtn.style.cursor = 'pointer';
+                floatingBtn.title = 'Go to Mart';
+            }
+        }
+    }
+
+    // Update button status when location is detected
+    $(document).ready(function() {
+        // Update button status initially
+        updateFloatingButtonStatus();
+        
+        // Update button status periodically until location is set
+        const locationCheckInterval = setInterval(() => {
+            updateFloatingButtonStatus();
+            
+            // Stop checking once location is set
+            if (typeof address_lat !== 'undefined' && typeof address_lng !== 'undefined' && typeof user_zone_id !== 'undefined' &&
+                address_lat && address_lng && user_zone_id) {
+                clearInterval(locationCheckInterval);
+            }
+        }, 2000);
+        
+        // Clear interval after 30 seconds to avoid infinite checking
+        setTimeout(() => {
+            clearInterval(locationCheckInterval);
+        }, 30000);
+    });
+
 </script>
 
 <!-- Floating Button Styles -->
@@ -3461,7 +3627,11 @@
 </style>
 
 <!-- Floating Button -->
-<a href="{{ url('mart') }}" class="floating-btn" title="Go to Mart">
+<a href="{{ url('mart') }}" 
+   class="floating-btn" 
+   id="mart-floating-btn"
+   title="Go to Mart"
+   onclick="checkLocationAndNavigate(event)">
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
       <path stroke-linecap="round" stroke-linejoin="round" 
         d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 

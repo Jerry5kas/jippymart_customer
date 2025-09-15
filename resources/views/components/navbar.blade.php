@@ -1,16 +1,163 @@
 <!-- Navbar -->
 <header class="fixed z-40 w-full text-sm bg-gradient-to-b from-purple-100 to-white"
-        x-data="{ mobileMenu: false, cartOpen: false }">
+        x-data="{ mobileMenu: false, cartOpen: false, locationSet: false, currentLocation: 'Select Location' }"
+        x-init="
+            // Check if location is set from cookies
+            function getCookie(name) {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
+                return null;
+            }
+            
+            function updateLocationDisplay() {
+                const addressLat = getCookie('address_lat');
+                const addressLng = getCookie('address_lng');
+                const userZoneId = getCookie('user_zone_id');
+                const userAddress = getCookie('user_address');
+                
+                console.log('Navbar - Location check:', {
+                    addressLat, addressLng, userZoneId, userAddress,
+                    allCookies: document.cookie
+                });
+                
+                if (addressLat && addressLng && userZoneId && 
+                    addressLat !== 'null' && addressLng !== 'null' && userZoneId !== 'null') {
+                    locationSet = true;
+                    // Show actual address if available, otherwise show coordinates
+                    if (userAddress && userAddress !== 'undefined' && userAddress !== 'null' && userAddress !== '') {
+                        currentLocation = userAddress;
+                    } else {
+                        currentLocation = `${parseFloat(addressLat).toFixed(4)}, ${parseFloat(addressLng).toFixed(4)}`;
+                    }
+                } else {
+                    locationSet = false;
+                    currentLocation = 'Select Location';
+                }
+            }
+            
+            // Initial check
+            updateLocationDisplay();
+            
+            // Update location display periodically
+            setInterval(updateLocationDisplay, 2000);
+            
+            // Function to get current location
+            window.getCurrentLocation = function() {
+                if (navigator.geolocation) {
+                    console.log('Requesting current location...');
+                    
+                    navigator.geolocation.getCurrentPosition(
+                        async function(position) {
+                            const lat = position.coords.latitude;
+                            const lng = position.coords.longitude;
+                            
+                            console.log('Location obtained:', lat, lng);
+                            
+                            // Set cookies
+                            setCookie('address_lat', lat, 365);
+                            setCookie('address_lng', lng, 365);
+                            
+                            // Get address from coordinates
+                            try {
+                                const response = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`);
+                                const data = await response.json();
+                                
+                                if (data && data.localityInfo && data.localityInfo.administrative) {
+                                    const address = data.localityInfo.administrative
+                                        .filter(admin => admin.order <= 3)
+                                        .map(admin => admin.name)
+                                        .join(', ');
+                                    
+                                    if (address) {
+                                        setCookie('user_address', address, 365);
+                                        setCookie('user_zone_id', '1', 365); // Default zone
+                                        console.log('Address saved:', address);
+                                        
+                                        // Update display
+                                        updateLocationDisplay();
+                                        
+                                        // Show success message
+                                        if (typeof Swal !== 'undefined') {
+                                            Swal.fire({
+                                                title: 'Location Set!',
+                                                text: `Your location is set to: ${address}`,
+                                                icon: 'success',
+                                                timer: 2000,
+                                                showConfirmButton: false
+                                            });
+                                        }
+                                    }
+                                }
+                            } catch (error) {
+                                console.error('Error getting address:', error);
+                                // Fallback address
+                                const fallbackAddress = `Location: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+                                setCookie('user_address', fallbackAddress, 365);
+                                setCookie('user_zone_id', '1', 365);
+                                updateLocationDisplay();
+                            }
+                        },
+                        function(error) {
+                            console.error('Geolocation error:', error);
+                            let errorMessage = 'Unable to get your location';
+                            
+                            switch(error.code) {
+                                case error.PERMISSION_DENIED:
+                                    errorMessage = 'Location access denied. Please allow location access.';
+                                    break;
+                                case error.POSITION_UNAVAILABLE:
+                                    errorMessage = 'Location information unavailable.';
+                                    break;
+                                case error.TIMEOUT:
+                                    errorMessage = 'Location request timed out.';
+                                    break;
+                            }
+                            
+                            if (typeof Swal !== 'undefined') {
+                                Swal.fire({
+                                    title: 'Location Error',
+                                    text: errorMessage,
+                                    icon: 'error',
+                                    confirmButtonText: 'OK'
+                                });
+                            } else {
+                                alert(errorMessage);
+                            }
+                        },
+                        {
+                            enableHighAccuracy: true,
+                            timeout: 15000,
+                            maximumAge: 300000
+                        }
+                    );
+                } else {
+                    alert('Geolocation is not supported by your browser.');
+                }
+            };
+            
+            function setCookie(name, value, days) {
+                const expires = new Date();
+                expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
+                document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/`;
+            }
+        ">
 
     <div class="sm:w-[90%] mx-auto w-full px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center py-4">
 
             <!-- Left section -->
             <div class="flex items-center space-x-4">
-                <a href="/mart" class="text-2xl font-extrabold text-purple-600">Mart</a>
+                <a href="/mart" 
+                   class="text-2xl font-extrabold text-purple-600"
+                   x-bind:class="{ 'opacity-50 cursor-not-allowed': !locationSet }"
+                   x-on:click="!locationSet ? ($event.preventDefault(), window.location.href = '{{ url('set-location') }}') : null"
+                   x-bind:title="locationSet ? 'Go to Mart' : 'Please set your location first'">
+                    Mart
+                </a>
 
                 <!-- Location -->
-                <button class="hidden md:flex items-center space-x-1 font-medium">
+                <div class="hidden md:flex items-center space-x-1 font-medium">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                          stroke="currentColor" class="size-4 text-gray-600 font-semibold">
                         <path stroke-linecap="round" stroke-linejoin="round"
@@ -18,12 +165,33 @@
                         <path stroke-linecap="round" stroke-linejoin="round"
                               d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"/>
                     </svg>
-                    <span class="font-semibold text-gray-600">Select Location</span>
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-600" fill="none"
-                         viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                    </svg>
-                </button>
+                    
+                    <!-- Show address when location is set -->
+                    <div x-show="locationSet" class="flex items-center space-x-2">
+                        <span class="font-semibold text-gray-600 max-w-48 truncate" 
+                              x-text="currentLocation"
+                              x-bind:title="currentLocation">
+                        </span>
+                        <button x-on:click="getCurrentLocation()"
+                                class="text-green-600 hover:text-green-800 text-xs"
+                                title="Refresh Location">
+                            🔄
+                        </button>
+                    </div>
+                    
+                    <!-- Show location buttons when location is not set -->
+                    <div x-show="!locationSet" class="flex items-center space-x-2">
+                        <button x-on:click="getCurrentLocation()"
+                                class="text-green-600 hover:text-green-800 text-sm font-medium">
+                            📍 Get Location
+                        </button>
+                        <span class="text-gray-400">|</span>
+                        <button x-on:click="window.location.href = '{{ url('set-location') }}'"
+                                class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                            Set Location
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <!-- Search bar with animated rotating placeholder -->
@@ -79,7 +247,7 @@
 
             <!-- Right section -->
             <div class="hidden md:flex  items-center space-x-6 text-sm text-gray-600 font-semibold">
-                <a href="#" class="flex flex-col items-center space-y-1.5 text-gray-800">
+                <a href="{{ url('profile') }}" class="flex flex-col items-center space-y-1.5 text-gray-800">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
                          stroke="currentColor" class="size-6">
                         <path stroke-linecap="round" stroke-linejoin="round"
