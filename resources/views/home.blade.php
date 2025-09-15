@@ -69,6 +69,116 @@
                         </span>
                     </div>
                 </div>
+                
+                <!-- Restaurant Filter Bar -->
+                <div class="filter-bar-container mb-4">
+                    <div class="filter-bar">
+                        <!-- Active Filters with remove -->
+                        <div class="filter-chip" id="active-filters" style="display: none;">
+                            <!-- Active filters will be dynamically added here -->
+                        </div>
+
+                        <!-- Filter Dropdowns -->
+                        <div class="dropdown">
+                            <div class="filter-chip dropdown-toggle" data-bs-toggle="dropdown" id="sort-filter">
+                                <span class="filter-text">Sort By: Popular</span>
+                                <span class="dropdown-arrow">▼</span>
+                            </div>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item filter-option" href="#" data-filter="popular" data-value="popular">
+                                    <span class="option-text">Popular</span>
+                                    <span class="checkmark" style="display: none;">✓</span>
+                                </a></li>
+                                <li><a class="dropdown-item filter-option" href="#" data-filter="rating" data-value="rating">
+                                    <span class="option-text">Rating</span>
+                                    <span class="checkmark" style="display: none;">✓</span>
+                                </a></li>
+                                <li><a class="dropdown-item filter-option" href="#" data-filter="newest" data-value="newest">
+                                    <span class="option-text">Newest</span>
+                                    <span class="checkmark" style="display: none;">✓</span>
+                                </a></li>
+                                <li><a class="dropdown-item filter-option" href="#" data-filter="distance" data-value="distance">
+                                    <span class="option-text">Distance</span>
+                                    <span class="checkmark" style="display: none;">✓</span>
+                                </a></li>
+                            </ul>
+                        </div>
+
+                        <div class="dropdown">
+                            <div class="filter-chip dropdown-toggle" data-bs-toggle="dropdown" id="status-filter">
+                                <span class="filter-text">Status: All</span>
+                                <span class="dropdown-arrow">▼</span>
+                            </div>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item filter-option" href="#" data-filter="status" data-value="all">
+                                    <span class="option-text">All</span>
+                                    <span class="checkmark" style="display: none;">✓</span>
+                                </a></li>
+                                <li><a class="dropdown-item filter-option" href="#" data-filter="status" data-value="open">
+                                    <span class="option-text">Open Now</span>
+                                    <span class="checkmark" style="display: none;">✓</span>
+                                </a></li>
+                                <li><a class="dropdown-item filter-option" href="#" data-filter="status" data-value="closed">
+                                    <span class="option-text">Closed</span>
+                                    <span class="checkmark" style="display: none;">✓</span>
+                                </a></li>
+                            </ul>
+                        </div>
+
+                        <div class="dropdown">
+                            <div class="filter-chip dropdown-toggle" data-bs-toggle="dropdown" id="delivery-filter">
+                                <span class="filter-text">Delivery: All</span>
+                                <span class="dropdown-arrow">▼</span>
+                            </div>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item filter-option" href="#" data-filter="delivery" data-value="all">
+                                    <span class="option-text">All</span>
+                                    <span class="checkmark" style="display: none;">✓</span>
+                                </a></li>
+                                <li><a class="dropdown-item filter-option" href="#" data-filter="delivery" data-value="self">
+                                    <span class="option-text">Self Delivery</span>
+                                    <span class="checkmark" style="display: none;">✓</span>
+                                </a></li>
+                                <li><a class="dropdown-item filter-option" href="#" data-filter="delivery" data-value="partner">
+                                    <span class="option-text">Partner Delivery</span>
+                                    <span class="checkmark" style="display: none;">✓</span>
+                                </a></li>
+                            </ul>
+                        </div>
+
+                        <div class="dropdown">
+                            <div class="filter-chip dropdown-toggle" data-bs-toggle="dropdown" id="distance-filter">
+                                <span class="filter-text">Distance: All</span>
+                                <span class="dropdown-arrow">▼</span>
+                            </div>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item filter-option" href="#" data-filter="distance_range" data-value="all">
+                                    <span class="option-text">All</span>
+                                    <span class="checkmark" style="display: none;">✓</span>
+                                </a></li>
+                                <li><a class="dropdown-item filter-option" href="#" data-filter="distance_range" data-value="5">
+                                    <span class="option-text">Within 5km</span>
+                                    <span class="checkmark" style="display: none;">✓</span>
+                                </a></li>
+                                <li><a class="dropdown-item filter-option" href="#" data-filter="distance_range" data-value="10">
+                                    <span class="option-text">Within 10km</span>
+                                    <span class="checkmark" style="display: none;">✓</span>
+                                </a></li>
+                                <li><a class="dropdown-item filter-option" href="#" data-filter="distance_range" data-value="15">
+                                    <span class="option-text">Within 15km</span>
+                                    <span class="checkmark" style="display: none;">✓</span>
+                                </a></li>
+                            </ul>
+                        </div>
+
+                        <!-- Clear All -->
+                        <div class="filter-chip clear-all" id="clear-all-filters" style="display: none;">
+                            <span class="filter-text">Clear All</span>
+                            <span class="remove-btn">&times;</span>
+                        </div>
+                    </div>
+                </div>
+                
                 <div id="all_stores"></div>
                 <!-- Load More Button -->
                 <div class="row fu-loadmore-btn" id="loadmore-wrapper">
@@ -92,6 +202,442 @@
 
 <!-- lib styles -->
 <style>
+    /* Filter Bar Styles */
+    .filter-bar-container {
+        margin: 1rem 0;
+    }
+    .filter-bar {
+        background: #fff;
+        border-radius: 12px;
+        padding: 0.75rem 1rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: center;
+        border: 1px solid #e9ecef;
+    }
+    .filter-chip {
+        display: inline-flex;
+        align-items: center;
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 25px;
+        padding: 0.5rem 1rem;
+        font-size: 0.85rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        color: #495057;
+        position: relative;
+        min-width: 120px;
+        justify-content: space-between;
+    }
+    .filter-chip:hover {
+        background: #e9ecef;
+        border-color: #007bff;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0,123,255,0.15);
+        text-decoration: none;
+        color: #495057;
+    }
+    .filter-chip.active {
+        background: #007bff;
+        color: white;
+        border-color: #007bff;
+    }
+    .filter-chip.active .dropdown-arrow {
+        color: white;
+    }
+    .filter-text {
+        flex: 1;
+    }
+    .dropdown-arrow {
+        margin-left: 0.5rem;
+        font-size: 0.7rem;
+        transition: transform 0.3s ease;
+        color: #6c757d;
+    }
+    .filter-chip:hover .dropdown-arrow {
+        transform: rotate(180deg);
+    }
+    .filter-chip .remove-btn {
+        margin-left: 6px;
+        font-size: 1rem;
+        line-height: 1;
+        cursor: pointer;
+        color: #6c757d;
+        padding: 2px 4px;
+        border-radius: 50%;
+        transition: all 0.2s ease;
+    }
+    .filter-chip .remove-btn:hover {
+        background: rgba(220,53,69,0.1);
+        color: #dc3545;
+    }
+    .dropdown-toggle::after {
+        display: none;
+    }
+    .dropdown-menu {
+        border-radius: 12px;
+        padding: 0.5rem;
+        border: none;
+        min-width: 200px;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        animation: dropdownFade 0.3s ease-in-out;
+        margin-top: 0.5rem;
+    }
+    @keyframes dropdownFade {
+        from { opacity: 0; transform: translateY(-10px) scale(0.95); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .dropdown-item {
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        text-decoration: none;
+        color: #495057;
+        margin-bottom: 0.25rem;
+    }
+    .dropdown-item:hover {
+        background: #f8f9ff;
+        color: #007bff;
+        transform: translateX(5px);
+        text-decoration: none;
+    }
+    .dropdown-item.active {
+        background: #e3f2fd;
+        font-weight: 600;
+        color: #007bff;
+    }
+    .dropdown-item.active .checkmark {
+        color: #007bff;
+        font-weight: bold;
+    }
+    .option-text {
+        flex: 1;
+    }
+    .checkmark {
+        font-size: 1rem;
+        color: #28a745;
+    }
+    /* Clear All Button */
+    .clear-all {
+        background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+        color: white;
+        border: none;
+        box-shadow: 0 2px 8px rgba(255,107,107,0.3);
+    }
+    .clear-all:hover {
+        background: linear-gradient(135deg, #ff5252, #d63031);
+        color: white;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(255,107,107,0.4);
+        text-decoration: none;
+    }
+    .clear-all .remove-btn {
+        color: white;
+    }
+    .clear-all .remove-btn:hover {
+        background: rgba(255,255,255,0.2);
+        color: white;
+    }
+    
+    /* Restaurant Card Styles - Matching Existing Design */
+    #all_stores {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin-top: 1rem;
+    }
+    
+    /* Popular Restaurants Grid Layout */
+    .restaurant-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin-top: 1rem;
+    }
+    
+    .restaurant-card {
+        background: #fff;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        height: 100%;
+        border: 1px solid #f0f0f0;
+        cursor: pointer;
+        position: relative;
+    }
+    .restaurant-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        border-color: #007bff;
+    }
+    .restaurant-card:active {
+        transform: translateY(-2px);
+    }
+    .restaurant-card.card-clicked {
+        transform: scale(0.98);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .restaurant-image {
+        position: relative;
+        height: 200px;
+        overflow: hidden;
+    }
+    .restaurant-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+    }
+    .restaurant-card:hover .restaurant-image img {
+        transform: scale(1.05);
+    }
+    
+    .restaurant-status {
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        color: white;
+        border: 2px solid rgba(255,255,255,0.3);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        backdrop-filter: blur(10px);
+    }
+    .restaurant-status.open {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        border-color: rgba(255,255,255,0.2);
+    }
+    .restaurant-status.closed {
+        background: linear-gradient(135deg, #dc3545, #c82333);
+        border-color: rgba(255,255,255,0.2);
+    }
+    .restaurant-card:hover .restaurant-status {
+        transform: scale(1.05);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    .restaurant-card:hover .restaurant-status.open {
+        background: linear-gradient(135deg, #20c997, #28a745);
+    }
+    .restaurant-card:hover .restaurant-status.closed {
+        background: linear-gradient(135deg, #c82333, #dc3545);
+    }
+    
+    .distance {
+        position: absolute;
+        bottom: 12px;
+        left: 12px;
+        background: rgba(0,0,0,0.8);
+        color: white;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+    
+    .restaurant-info {
+        padding: 1.25rem;
+    }
+    
+    .restaurant-name {
+        font-size: 1.2rem;
+        font-weight: 700;
+        margin-bottom: 0.75rem;
+        color: #2c3e50;
+        line-height: 1.3;
+    }
+    
+    .restaurant-location {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.75rem;
+        color: #7f8c8d;
+        font-size: 0.9rem;
+    }
+    .restaurant-location .location-icon {
+        margin-right: 0.5rem;
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+    }
+    .restaurant-location .location-icon svg {
+        width: 100%;
+        height: 100%;
+    }
+    .restaurant-location .location-text {
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .restaurant-location:hover {
+        color: #007bff;
+        cursor: pointer;
+    }
+    .restaurant-location:hover .location-icon svg path {
+        fill: #007bff;
+    }
+    
+    .restaurant-rating {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 12px;
+    }
+    
+    .rating-stars {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    
+    .star-icon {
+        color: #f39c12;
+        font-size: 1.1rem;
+    }
+    
+    .rating-value {
+        font-weight: 700;
+        color: #2c3e50;
+        font-size: 1rem;
+    }
+    
+    .rating-badges {
+        display: flex;
+        gap: 8px;
+    }
+    
+    .rating-badge {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 6px 10px;
+        background: linear-gradient(135deg, #27ae60, #2ecc71);
+        color: white;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    .rating-badge::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+        transition: left 0.5s ease;
+    }
+    
+    .rating-badge:hover::before {
+        left: 100%;
+    }
+    
+    .rating-badge:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+    }
+    
+    .rating-badge:active {
+        transform: scale(0.95);
+    }
+    
+    .rating-badge.badge-clicked {
+        transform: scale(0.9);
+        background: linear-gradient(135deg, #229954, #27ae60);
+    }
+    
+    .badge-icon {
+        flex-shrink: 0;
+    }
+    
+    .badge-icon svg path {
+        fill: white;
+        transition: fill 0.3s ease;
+    }
+    
+    .badge-icon:hover {
+        transform: scale(1.1);
+    }
+    
+    .badge-text {
+        font-weight: 700;
+    }
+    .rating-badge:active {
+        transform: translateY(0);
+    }
+    .rating-badge::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+        transition: left 0.5s;
+    }
+    .rating-badge:hover::before {
+        left: 100%;
+    }
+    .rating-badge .badge-icon {
+        font-size: 0.7rem;
+        transition: transform 0.2s ease;
+    }
+    .rating-badge:hover .badge-icon {
+        transform: scale(1.1);
+    }
+    .rating-badge.badge-clicked {
+        transform: scale(0.95);
+        background: linear-gradient(135deg, #1e7e34, #20c997);
+    }
+    
+    .restaurant-price {
+        color: #27ae60;
+        font-weight: 700;
+        font-size: 1rem;
+    }
+    
+    /* Grid responsive adjustments */
+    @media (max-width: 768px) {
+        #all_stores, .restaurant-grid {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+        .restaurant-card {
+            margin: 0 0.5rem;
+        }
+    }
+    
+    @media (min-width: 769px) and (max-width: 1024px) {
+        #all_stores, .restaurant-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    
+    @media (min-width: 1025px) {
+        #all_stores, .restaurant-grid {
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        }
+    }
+    
     .top-categories-slider .slide-item {
         padding: 10px;
     }
@@ -626,10 +1172,694 @@
 
 
     var myInterval = '';
+    
+    // Filter functionality variables
+    var activeFilters = {};
+    var filteredRestaurants = [];
+    var originalRestaurants = [];
+    
+    // Initialize randomized ratings object if it doesn't exist
+    if (typeof window.randomizedRatings === 'undefined') {
+        window.randomizedRatings = {};
+    }
+    
+    // Initialize filter functionality
+    function initializeFilters() {
+        console.log("Initializing restaurant filters...");
+        
+        // Set default filters
+        activeFilters = {
+            sort: 'popular',
+            status: 'all',
+            delivery: 'all',
+            distance_range: 'all'
+        };
+        
+        // Bind filter events
+        bindFilterEvents();
+    }
+    
+    // Bind all filter events
+    function bindFilterEvents() {
+        // Filter option clicks
+        $('.filter-option').on('click', function(e) {
+            e.preventDefault();
+            var filterType = $(this).data('filter');
+            var filterValue = $(this).data('value');
+            var filterText = $(this).find('.option-text').text().trim();
+            
+            // Remove checkmark from all options in this dropdown
+            $(this).closest('.dropdown-menu').find('.checkmark').hide();
+            $(this).closest('.dropdown-menu').find('.dropdown-item').removeClass('active');
+            
+            // Add checkmark to selected option
+            $(this).find('.checkmark').show();
+            $(this).addClass('active');
+            
+            // Update filter
+            applyFilter(filterType, filterValue, filterText);
+            
+            // Close dropdown after selection
+            $(this).closest('.dropdown').removeClass('show');
+        });
+        
+        // Clear all filters
+        $('#clear-all-filters').on('click', function(e) {
+            e.preventDefault();
+            clearAllFilters();
+        });
+        
+        // Add hover effects for dropdown arrows
+        $('.filter-chip').hover(
+            function() {
+                if (!$(this).hasClass('active')) {
+                    $(this).find('.dropdown-arrow').css('transform', 'rotate(180deg)');
+                }
+            },
+            function() {
+                if (!$(this).hasClass('active')) {
+                    $(this).find('.dropdown-arrow').css('transform', 'rotate(0deg)');
+                }
+            }
+        );
+        
+        // Close dropdown when clicking outside
+        $(document).on('click', function(e) {
+            if (!$(e.target).closest('.dropdown').length) {
+                $('.dropdown').removeClass('show');
+                $('.dropdown-menu').removeClass('show');
+            }
+        });
+    }
+    
+    // Apply a filter
+    function applyFilter(filterType, filterValue, filterText) {
+        console.log("Applying filter:", filterType, "=", filterValue);
+        
+        // Update active filters
+        activeFilters[filterType] = filterValue;
+        
+        // Update filter chip text
+        updateFilterChip(filterType, filterText);
+        
+        // Apply filters to restaurants
+        filterRestaurants();
+        
+        // Show/hide clear all button
+        updateClearAllButton();
+    }
+    
+    // Update filter chip text
+    function updateFilterChip(filterType, filterText) {
+        var chipMap = {
+            'popular': '#sort-filter',
+            'rating': '#sort-filter',
+            'newest': '#sort-filter',
+            'distance': '#sort-filter',
+            'status': '#status-filter',
+            'delivery': '#delivery-filter',
+            'distance_range': '#distance-filter'
+        };
+        
+        var chipSelector = chipMap[filterType];
+        if (chipSelector) {
+            var prefix = chipSelector.replace('#', '').replace('-filter', '');
+            prefix = prefix.charAt(0).toUpperCase() + prefix.slice(1);
+            if (prefix === 'Sort') prefix = 'Sort By';
+            
+            // Update the filter text span
+            $(chipSelector).find('.filter-text').text(prefix + ': ' + filterText.replace(' ✓', ''));
+            
+            // Add active class for visual feedback
+            $(chipSelector).addClass('active');
+        }
+    }
+    
+    // Filter restaurants based on active filters
+    function filterRestaurants() {
+        console.log("Filtering restaurants with:", activeFilters);
+        
+        var filtered = [...originalRestaurants]; // Copy original array
+        
+        // Apply status filter
+        if (activeFilters.status !== 'all') {
+            filtered = filtered.filter(restaurant => {
+                var isOpen = isRestaurantOpen(restaurant);
+                return activeFilters.status === 'open' ? isOpen : !isOpen;
+            });
+        }
+        
+        // Apply delivery filter
+        if (activeFilters.delivery !== 'all') {
+            filtered = filtered.filter(restaurant => {
+                return activeFilters.delivery === 'self' ? 
+                    restaurant.isSelfDelivery : 
+                    !restaurant.isSelfDelivery;
+            });
+        }
+        
+        // Apply distance filter
+        if (activeFilters.distance_range !== 'all' && address_lat && address_lng) {
+            var maxDistance = parseInt(activeFilters.distance_range);
+            filtered = filtered.filter(restaurant => {
+                var distance = calculateDistance(
+                    address_lat, address_lng,
+                    restaurant.latitude, restaurant.longitude
+                );
+                return distance <= maxDistance;
+            });
+        }
+        
+        // Apply sorting
+        filtered = sortRestaurants(filtered, activeFilters.sort);
+        
+        filteredRestaurants = filtered;
+        console.log("Filtered restaurants:", filtered.length);
+        
+        // Re-render restaurant list
+        renderFilteredRestaurants();
+    }
+    
+    // Sort restaurants based on sort type
+    function sortRestaurants(restaurants, sortType) {
+        switch(sortType) {
+            case 'rating':
+                return restaurants.sort((a, b) => {
+                    var ratingA = a.reviewsCount > 0 ? (a.reviewsSum / a.reviewsCount) : 0;
+                    var ratingB = b.reviewsCount > 0 ? (b.reviewsSum / b.reviewsCount) : 0;
+                    return ratingB - ratingA;
+                });
+            case 'newest':
+                return restaurants.sort((a, b) => {
+                    return new Date(b.createdAt) - new Date(a.createdAt);
+                });
+            case 'distance':
+                if (address_lat && address_lng) {
+                    return restaurants.sort((a, b) => {
+                        var distanceA = calculateDistance(address_lat, address_lng, a.latitude, a.longitude);
+                        var distanceB = calculateDistance(address_lat, address_lng, b.latitude, b.longitude);
+                        return distanceA - distanceB;
+                    });
+                }
+                return restaurants;
+            case 'popular':
+            default:
+                // Default to original order (popularity based on reviews count)
+                return restaurants.sort((a, b) => b.reviewsCount - a.reviewsCount);
+        }
+    }
+    
+    // Check if restaurant is open
+    function isRestaurantOpen(restaurant) {
+        if (window.restaurantStatusManager) {
+            const workingHours = restaurant.workingHours || [];
+            const isOpen = restaurant.isOpen !== undefined ? restaurant.isOpen : null;
+            return window.restaurantStatusManager.isRestaurantOpenNow(workingHours, isOpen);
+        }
+        return false; // Fallback
+    }
+    
+    // Calculate distance between two coordinates
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371; // Radius of the Earth in kilometers
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = 
+            Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+            Math.sin(dLon/2) * Math.sin(dLon/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        const distance = R * c;
+        return distance;
+    }
+    
+    // Render filtered restaurants
+    function renderFilteredRestaurants() {
+        console.log("Rendering", filteredRestaurants.length, "filtered restaurants");
+        
+        // Clear existing restaurants
+        $('#all_stores').empty();
+        
+        if (filteredRestaurants.length === 0) {
+            $('#all_stores').html(`
+                <div class="text-center py-5">
+                    <h5 class="text-muted">No restaurants found matching your filters</h5>
+                    <p class="text-muted">Try adjusting your filter criteria</p>
+                </div>
+            `);
+            return;
+        }
+        
+        // Render restaurants
+        filteredRestaurants.forEach(restaurant => {
+            var restaurantHtml = buildRestaurantHTML(restaurant);
+            $('#all_stores').append(restaurantHtml);
+        });
+        
+        // Add interactive functionality to restaurant cards
+        addRestaurantCardInteractivity();
+    }
+    
+    // Clear all filters
+    function clearAllFilters() {
+        console.log("Clearing all filters");
+        
+        // Reset active filters
+        activeFilters = {
+            sort: 'popular',
+            status: 'all',
+            delivery: 'all',
+            distance_range: 'all'
+        };
+        
+        // Reset filter chips
+        $('#sort-filter .filter-text').text('Sort By: Popular');
+        $('#status-filter .filter-text').text('Status: All');
+        $('#delivery-filter .filter-text').text('Delivery: All');
+        $('#distance-filter .filter-text').text('Distance: All');
+        
+        // Remove active classes
+        $('.filter-chip').removeClass('active');
+        
+        // Reset dropdown selections
+        $('.dropdown-item').removeClass('active');
+        $('.checkmark').hide();
+        
+        // Show default selections
+        $('.dropdown-menu').each(function() {
+            $(this).find('.dropdown-item').first().addClass('active');
+            $(this).find('.dropdown-item').first().find('.checkmark').show();
+        });
+        
+        // Hide clear all button
+        $('#clear-all-filters').hide();
+        
+        // Reset restaurants
+        filteredRestaurants = [...originalRestaurants];
+        renderFilteredRestaurants();
+    }
+    
+    // Update clear all button visibility
+    function updateClearAllButton() {
+        var hasActiveFilters = Object.values(activeFilters).some(value => 
+            value !== 'all' && value !== 'popular'
+        );
+        $('#clear-all-filters').toggle(hasActiveFilters);
+    }
+    
+    // Store original restaurants when loaded
+    function storeOriginalRestaurants(restaurants) {
+        originalRestaurants = restaurants;
+        filteredRestaurants = [...restaurants];
+        console.log("Stored", restaurants.length, "original restaurants");
+    }
+    
+    // Add interactive functionality to restaurant cards
+    function addRestaurantCardInteractivity() {
+        // Restaurant card click handlers
+        $('.restaurant-card').off('click').on('click', function(e) {
+            // Don't trigger if clicking on badges
+            if (!$(e.target).closest('.rating-badge').length) {
+                var restaurantName = $(this).find('.restaurant-name').text();
+                console.log('Restaurant clicked:', restaurantName);
+                
+                // Add click animation
+                $(this).addClass('card-clicked');
+                setTimeout(() => {
+                    $(this).removeClass('card-clicked');
+                }, 200);
+                
+                // Here you can add navigation to restaurant details page
+                // window.location.href = '/restaurant/' + restaurantId;
+            }
+        });
+        
+        // Rating badge click handlers
+        $('.rating-badge').off('click').on('click', function(e) {
+            e.stopPropagation(); // Prevent card click
+            
+            var badgeText = $(this).text().trim();
+            var badgeType = $(this).attr('title');
+            
+            console.log('Rating badge clicked:', badgeType, badgeText);
+            
+            // Add badge click animation
+            $(this).addClass('badge-clicked');
+            setTimeout(() => {
+                $(this).removeClass('badge-clicked');
+            }, 300);
+            
+            // Here you can add functionality like showing detailed reviews
+            // showRestaurantReviews(restaurantId);
+        });
+        
+        // Location click handler
+        $('.restaurant-location').off('click').on('click', function(e) {
+            e.stopPropagation(); // Prevent card click
+            
+            var locationText = $(this).find('.location-text').text();
+            console.log('Location clicked:', locationText);
+            
+            // Here you can add functionality like opening maps
+            // openInMaps(locationText);
+        });
+    }
+    
+    // Build restaurant HTML for filter display - Matching existing design
+    function buildRestaurantHTML(restaurant) {
+        var rating = 0;
+        var reviewsCount = 0;
+        if (restaurant.hasOwnProperty('reviewsSum') && restaurant.reviewsSum != 0 && restaurant.reviewsSum != null && 
+            restaurant.reviewsSum != '' && restaurant.hasOwnProperty('reviewsCount') && 
+            restaurant.reviewsCount != 0 && restaurant.reviewsCount != null && restaurant.reviewsCount != '') {
+            rating = (restaurant.reviewsSum / restaurant.reviewsCount);
+            rating = Math.round(rating * 10) / 10;
+            reviewsCount = restaurant.reviewsCount;
+        } else {
+            // Apply global ratings fallback (same as popular restaurants)
+            if (window.randomizedRatings[restaurant.id]) {
+                rating = window.randomizedRatings[restaurant.id].rating;
+                reviewsCount = window.randomizedRatings[restaurant.id].reviewsCount;
+            } else {
+                rating = (Math.random() * (5.0 - 4.1) + 4.1).toFixed(1);
+                reviewsCount = Math.floor(Math.random() * (25 - 11 + 1)) + 11;
+                window.randomizedRatings[restaurant.id] = { rating, reviewsCount };
+            }
+        }
+        
+        // Determine restaurant status
+        var status = 'Closed';
+        var statusclass = "closed";
+        if (window.restaurantStatusManager) {
+            const workingHours = restaurant.workingHours || [];
+            const isOpen = restaurant.isOpen !== undefined ? restaurant.isOpen : null;
+            const isOpenNow = window.restaurantStatusManager.isRestaurantOpenNow(workingHours, isOpen);
+            if (isOpenNow) {
+                status = 'Open';
+                statusclass = "open";
+            }
+        }
+        
+        var photo = restaurant.photo || placeholderImageSrc;
+        var distance = '';
+        if (address_lat && address_lng && restaurant.latitude && restaurant.longitude) {
+            var dist = calculateDistance(address_lat, address_lng, restaurant.latitude, restaurant.longitude);
+            distance = `<span class="distance">${dist.toFixed(1)} km</span>`;
+        }
+        
+        // Format location text (truncate if too long)
+        var locationText = restaurant.location || '';
+        if (locationText.length > 60) {
+            locationText = locationText.substring(0, 60) + '...';
+        }
+        
+        // Create SVG location icon
+        var locationIcon = `
+            <svg class="location-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="#ff6b35"/>
+            </svg>
+        `;
+        
+        // Rating badges are now included in the main HTML structure
+        
+        return `
+            <div class="restaurant-card">
+                <div class="restaurant-image">
+                    <img src="${photo}" alt="${restaurant.title}" onerror="this.src='${placeholderImageSrc}'">
+                    <div class="restaurant-status ${statusclass}">${status}</div>
+                    ${distance}
+                </div>
+                <div class="restaurant-info">
+                    <h5 class="restaurant-name">${restaurant.title}</h5>
+                    <div class="restaurant-location">
+                        <div class="location-icon">${locationIcon}</div>
+                        <span class="location-text">${locationText}</span>
+                    </div>
+                    <div class="restaurant-rating">
+                        <div class="rating-stars">
+                            <span class="star-icon">★</span>
+                            <span class="rating-value">${rating}</span>
+                        </div>
+                        <div class="rating-badges">
+                            <div class="rating-badge" data-badge="reviewsCount">
+                                <svg class="badge-icon" viewBox="0 0 24 24" width="14" height="14">
+                                    <path d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zm4 18v-6h2.5l-2.54-7.63A1.5 1.5 0 0 0 18.54 8H16c-.8 0-1.54.37-2.01 1.01L12 11l-1.99-1.99C9.54 8.37 8.8 8 8 8H5.46c-.8 0-1.54.37-2.01 1.01L.95 16.63A1.5 1.5 0 0 0 2.5 18H5v4h2v-6h2v6h2v-6h2v6h2v-6h2v6h2z"/>
+                                </svg>
+                                <span class="badge-text">${reviewsCount}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="restaurant-price">
+                        ${restaurant.minPrice ? `From ₹${restaurant.minPrice}` : 'Price not available'}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Location initialization function
+    async function initializeLocation() {
+        return new Promise((resolve, reject) => {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    async function(position) {
+                        try {
+                            address_lat = position.coords.latitude;
+                            address_lng = position.coords.longitude;
+                            console.log("Location obtained:", address_lat, address_lng);
+                            
+                            // Set cookies for future use
+                            setCookie('address_lat', address_lat, 365);
+                            setCookie('address_lng', address_lng, 365);
+                            
+                            // Get zone ID for this location
+                            await getUserZoneId();
+                            
+                            resolve();
+                        } catch (error) {
+                            console.error("Error processing location:", error);
+                            reject(error);
+                        }
+                    },
+                    function(error) {
+                        console.error("Geolocation error:", error);
+                        // Try to use a default location as fallback
+                        console.log("Trying fallback location...");
+                        tryFallbackLocation().then(resolve).catch(() => {
+                            showLocationError();
+                            reject(error);
+                        });
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        maximumAge: 300000 // 5 minutes
+                    }
+                );
+            } else {
+                console.error("Geolocation not supported");
+                showLocationError();
+                reject(new Error("Geolocation not supported"));
+            }
+        });
+    }
+    
+    // Function to get user zone ID (moved from footer.blade.php)
+    async function getUserZoneId() {
+        if (!address_lat || !address_lng) {
+            console.log("No location available for zone detection");
+            return;
+        }
+        
+        try {
+            var zone_list = [];
+            console.log("Fetching zones from database...");
+            var snapshots = await database.collection('zone').where("publish", "==", true).get();
+            console.log("Found", snapshots.docs.length, "published zones");
+            
+            if (snapshots.docs.length > 0) {
+                snapshots.docs.forEach((snapshot) => {
+                    var zone_data = snapshot.data();
+                    zone_data.id = snapshot.id;
+                    zone_list.push(zone_data);
+                    console.log("Zone:", zone_data.id, "-", zone_data.title || "No title");
+                });
+            }
+            
+            if (zone_list.length > 0) {
+                console.log("Checking location", address_lat, address_lng, "against", zone_list.length, "zones...");
+                
+                for (i = 0; i < zone_list.length; i++) {
+                    var zone = zone_list[i];
+                    var vertices_x = [];
+                    var vertices_y = [];
+                    
+                    if (zone.area && zone.area.length > 0) {
+                        console.log("Checking zone", zone.id, "with", zone.area.length, "boundary points");
+                        
+                        for (j = 0; j < zone.area.length; j++) {
+                            var geopoint = zone.area[j];
+                            vertices_x.push(geopoint.longitude);
+                            vertices_y.push(geopoint.latitude);
+                        }
+                        
+                        var points_polygon = (vertices_x.length) - 1;
+                        var isInZone = is_in_polygon(points_polygon, vertices_x, vertices_y, address_lng, address_lat);
+                        console.log("Zone", zone.id, "polygon test result:", isInZone);
+                        
+                        if (isInZone) {
+                            user_zone_id = zone.id;
+                            console.log("✅ Zone detected:", user_zone_id, "-", zone.title || "No title");
+                            return; // Exit function once zone is found
+                        }
+                    } else {
+                        console.log("⚠️ Zone", zone.id, "has no area boundaries defined");
+                    }
+                }
+            } else {
+                console.log("❌ No published zones found in database");
+            }
+            
+            // If no zone found, try fallback approaches
+            if (!user_zone_id) {
+                console.log("No zone found for current location. Trying fallback approaches...");
+                var fallbackSuccess = await tryFallbackZoneAssignment();
+                if (fallbackSuccess) {
+                    console.log("✅ Fallback zone assignment successful:", user_zone_id);
+                    // Trigger data loading now that we have a zone
+                    setTimeout(() => {
+                        callStore();
+                    }, 1000);
+                } else {
+                    console.log("❌ All zone assignment attempts failed");
+                    showLocationError();
+                }
+            } else {
+                console.log("✅ Zone assignment successful:", user_zone_id);
+                // Trigger data loading now that we have a zone
+                setTimeout(() => {
+                    callStore();
+                }, 1000);
+            }
+            
+        } catch (error) {
+            console.error("Error getting zone ID:", error);
+            // Try fallback on error too
+            await tryFallbackZoneAssignment();
+        }
+    }
+    
+    // Polygon point-in-polygon test function (moved from footer.blade.php)
+    function is_in_polygon($points_polygon, $vertices_x, $vertices_y, $longitude_x, $latitude_y) {
+        $i = $j = $c = $point = 0;
+        for ($i = 0, $j = $points_polygon; $i < $points_polygon; $j = $i++) {
+            $point = $i;
+            if ($point == $points_polygon)
+                $point = 0;
+            if ((($vertices_y[$point] > $latitude_y != ($vertices_y[$j] > $latitude_y)) && ($longitude_x < ($vertices_x[
+                    $j] - $vertices_x[$point]) * ($latitude_y - $vertices_y[$point]) / ($vertices_y[$j] -
+                    $vertices_y[$point]) + $vertices_x[$point])))
+                $c = !$c;
+        }
+        return $c;
+    }
+    
+    // Function to try fallback zone assignment
+    async function tryFallbackZoneAssignment() {
+        try {
+            console.log("Attempting fallback zone assignment...");
+            
+            // First, try to get any published zone (as a fallback)
+            var snapshots = await database.collection('zone').where("publish", "==", true).get();
+            
+            if (snapshots.docs.length > 0) {
+                // Use the first available zone as fallback
+                var firstZone = snapshots.docs[0];
+                user_zone_id = firstZone.id;
+                console.log("🔄 Using fallback zone:", user_zone_id, "-", firstZone.data().title || "No title");
+                return true;
+            } else {
+                // If no zones exist at all, try to create a default zone or use a system default
+                console.log("❌ No zones exist in database. This is a configuration issue.");
+                console.log("Please create at least one zone in your admin panel.");
+                return false;
+            }
+        } catch (error) {
+            console.error("Error in fallback zone assignment:", error);
+            return false;
+        }
+    }
+    
+    // Function to try fallback location (default city center)
+    async function tryFallbackLocation() {
+        return new Promise((resolve, reject) => {
+            // Use a default location - Chennai, India coordinates (based on your detected location)
+            address_lat = 12.9716; // Chennai latitude
+            address_lng = 80.2206; // Chennai longitude
+            
+            console.log("Using fallback location:", address_lat, address_lng);
+            
+            // Set cookies for the fallback location
+            setCookie('address_lat', address_lat, 365);
+            setCookie('address_lng', address_lng, 365);
+            
+            // Try to get zone ID for fallback location
+            getUserZoneId().then(() => {
+                resolve();
+            }).catch(() => {
+                reject();
+            });
+        });
+    }
+    
+    // Function to show location error
+    function showLocationError() {
+        console.log("Showing location error message");
+        jQuery(".section-content").remove();
+        jQuery(".zone-error").show();
+        
+        // Add more helpful error message
+        var errorHtml = `
+            <div class="zone-error m-5 p-5 text-center">
+                <div class="zone-image text-center">
+                    <img src="{{ asset('img/zone_logo.png') }}" width="100" onerror="this.src='${placeholderImage}'">
+                </div>
+                <div class="zone-content text-center">
+                    <h3 class="title text-danger">{{ trans('lang.zone_error_title') }}</h3>
+                    <h6 class="text text-muted">{{ trans('lang.zone_error_text') }}</h6>
+                    <div class="mt-3">
+                        <p class="small text-info">
+                            <strong>Location detected:</strong> ${address_lat}, ${address_lng}<br>
+                            <strong>Issue:</strong> No delivery zones configured for this area.
+                        </p>
+                        <button class="btn btn-primary btn-sm" onclick="window.location.reload()">
+                            Try Again
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        jQuery(".zone-error").html(errorHtml);
+    }
+    
     $(document).ready(async function() {
         console.log("Initial user_zone_id:", typeof user_zone_id, user_zone_id);
         console.log("Initial address_lat:", typeof address_lat, address_lat);
         console.log("Initial address_lng:", typeof address_lng, address_lng);
+
+        // Initialize location if not available
+        if (typeof address_lat === 'undefined' || address_lat === null || address_lat === '' ||
+            typeof address_lng === 'undefined' || address_lng === null || address_lng === '') {
+            console.log("Location not found in cookies, attempting to get current location...");
+            await initializeLocation();
+        } else {
+            console.log("Location found in cookies, proceeding with zone detection...");
+            // Trigger zone detection with existing location
+            await getUserZoneId();
+        }
+
+        // Initialize filters
+        initializeFilters();
 
         // Retrieve all invalid vendors
         await checkVendors().then(expiredStores => {
@@ -684,22 +1914,26 @@
             lastUpdateTime = Date.now();
         }, 2000);
         
-        // Retry mechanism for location detection
+        // Retry mechanism for location detection - improved
         let locationRetryCount = 0;
-        const maxLocationRetries = 10;
+        const maxLocationRetries = 15; // Increased retries
         const locationRetryInterval = setInterval(() => {
-            if (typeof address_lat !== 'undefined' && typeof address_lng !== 'undefined' && typeof user_zone_id !== 'undefined') {
+            if (typeof address_lat !== 'undefined' && typeof address_lng !== 'undefined' && 
+                address_lat !== null && address_lng !== null && 
+                typeof user_zone_id !== 'undefined' && user_zone_id !== null) {
                 clearInterval(locationRetryInterval);
-                console.log("Location detected, initializing data...");
+                console.log("Location and zone detected, initializing data...");
                 callStore();
             } else if (locationRetryCount >= maxLocationRetries) {
                 clearInterval(locationRetryInterval);
                 console.log("Location detection timeout, showing error...");
                 jQuery(".section-content").remove();
                 jQuery(".zone-error").show();
+            } else {
+                console.log(`Location retry ${locationRetryCount + 1}/${maxLocationRetries} - address_lat: ${address_lat}, address_lng: ${address_lng}, user_zone_id: ${user_zone_id}`);
             }
             locationRetryCount++;
-        }, 2000);
+        }, 3000); // Increased interval to 3 seconds
 
         // Fallback update every 5 minutes (much better than every 1 second)
         setInterval(() => {
@@ -721,8 +1955,9 @@
         
         // Check if location variables are defined and valid
         if (typeof address_lat === 'undefined' || typeof address_lng === 'undefined' || typeof user_zone_id === 'undefined' ||
-            address_lat == '' || address_lng == '' || address_lng == NaN || address_lat == NaN || address_lat == null || address_lng == null) {
-            console.log("Location not detected yet, waiting...");
+            address_lat == '' || address_lng == '' || address_lng == NaN || address_lat == NaN || address_lat == null || address_lng == null ||
+            user_zone_id == null || user_zone_id == '') {
+            console.log("Location or zone not detected yet, waiting...");
             return false;
         }
         DriverNearByRef.get().then(async function(DriverNearByRefSnapshots) {
@@ -805,8 +2040,11 @@
                 allVendorsData = vendors;
                 console.log("Initial vendors stored:", allVendorsData.length);
                 
-                // Display initial restaurants immediately
-                displayRestaurants();
+                // Store restaurants for filter functionality
+                storeOriginalRestaurants(vendors);
+                
+                // Display initial restaurants using filter system
+                renderFilteredRestaurants();
                 
                 // Load more data in background (non-blocking)
                 setTimeout(() => {
@@ -1142,108 +2380,17 @@
         return status;
     }
 
-    // Update buildAllStoresHTMLFromArray to match Popular Restaurants UI exactly
+    // Update buildAllStoresHTMLFromArray to use unified restaurant card UI
     function buildAllStoresHTMLFromArray(alldata) {
         var html = '';
         if (alldata.length > 0) {
-            html = html + '<div class="row">';
             alldata.forEach((val) => {
-                var rating = 0;
-                var reviewsCount = 0;
-                if (val.hasOwnProperty('reviewsSum') && val.reviewsSum != 0 && val.reviewsSum != null && val
-                    .reviewsSum != '' && val.hasOwnProperty(
-                    'reviewsCount') && val.reviewsCount != 0 && val.reviewsCount != null && val
-                    .reviewsCount != '') {
-                    rating = (val.reviewsSum / val.reviewsCount);
-                    rating = Math.round(rating * 10) / 10;
-                    reviewsCount = val.reviewsCount;
-                } else {
-                    if (window.randomizedRatings[val.id]) {
-                        rating = window.randomizedRatings[val.id].rating;
-                        reviewsCount = window.randomizedRatings[val.id].reviewsCount;
-                    } else {
-                        rating = (Math.random() * (5.0 - 4.1) + 4.1).toFixed(1);
-                        reviewsCount = Math.floor(Math.random() * (25 - 11 + 1)) + 11;
-                        window.randomizedRatings[val.id] = { rating, reviewsCount };
-                    }
-                }
-
-                // Use failproof status logic (same as Popular Restaurants)
-                var status = 'Closed';
-                var statusclass = "closed";
-
-                if (window.restaurantStatusManager) {
-                    const workingHours = val.workingHours || [];
-                    const isOpen = val.isOpen !== undefined ? val.isOpen : null;
-                    const isOpenNow = window.restaurantStatusManager.isRestaurantOpenNow(workingHours, isOpen);
-                    if (isOpenNow) {
-                        status = '{{ trans('lang.open') }}';
-                        statusclass = "open";
-                    }
-                } else {
-                    // Fallback to old logic
-                    var days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-                    var currentdate = new Date();
-                    var currentDay = days[currentdate.getDay()];
-                    hour = currentdate.getHours();
-                    minute = currentdate.getMinutes();
-                    if (hour < 10) {
-                        hour = '0' + hour
-                    }
-                    if (minute < 10) {
-                        minute = '0' + minute
-                    }
-                    var currentHours = hour + ':' + minute;
-                    if (val.hasOwnProperty('workingHours')) {
-                        for (i = 0; i < val.workingHours.length; i++) {
-                            var day = val.workingHours[i]['day'];
-                            if (val.workingHours[i]['day'] == currentDay) {
-                                if (val.workingHours[i]['timeslot'].length != 0) {
-                                    for (j = 0; j < val.workingHours[i]['timeslot'].length; j++) {
-                                        var timeslot = val.workingHours[i]['timeslot'][j];
-                                        var from = timeslot[`from`];
-                                        var to = timeslot[`to`];
-                                        if (currentHours >= from && currentHours <= to) {
-                                            status = '{{ trans('lang.open') }}';
-                                            statusclass = "open";
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                var vendor_id_single = val.id;
-                var view_vendor_details = "/restaurant/" + vendor_id_single + "/" + val.restaurant_slug + "/" + val.zone_slug;
-
-                getMinDiscount(val.id);
-                html = html +
-                    '<div class="col-md-3 product-list"><div class="list-card position-relative"><div class="list-card-image"><span class="discount-price vendor_dis_' +
-                    val.id + ' " ></span>';
-                if (val.photo != "" && val.photo != null) {
-                    photo = val.photo;
-                } else {
-                    photo = placeholderImageSrc;
-                }
-                html = html + '<div class="member-plan position-absolute"><span class="badge badge-dark ' +
-                    statusclass + '">' + status + '</span></div><div class="offer-icon position-absolute free-delivery-' + val.id + '"></div><a href="' + view_vendor_details +
-                    '"><img onerror="this.onerror=null;this.src=\'' + placeholderImage + '\'" alt="#" src="' +
-                    photo +
-                    '" class="img-fluid item-img w-100"></a></div><div class="py-2 position-relative"><div class="list-card-body position-relative"><h6 class="mb-1 popul-title"><a href="' +
-                    view_vendor_details + '" class="text-black">' + val.title +
-                    '</a></h6><p class="text-gray mb-1 small address"><span class="fa fa-map-marker"></span>' +
-                    val.location + '</p>';
-                html = html +
-                    '<div class="star position-relative mt-3"><span class="badge badge-success "><i class="feather-star"></i>' +
-                    rating + ' (' + reviewsCount + ')</span></div>';
-                html = html + '</div>';
-                html = html + '</div></div></div>';
+                // Use the unified buildRestaurantHTML function
+                html += buildRestaurantHTML(val);
 
                 // Keep the existing checkSelfDeliveryForVendor call
                 checkSelfDeliveryForVendor(val.id);
             });
-            html = html + '</div>';
         }
         return html;
     }
@@ -1332,97 +2479,17 @@
             }
         });
 
-
-
         if (alldata.length > 0) {
-            var count = 0;
-            html = html + '<div class="row">';
-            alldata.forEach((listval) => {
-                var val = listval;
-
-                var rating = 0;
-                var reviewsCount = 0;
-                if (val.hasOwnProperty('reviewsSum') && val.reviewsSum != 0 && val.reviewsSum != null && val
-                    .reviewsSum != '' && val.hasOwnProperty(
-                    'reviewsCount') && val.reviewsCount != 0 && val.reviewsCount != null && val
-                    .reviewsCount != '') {
-                    rating = (val.reviewsSum / val.reviewsCount);
-                    rating = Math.round(rating * 10) / 10;
-                    reviewsCount = val.reviewsCount;
-                }
-                // Use failproof status logic
-                var status = 'Closed';
-                var statusclass = "closed";
-
-                if (window.restaurantStatusManager) {
-                    const workingHours = val.workingHours || [];
-                    const isOpen = val.isOpen !== undefined ? val.isOpen : null;
-                    const isOpenNow = window.restaurantStatusManager.isRestaurantOpenNow(workingHours, isOpen);
-                    if (isOpenNow) {
-                        status = '{{ trans('lang.open') }}';
-                        statusclass = "open";
-                    }
-                } else {
-                    // Fallback to old logic
-                    var days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-                    var currentdate = new Date();
-                    var currentDay = days[currentdate.getDay()];
-                    hour = currentdate.getHours();
-                    minute = currentdate.getMinutes();
-                    if (hour < 10) {
-                        hour = '0' + hour
-                    }
-                    if (minute < 10) {
-                        minute = '0' + minute
-                    }
-                    var currentHours = hour + ':' + minute;
-                    if (val.hasOwnProperty('workingHours')) {
-                        for (i = 0; i < val.workingHours.length; i++) {
-                            var day = val.workingHours[i]['day'];
-                            if (val.workingHours[i]['day'] == currentDay) {
-                                if (val.workingHours[i]['timeslot'].length != 0) {
-                                    for (j = 0; j < val.workingHours[i]['timeslot'].length; j++) {
-                                        var timeslot = val.workingHours[i]['timeslot'][j];
-                                        var from = timeslot[`from`];
-                                        var to = timeslot[`to`];
-                                        if (currentHours >= from && currentHours <= to) {
-                                            status = '{{ trans('lang.open') }}';
-                                            statusclass = "open";
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                var vendor_id_single = val.id;
-                var view_vendor_details = "/restaurant/" + vendor_id_single + "/" + val.restaurant_slug + "/" + val.zone_slug;
-                count++;
-                getMinDiscount(val.id);
-                html = html +
-                    '<div class="col-md-3 product-list"><div class="list-card position-relative"><div class="list-card-image">';
-                if (val.photo != "" && val.photo != null) {
-                    photo = val.photo;
-                } else {
-                    photo = placeholderImageSrc;
-                }
-                html = html + '<div class="member-plan position-absolute"><span class="badge badge-dark ' +
-                    statusclass + '">' + status + '</span></div><div class="offer-icon position-absolute free-delivery-' + val.id + '"></div><a href="' + view_vendor_details +
-                    '"><img  onerror="this.onerror=null;this.src=\'' + placeholderImage + '\'" alt="#" src="' +
-                    photo +
-                    '" class="img-fluid item-img w-100"></a></div><div class="py-2 position-relative"><div class="list-card-body"><h6 class="mb-1 popul-title"><a href="' +
-                    view_vendor_details + '" class="text-black">' + val.title +
-                    '</a></h6><p class="text-gray mb-1 small address"><span class="fa fa-map-marker"></span>' +
-                    val.location + '</p>';
-                html = html + '<span class="pro-price vendor_dis_' + val.id + ' " ></span>';
-                html = html +
-                    '<div class="star position-relative mt-3"><span class="badge badge-success "><i class="feather-star"></i>' +
-                    rating + ' (' + reviewsCount + ')</span></div>';
-                html = html + '</div>';
-                html = html + '</div></div></div>';
+            alldata.forEach((val) => {
+                // Use the unified buildRestaurantHTML function
+                html += buildRestaurantHTML(val);
+                
+                // Keep the existing checkSelfDeliveryForVendor call
                 checkSelfDeliveryForVendor(val.id);
+                
+                // Keep the existing getMinDiscount call
+                getMinDiscount(val.id);
             });
-            html = html + '</div>';
         }
         return html;
     }
@@ -1853,112 +2920,34 @@
                 alldata.push(datas);
             }
         });
+        
         if (alldata.length) {
             alldata = sortArrayOfObjects(alldata, "rating");
             alldata = alldata.slice(0, 4);
-            var count = 0;
             var popularItemCount = 0;
-            html = html + '<div class="row">';
-            alldata.forEach((listval) => {
-                var val = listval;
-                var rating = 0;
-                var reviewsCount = 0;
-                if (val.hasOwnProperty('reviewsSum') && val.reviewsSum != 0 && val.reviewsSum != null && val
-                    .reviewsSum != '' && val.hasOwnProperty(
-                    'reviewsCount') && val.reviewsCount != 0 && val.reviewsCount != null && val
-                    .reviewsCount != '') {
-                    rating = (val.reviewsSum / val.reviewsCount);
-                    rating = Math.round(rating * 10) / 10;
-                    reviewsCount = val.reviewsCount;
-                } else {
-                    if (window.randomizedRatings[val.id]) {
-                        rating = window.randomizedRatings[val.id].rating;
-                        reviewsCount = window.randomizedRatings[val.id].reviewsCount;
-                    } else {
-                        rating = (Math.random() * (5.0 - 4.1) + 4.1).toFixed(1);
-                        reviewsCount = Math.floor(Math.random() * (25 - 11 + 1)) + 11;
-                        window.randomizedRatings[val.id] = { rating, reviewsCount };
-                    }
-                }
+            
+            // Add grid container for popular restaurants
+            html += '<div class="restaurant-grid">';
+            
+            alldata.forEach((val) => {
                 if (popularItemCount < 10) {
                     popularItemCount++;
                     popularStoresList.push(val.id);
                 }
-                // Use failproof status logic
-                var status = 'Closed';
-                var statusclass = "closed";
-
-                if (window.restaurantStatusManager) {
-                    const workingHours = val.workingHours || [];
-                    const isOpen = val.isOpen !== undefined ? val.isOpen : null;
-                    const isOpenNow = window.restaurantStatusManager.isRestaurantOpenNow(workingHours, isOpen);
-                    if (isOpenNow) {
-                        status = '{{ trans('lang.open') }}';
-                        statusclass = "open";
-                    }
-                } else {
-                    // Fallback to old logic
-                    var days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-                    var currentdate = new Date();
-                    var currentDay = days[currentdate.getDay()];
-                    hour = currentdate.getHours();
-                    minute = currentdate.getMinutes();
-                    if (hour < 10) {
-                        hour = '0' + hour
-                    }
-                    if (minute < 10) {
-                        minute = '0' + minute
-                    }
-                    var currentHours = hour + ':' + minute;
-                    if (val.hasOwnProperty('workingHours')) {
-                        for (i = 0; i < val.workingHours.length; i++) {
-                            var day = val.workingHours[i]['day'];
-                            if (val.workingHours[i]['day'] == currentDay) {
-                                if (val.workingHours[i]['timeslot'].length != 0) {
-                                    for (j = 0; j < val.workingHours[i]['timeslot'].length; j++) {
-                                        var timeslot = val.workingHours[i]['timeslot'][j];
-                                        var from = timeslot[`from`];
-                                        var to = timeslot[`to`];
-                                        if (currentHours >= from && currentHours <= to) {
-                                            status = '{{ trans('lang.open') }}';
-                                            statusclass = "open";
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                var vendor_id_single = val.id;
-                var view_vendor_details = "/restaurant/" + vendor_id_single + "/" + val.restaurant_slug + "/" + val.zone_slug;
-                count++;
+                
+                // Use the unified buildRestaurantHTML function
+                html += buildRestaurantHTML(val);
+                
+                // Keep the existing getMinDiscount call
                 getMinDiscount(val.id);
-                html = html +
-                    '<div class="col-md-3 product-list"><div class="list-card position-relative"><div class="list-card-image"><span class="discount-price vendor_dis_' +
-                    val.id + ' " ></span>';
-                if (val.photo != "" && val.photo != null) {
-                    photo = val.photo;
-                } else {
-                    photo = placeholderImageSrc;
-                }
-                html = html + '<div class="member-plan position-absolute"><span class="badge badge-dark ' +
-                    statusclass + '">' + status + '</span></div><div class="offer-icon position-absolute free-delivery-' + val.id + '"></div><a href="' + view_vendor_details +
-                    '"><img onerror="this.onerror=null;this.src=\'' + placeholderImage + '\'" alt="#" src="' +
-                    photo +
-                    '" class="img-fluid item-img w-100"></a></div><div class="py-2 position-relative"><div class="list-card-body position-relative"><h6 class="mb-1 popul-title"><a href="' +
-                    view_vendor_details + '" class="text-black">' + val.title +
-                    '</a></h6><p class="text-gray mb-1 small address"><span class="fa fa-map-marker"></span>' +
-                    val.location + '</p>';
-                html = html +
-                    '<div class="star position-relative mt-3"><span class="badge badge-success "><i class="feather-star"></i>' +
-                    rating + ' (' + reviewsCount + ')</span></div>';
-                html = html + '</div>';
-                html = html + '</div></div></div>';
             });
-            html = html + '</div>';
+            
+            // Close grid container
+            html += '</div>';
         } else {
             html = '<p class="text-danger text-center">{{ trans('lang.no_results') }}</p>';
         }
+        
         getPopularItem();
         getCouponsList();
         return html;
