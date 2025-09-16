@@ -26,30 +26,23 @@
         <!-- Floating Add/Qty Button -->
         <div x-data="martCartItem('{{ addslashes($title) }}', {{ $disPrice }}, {{ $price }}, '{{ addslashes($src) }}', '{{ addslashes($subcategoryTitle) }}', '{{ addslashes($description) }}', '{{ $grams }}', {{ $rating }}, {{ $reviews }})" 
              x-cloak
+             x-init="loadCartState(); ready = true"
              class="absolute bottom-2 right-2">
-            <!-- Loading state -->
-            <div x-show="isLoading" class="px-5 py-1.5 rounded-full bg-[#007F73] text-white text-xs font-semibold shadow-md">
-                <div class="flex items-center gap-1">
-                    <div class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    <span>Adding...</span>
-                </div>
-            </div>
-
             <!-- If not added yet -->
-            <button x-show="!isLoading && quantity === 0"
-                    @click.stop="addToCart()"
+            <button x-show="ready && quantity === 0"
+                    @click.stop.prevent="addToCart()"
                     class="px-5 py-1.5 rounded-full border border-[#007F73]
                    text-[#007F73] text-xs font-semibold bg-white shadow-md hover:bg-[#E8F8DB] transition">
                 ADD
             </button>
 
             <!-- If added, show increment/decrement -->
-            <div x-show="!isLoading && quantity > 0"
+            <div x-show="ready && quantity > 0"
                  x-transition
                  class="flex items-center gap-2 bg-[#007F73] text-white px-3 py-1.5 rounded-full text-xs font-semibold shadow-md">
-                <button @click.stop="decreaseQuantity()" class="px-2 hover:bg-[#005f56] rounded">−</button>
+                <button @click.stop.prevent="decreaseQuantity()" class="px-2 hover:bg-[#005f56] rounded">−</button>
                 <span x-text="quantity"></span>
-                <button @click.stop="increaseQuantity()" class="px-2 hover:bg-[#005f56] rounded">+</button>
+                <button @click.stop.prevent="increaseQuantity()" class="px-2 hover:bg-[#005f56] rounded">+</button>
             </div>
         </div>
     </div>
@@ -123,12 +116,7 @@ document.addEventListener('alpine:init', () => {
         rating: rating,
         reviews: reviews,
         quantity: 0,
-        isLoading: false,
-        
-        init() {
-            this.isLoading = false; // Initialize loading state
-            this.loadCartState();
-        },
+        ready: false,
         
         loadCartState() {
             // Load cart state from local storage
@@ -142,8 +130,6 @@ document.addEventListener('alpine:init', () => {
         },
         
         addToCart() {
-            this.isLoading = true;
-            
             const productData = {
                 id: this.id,
                 name: this.name,
@@ -173,13 +159,9 @@ document.addEventListener('alpine:init', () => {
             // Dispatch events
             this.dispatchCartUpdate();
             this.dispatchItemAdded(cart[this.id]);
-            
-            this.isLoading = false;
         },
         
         increaseQuantity() {
-            this.isLoading = true;
-            
             const cartData = localStorage.getItem('mart_cart') || '{}';
             const cart = JSON.parse(cartData);
             
@@ -189,13 +171,9 @@ document.addEventListener('alpine:init', () => {
                 this.quantity = cart[this.id].quantity;
                 this.dispatchCartUpdate();
             }
-            
-            this.isLoading = false;
         },
         
         decreaseQuantity() {
-            this.isLoading = true;
-            
             const cartData = localStorage.getItem('mart_cart') || '{}';
             const cart = JSON.parse(cartData);
             
@@ -208,8 +186,6 @@ document.addEventListener('alpine:init', () => {
                 this.quantity = cart[this.id] ? cart[this.id].quantity : 0;
                 this.dispatchCartUpdate();
             }
-            
-            this.isLoading = false;
         },
         
         dispatchCartUpdate() {

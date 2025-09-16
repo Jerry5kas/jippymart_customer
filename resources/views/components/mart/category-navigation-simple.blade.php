@@ -1,7 +1,7 @@
 @props([
-    'categories' => 'categories'
+    'categories' => []
 ])
-<div class="w-full pb-5 pt-16" id="top-cat-items">
+<div class="w-full pb-5 pt-16" id="category-navigation">
 
     <!-- Categories Navigation -->
     <div class="fixed z-40 w-full border-b bg-[#F9FDF6]">
@@ -25,23 +25,16 @@
         @foreach($categories as $index => $category)
             <div class="category-content flex space-x-6 overflow-x-auto px-4 py-5 scrollbar-hide sm:w-[90%] mx-auto w-full text-xs"
                  data-category="{{ $category['title'] }}"
-                 id="content-{{ $index }}"
                  @if($index !== 0) style="display: none;" @endif>
-                @if(isset($category['subcategories']) && is_array($category['subcategories']))
-                    @foreach($category['subcategories'] as $sub)
-                        <a href="{{ route('mart.items.by.subcategory', ['subcategoryTitle' => $sub['title']]) }}">
-                            <div class="flex-shrink-0 w-20 rounded-full bg-[#F9FDF6] text-center">
-                                <img src="{{ $sub['photo'] }}" alt="{{ $sub['title'] }}"
-                                     class="w-20 h-20 mx-auto object-cover rounded-full shadow-lg">
-                                <p class="mt-2 text-xs font-semibold text-[#007F73]">{{ $sub['title'] }}</p>
-                            </div>
-                        </a>
-                    @endforeach
-                @else
-                    <div class="text-center text-gray-500 py-4">
-                        <p>No subcategories available for {{ $category['title'] }}</p>
-                    </div>
-                @endif
+                @foreach($category['subcategories'] as $sub)
+                    <a href="{{ route('mart.items.by.subcategory', ['subcategoryTitle' => $sub['title']]) }}">
+                        <div class="flex-shrink-0 w-20 rounded-full bg-[#F9FDF6] text-center">
+                            <img src="{{ $sub['photo'] }}" alt="{{ $sub['title'] }}"
+                                 class="w-20 h-20 mx-auto object-cover rounded-full shadow-lg">
+                            <p class="mt-2 text-xs font-semibold text-[#007F73]">{{ $sub['title'] }}</p>
+                        </div>
+                    </a>
+                @endforeach
             </div>
         @endforeach
     </div>
@@ -68,12 +61,9 @@
 
     <script>
         function setActiveCategory(categoryTitle) {
-            console.log('Setting active category:', categoryTitle);
-            
             // Hide all category contents
             document.querySelectorAll('.category-content').forEach(content => {
                 content.style.display = 'none';
-                console.log('Hiding content for:', content.getAttribute('data-category'));
             });
             
             // Remove active class from all tabs
@@ -83,31 +73,10 @@
                 tab.style.borderColor = 'transparent';
             });
             
-            // Show selected category content - try multiple selectors
-            let selectedContent = document.querySelector(`.category-content[data-category="${categoryTitle}"]`);
-            
-            // If not found by data-category, try to find by index
-            if (!selectedContent) {
-                const tabs = document.querySelectorAll('.category-tab');
-                tabs.forEach((tab, index) => {
-                    if (tab.getAttribute('data-category') === categoryTitle) {
-                        selectedContent = document.getElementById(`content-${index}`);
-                    }
-                });
-            }
-            
-            console.log('Selected content element:', selectedContent);
+            // Show selected category content
+            const selectedContent = document.querySelector(`[data-category="${categoryTitle}"]`);
             if (selectedContent) {
                 selectedContent.style.display = 'flex';
-                console.log('Successfully showing content for:', categoryTitle);
-            } else {
-                console.error('Could not find content for category:', categoryTitle);
-                // Fallback: show all content if selector fails
-                document.querySelectorAll('.category-content').forEach(content => {
-                    if (content.getAttribute('data-category') === categoryTitle) {
-                        content.style.display = 'flex';
-                    }
-                });
             }
             
             // Add active class to selected tab
@@ -127,16 +96,12 @@
         
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM loaded, initializing categories');
             // Ensure first category is active
             const firstCategory = document.querySelector('.category-tab');
             if (firstCategory) {
                 const categoryTitle = firstCategory.getAttribute('data-category');
-                console.log('First category:', categoryTitle);
                 setActiveCategory(categoryTitle);
             }
         });
     </script>
-
 </div>
-

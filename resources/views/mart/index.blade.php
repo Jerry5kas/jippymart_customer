@@ -1,11 +1,11 @@
 <x-layouts.app>
     <!-- Alpine.js CDN -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    
+
     <!-- Firebase for location detection -->
     <script src="{{ asset('js/geofirestore.js') }}"></script>
     <script src="https://cdn.firebase.com/libs/geofire/5.0.1/geofire.min.js"></script>
-    
+
     <x-mart.top-cat-items :categories="$categories"/>
     {{--   --}}
 
@@ -45,7 +45,7 @@
     <x-mart.banner-card :products="$stealOfMomentProducts" :header="'⚡ Grab It Before It’s Gone'"
                         :idea="'Unbeatable deals for a limited time—get yours before the clock runs out.'"/>
 
-    <div class="w-full max-w-7xl mx-auto px-4 py-8">
+    <div class="w-full max-w-7xl mx-auto py-8">
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div class="bg-white rounded-2xl shadow-sm p-6">
                 <x-mart.small-cat-carousel :products="$featured"
@@ -84,7 +84,7 @@
             @endif
         </div>
     </div>
-    
+
     <!-- Cart Components -->
     <x-mart.cart />
     <x-mart.cart-popup />
@@ -172,7 +172,7 @@
     var firestore = firebase.firestore();
     var database = firestore; // Alias for compatibility
     var geoFirestore = new GeoFirestore(firestore);
-    
+
     // Location variables (same as home page)
     var address_lat, address_lng, user_zone_id;
 
@@ -268,11 +268,11 @@
 
         try {
             console.log("Mart page - Detecting zone for location:", address_lat, address_lng);
-            
+
             // Use the same zone detection logic as home page
             var zone_list = [];
             var snapshots = await database.collection('zone').where("publish", "==", true).get();
-            
+
             if (snapshots.docs.length > 0) {
                 snapshots.docs.forEach((snapshot) => {
                     var zone_data = snapshot.data();
@@ -296,21 +296,21 @@
 
                         var points_polygon = (vertices_x.length) - 1;
                         var isInZone = is_in_polygon(points_polygon, vertices_x, vertices_y, address_lng, address_lat);
-                        
+
                         if (isInZone) {
                             user_zone_id = zone.id;
                             console.log("✅ Mart page - Zone detected:", user_zone_id, "-", zone.title || "No title");
-                            
+
                             // Save zone ID to cookies
                             setCookie('user_zone_id', user_zone_id, 365);
                             console.log("Mart page - Zone ID saved to cookies:", user_zone_id);
-                            
+
                             return;
                         }
                     }
                 }
             }
-            
+
             console.log("Mart page - No zone found for current location");
         } catch (error) {
             console.error("Mart page - Error detecting zone:", error);
@@ -381,11 +381,11 @@
     // Function to update navbar with address
     function updateNavbarWithAddress(address) {
         console.log("Mart page - Updating navbar with address:", address);
-        
+
         // Update the navbar location display
         const locationDisplay = document.getElementById('location-display');
         const locationText = document.getElementById('current-location-text');
-        
+
         if (locationDisplay && locationText) {
             if (address && address.trim() !== '') {
                 // Truncate long addresses for better display

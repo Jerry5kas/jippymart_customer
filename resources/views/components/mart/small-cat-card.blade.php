@@ -1,15 +1,19 @@
 @props([
-
-
     'src' => 'https://icon2.cleanpng.com/lnd/20250108/yj/011d1e60d8d65ba818e537fc0cf2d3.webp',
     'title' => 'Fruits & Veg',
     'price' => 0,
     'disPrice' => 0,
     'rating' => 4.5,
     'reviews' => 100,
+    'description' => 'Lorem ipsum dolor sit amet, consectetur adipisicing elit.',
+    'grams' => 200,
+    'subcategoryTitle' => 'fruits',
     ])
 
-<div class="flex-shrink-0 w-32 h-auto rounded-xl shadow-md flex flex-col items-center justify-between snap-center bg-white hover:shadow-lg transition duration-200">
+<div class="flex-shrink-0 w-32 h-auto rounded-xl shadow-md flex flex-col items-center justify-between snap-center bg-white hover:shadow-lg transition duration-200"
+     x-data="martCartItem('{{ addslashes($title) }}', {{ $disPrice }}, {{ $price }}, '{{ addslashes($src) }}', '{{ addslashes($subcategoryTitle) }}', '{{ addslashes($description) }}', '{{ $grams }}', {{ $rating }}, {{ $reviews }})"
+     x-cloak
+     x-init="loadCartState(); ready = true">
     <!-- Product Image -->
     <div class="relative w-full h-24 rounded-t-xl overflow-hidden">
         <img
@@ -44,11 +48,23 @@
             @endif
 
             <!-- Add-to-cart button -->
-            <button class="bg-[#007F73] hover:bg-[#00665c] text-white p-1 rounded-lg shadow-sm transition">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 9m13-9l2 9m-5-9v9m-4-9v9"/>
-                </svg>
-            </button>
+            <div class="relative">
+                <!-- If not added yet -->
+                <button x-show="ready && quantity === 0"
+                        @click.stop.prevent="addToCart()"
+                        class="bg-[#007F73] hover:bg-[#00665c] text-white p-1 rounded-lg shadow-sm transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 9m13-9l2 9m-5-9v9m-4-9v9"/>
+                    </svg>
+                </button>
+
+                <!-- If added, show quantity -->
+                <div x-show="ready && quantity > 0"
+                     x-transition
+                     class="bg-[#007F73] text-white p-1 rounded-lg shadow-sm flex items-center justify-center">
+                    <span class="text-xs font-semibold" x-text="quantity"></span>
+                </div>
+            </div>
         </div>
 
         <!-- Reviews -->
@@ -62,44 +78,103 @@
 </div>
 
 
-{{--<div class="flex-shrink-0 w-32 h-auto rounded-xl shadow flex flex-col items-center justify-center snap-center bg-white">--}}
-{{--    <!-- Product Image -->--}}
-{{--    <div class="relative w-full h-24 rounded-t-xl overflow-hidden">--}}
-{{--        <img--}}
-{{--            src="{{ $src }}"--}}
-{{--            alt="{{ $title }}"--}}
-{{--            class="w-full h-full object-cover"--}}
-{{--            onerror="this.src='/img/pro1.jpg'">--}}
+<script>
+document.addEventListener('alpine:init', () => {
+    Alpine.data('martCartItem', (name, disPrice, price, photo, subcategoryTitle, description, grams, rating, reviews) => ({
+        id: name, // Use name as unique identifier
+        name: name,
+        price: price,
+        disPrice: disPrice,
+        photo: photo,
+        subcategoryTitle: subcategoryTitle,
+        description: description,
+        grams: grams,
+        rating: rating,
+        reviews: reviews,
+        quantity: 0,
+        ready: false,
 
-{{--        <!-- Rating Badge -->--}}
-{{--        <div class="absolute top-1 right-1 bg-yellow-400 text-black text-xs px-1 rounded flex items-center">--}}
-{{--            <span class="text-xs">★</span>--}}
-{{--            <span class="text-xs ml-0.5">{{ number_format($rating, 1) }}</span>--}}
-{{--        </div>--}}
-{{--    </div>--}}
+        loadCartState() {
+            // Load cart state from local storage
+            const cartData = localStorage.getItem('mart_cart');
+            if (cartData) {
+                const cart = JSON.parse(cartData);
+                if (cart[this.id]) {
+                    this.quantity = cart[this.id].quantity;
+                }
+            }
+        },
 
-{{--    <!-- Product Info -->--}}
-{{--    <div class="p-2 w-full">--}}
-{{--        <!-- Product Name -->--}}
-{{--        <h3 class="text-xs font-semibold text-gray-800 line-clamp-2 mb-1" title="{{ $title }}">--}}
-{{--            {{ Str::limit($title, 20) }}--}}
-{{--        </h3>--}}
+        addToCart() {
+            const productData = {
+                id: this.id,
+                name: this.name,
+                price: this.price,
+                disPrice: this.disPrice,
+                photo: this.photo,
+                subcategoryTitle: this.subcategoryTitle,
+                description: this.description,
+                grams: this.grams,
+                rating: this.rating,
+                reviews: this.reviews
+            };
+ 
+            // Add to local storage
+            const cartData = localStorage.getItem('mart_cart') || '{}';
+            const cart = JSON.parse(cartData);
+ 
+            if (cart[this.id]) {
+                cart[this.id].quantity++;
+            } else {
+                cart[this.id] = { ...productData, quantity: 1 };
+            }
+ 
+            localStorage.setItem('mart_cart', JSON.stringify(cart));
+            this.quantity = cart[this.id].quantity;
+ 
+            // Dispatch events
+            this.dispatchCartUpdate();
+            this.dispatchItemAdded(cart[this.id]);
+        },
 
-{{--        <!-- Price -->--}}
-{{--        <div class="flex items-center justify-between">--}}
-{{--            @if($disPrice > 0 && $disPrice < $price)--}}
-{{--                <div class="flex flex-col">--}}
-{{--                    <span class="text-xs font-bold text-[#007F73]">₹{{ number_format($disPrice) }}</span>--}}
-{{--                    <span class="text-xs text-gray-500 line-through">₹{{ number_format($price) }}</span>--}}
-{{--                </div>--}}
-{{--            @else--}}
-{{--                <span class="text-xs font-bold text-gray-800">₹{{ number_format($price) }}</span>--}}
-{{--            @endif--}}
-{{--</div>--}}
+        increaseQuantity() {
+            const cartData = localStorage.getItem('mart_cart') || '{}';
+            const cart = JSON.parse(cartData);
+ 
+            if (cart[this.id]) {
+                cart[this.id].quantity++;
+                localStorage.setItem('mart_cart', JSON.stringify(cart));
+                this.quantity = cart[this.id].quantity;
+                this.dispatchCartUpdate();
+            }
+        },
 
-{{--        <!-- Reviews -->--}}
-{{--        <div class="text-xs text-gray-500 mt-1">--}}
-{{--            {{ $reviews }} reviews--}}
-{{--        </div>--}}
-{{--    </div>--}}
-{{--</div>--}}
+        decreaseQuantity() {
+            const cartData = localStorage.getItem('mart_cart') || '{}';
+            const cart = JSON.parse(cartData);
+ 
+            if (cart[this.id] && cart[this.id].quantity > 0) {
+                cart[this.id].quantity--;
+                if (cart[this.id].quantity === 0) {
+                    delete cart[this.id];
+                }
+                localStorage.setItem('mart_cart', JSON.stringify(cart));
+                this.quantity = cart[this.id] ? cart[this.id].quantity : 0;
+                this.dispatchCartUpdate();
+            }
+        },
+
+        dispatchCartUpdate() {
+            // Dispatch event to update cart count in navbar
+            window.dispatchEvent(new CustomEvent('cart-updated'));
+        },
+
+        dispatchItemAdded(item) {
+            // Dispatch event to show cart popup
+            window.dispatchEvent(new CustomEvent('item-added-to-cart', {
+                detail: { item: item }
+            }));
+        }
+    }));
+});
+</script>

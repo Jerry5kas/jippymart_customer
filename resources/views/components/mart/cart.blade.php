@@ -34,13 +34,20 @@
             <button @click="cartOpen = false" class="text-gray-600 hover:text-black">✕</button>
         </div>
 
-        <!-- Free Delivery Notice -->
-        <div class="p-3 bg-green-50 flex items-center text-sm text-green-700 rounded-b-lg">
+        <!-- Dynamic Delivery Notice -->
+        <div x-show="deliveryChargeDisplay.type === 'free_delivery'" class="p-3 bg-green-50 flex items-center text-sm text-green-700 rounded-b-lg">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
                 <path fill-rule="evenodd"
                       d="M8.603 3.799A4.49 4.49 0 0 1 12 2.25c1.357 0 2.573.6 3.397 1.549a4.49 4.49 0 0 1 3.498 1.307 4.491 4.491 0 0 1 1.307 3.497A4.49 4.49 0 0 1 21.75 12a4.49 4.49 0 0 1-1.549 3.397 4.491 4.491 0 0 1-1.307 3.497 4.491 4.491 0 0 1-3.497 1.307A4.49 4.49 0 0 1 12 21.75a4.49 4.49 0 0 1-3.397-1.549 4.49 4.49 0 0 1-3.498-1.306 4.491 4.491 0 0 1-1.307-3.498A4.49 4.49 0 0 1 2.25 12c0-1.357.6-2.573 1.549-3.397a4.49 4.49 0 0 1 1.307-3.497 4.49 4.49 0 0 1 3.497-1.307Zm7.007 6.387a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z"
                       clip-rule="evenodd"/>
-            </svg> &nbsp;&nbsp; Free delivery auto applied on this order!
+            </svg> &nbsp;&nbsp; <span x-text="deliveryChargeDisplay.main_text"></span> auto applied on this order!
+        </div>
+        
+        <!-- Delivery Charge Notice for non-free delivery -->
+        <div x-show="deliveryChargeDisplay.type !== 'free_delivery' && deliveryCharge > 0" class="p-3 bg-blue-50 flex items-center text-sm text-blue-700 rounded-b-lg">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+                <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25ZM12.75 6a.75.75 0 0 0-1.5 0v6c0 .414.336.75.75.75h4.5a.75.75 0 0 0 0-1.5h-3.75V6Z" clip-rule="evenodd"/>
+            </svg> &nbsp;&nbsp; Delivery charge: <span x-text="deliveryChargeDisplay.main_text"></span>
         </div>
 
         <!-- Scrollable Content -->
@@ -138,9 +145,9 @@
                     <h2 class="text-lg font-bold text-gray-800">Grand Total:</h2>
                     <div class="text-right">
                         <div x-show="appliedCoupon" class="text-sm text-gray-500 line-through">
-                            ₹<span x-text="originalTotal"></span>
+                            ₹<span x-text="originalTotal + deliveryCharge + totalTax + tipAmount"></span>
                         </div>
-                        <span class="text-xl font-bold text-[#007F73]">₹<span x-text="finalTotal"></span></span>
+                        <span class="text-xl font-bold text-[#007F73]">₹<span x-text="totalWithDeliveryTaxAndTip"></span></span>
                     </div>
                 </div>
             </div>
@@ -190,8 +197,8 @@
                         </div>
                         <div class="text-right">
                             <p class="text-sm font-semibold text-gray-800">
-                                ₹<span x-text="finalTotal"></span>
-                                <span x-show="appliedCoupon" class="line-through text-gray-400 text-xs ml-1">₹<span x-text="originalTotal"></span></span>
+                                ₹<span x-text="totalWithDeliveryTaxAndTip"></span>
+                                <span x-show="appliedCoupon" class="line-through text-gray-400 text-xs ml-1">₹<span x-text="originalTotal + deliveryCharge + totalTax + tipAmount"></span></span>
                             </p>
                             <p x-show="appliedCoupon" class="text-xs font-medium text-green-600">
                                 SAVINGS ₹<span x-text="appliedCoupon?.discountAmount || 0"></span>
@@ -217,24 +224,50 @@
           </span>
                         </div>
 
-                        <div class="flex justify-between">
-                            <span>Handling Charge</span>
-                            <span>₹20.99</span>
-                        </div>
-
-                        <div class="flex justify-between">
-                            <span>Rain Fee</span>
-                            <span><span class="line-through text-xs text-gray-400 mr-1">₹15</span>₹0</span>
-                        </div>
-
+                        <!-- Delivery Fee with dynamic calculation -->
                         <div class="flex justify-between">
                             <span>Delivery Fee</span>
-                            <span><span class="line-through text-xs text-gray-400 mr-1">₹30</span>₹0</span>
+                            <div class="text-right">
+                                <template x-if="deliveryChargeDisplay.type === 'free_delivery'">
+                                    <div>
+                                        <div class="text-green-600 font-semibold" x-text="deliveryChargeDisplay.main_text"></div>
+                                        <div class="text-xs text-gray-400 line-through" x-text="deliveryChargeDisplay.sub_text"></div>
+                                        <div class="text-xs text-gray-600" x-text="deliveryChargeDisplay.charged_amount"></div>
+                                    </div>
+                                </template>
+                                <template x-if="deliveryChargeDisplay.type === 'extra_distance'">
+                                    <div>
+                                        <div class="text-green-600 font-semibold" x-text="deliveryChargeDisplay.main_text"></div>
+                                        <div class="text-xs text-gray-400 line-through" x-text="deliveryChargeDisplay.sub_text"></div>
+                                        <div class="text-xs text-gray-600" x-text="deliveryChargeDisplay.charged_amount"></div>
+                                    </div>
+                                </template>
+                                <template x-if="deliveryChargeDisplay.type === 'normal'">
+                                    <span x-text="deliveryChargeDisplay.main_text"></span>
+                                </template>
+                            </div>
                         </div>
 
+                        <!-- Tax Breakdown -->
                         <div class="flex justify-between">
-                            <span>GST</span>
-                            <span>₹0.75</span>
+                            <span>SGST (5%)</span>
+                            <span>₹<span x-text="sgst.toFixed(2)"></span></span>
+                        </div>
+                        
+                        <div class="flex justify-between">
+                            <span>GST (18%)</span>
+                            <span>₹<span x-text="gst.toFixed(2)"></span></span>
+                        </div>
+                        
+                        <div class="flex justify-between font-semibold">
+                            <span>Total Tax</span>
+                            <span>₹<span x-text="totalTax.toFixed(2)"></span></span>
+                        </div>
+
+                        <!-- Tip Amount -->
+                        <div x-show="tipAmount > 0" class="flex justify-between">
+                            <span>Delivery Partner Tip</span>
+                            <span>₹<span x-text="tipAmount.toFixed(2)"></span></span>
                         </div>
 
                         <!-- Divider -->
@@ -253,8 +286,8 @@
                                 <p class="text-xs text-gray-500">Incl. all taxes and charges</p>
                             </div>
                             <div class="text-right">
-                                <p class="text-base">₹<span x-text="finalTotal"></span>
-                                    <span x-show="appliedCoupon" class="line-through text-xs text-gray-400 ml-1">₹<span x-text="originalTotal"></span></span>
+                                <p class="text-base">₹<span x-text="totalWithDeliveryTaxAndTip"></span>
+                                    <span x-show="appliedCoupon" class="line-through text-xs text-gray-400 ml-1">₹<span x-text="originalTotal + deliveryCharge + totalTax + tipAmount"></span></span>
                                 </p>
                                 <span x-show="appliedCoupon" class="inline-block mt-1 text-xs font-semibold text-green-700
                            bg-green-100 px-2 py-0.5 rounded-full">
@@ -265,7 +298,7 @@
                     </div>
                 </div>
 
-                <div x-data="{ showInstructions: false, showTip: false, showSafety: false, selectedTip: null }" class="space-y-4">
+                <div x-data="{ showInstructions: false, showTip: false, showSafety: false, selectedTip: null, customTipAmount: '' }" class="space-y-4">
 
                     <!-- Delivery Instructions -->
                     <div class="bg-white border rounded-xl shadow-sm overflow-hidden">
@@ -314,8 +347,8 @@
                             <!-- Tip Options -->
                             <div class="flex gap-3">
                                 <template x-for="tip in [10,20,35]" :key="tip">
-                                    <button @click="selectedTip = tip"
-                                            :class="selectedTip === tip ? 'border-green-500 bg-green-50 text-green-700' : 'border-gray-300 bg-white text-gray-700'"
+                                    <button @click="selectTip(tip)"
+                                            :class="selectedTip == tip ? 'border-green-500 bg-green-50 text-green-700' : 'border-gray-300 bg-white text-gray-700'"
                                             class="flex-1 flex items-center justify-center gap-1 px-3 py-2 border rounded-full text-sm font-medium transition">
                                         💰 ₹<span x-text="tip"></span>
                                     </button>
@@ -323,9 +356,27 @@
                             </div>
 
                             <!-- Custom Tip -->
-                            <button class="w-full py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-100 transition text-sm font-medium">
-                                Add Custom Tip
-                            </button>
+                            <div class="space-y-2">
+                                <input type="number" 
+                                       min="1" 
+                                       max="100"
+                                       placeholder="Enter custom tip amount"
+                                       x-model="customTipAmount"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                                <button @click="selectTip(parseFloat(customTipAmount) || 0)"
+                                        class="w-full py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-100 transition text-sm font-medium">
+                                    Add Custom Tip
+                                </button>
+                            </div>
+
+                            <!-- Current Tip Display -->
+                            <div x-show="tipAmount > 0" class="flex justify-between items-center p-3 bg-green-50 border border-green-200 rounded-lg">
+                                <span class="text-green-800 font-medium">Selected Tip:</span>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-green-700 font-bold">₹<span x-text="tipAmount"></span></span>
+                                    <button @click="clearTip()" class="text-green-600 hover:text-green-800 text-sm">Remove</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -373,9 +424,22 @@
 
         <!-- Footer Checkout -->
         <div class="p-4 border-t bg-white sticky bottom-0">
+            <!-- Minimum Order Validation -->
+            <div x-show="!isMinimumOrderMet" class="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div class="flex items-center">
+                    <svg class="w-5 h-5 text-yellow-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                    </svg>
+                    <p class="text-sm text-yellow-800" x-text="minimumOrderMessage"></p>
+                </div>
+            </div>
+            
             <button
-                class="w-full bg-[#007F73] text-white font-semibold py-3 rounded-lg hover:bg-[#005f56] transition">
-                Click to Pay ₹<span x-text="finalTotal"></span>
+                :disabled="!isMinimumOrderMet"
+                :class="isMinimumOrderMet ? 'bg-[#007F73] hover:bg-[#005f56]' : 'bg-gray-400 cursor-not-allowed'"
+                class="w-full text-white font-semibold py-3 rounded-lg transition">
+                <span x-show="isMinimumOrderMet">Click to Pay ₹<span x-text="totalWithDeliveryTaxAndTip"></span></span>
+                <span x-show="!isMinimumOrderMet">Minimum order not met</span>
             </button>
         </div>
     </div>
@@ -383,32 +447,349 @@
 
 <script>
     document.addEventListener('alpine:init', () => {
+        // Mart Delivery Settings (from Firebase collections)
+        let martDeliverySettings = {
+            min_order_value: 99,
+            free_delivery_threshold: 199,
+            base_delivery_charge: 23,
+            free_delivery_distance_km: 5,
+            per_km_charge_above_free_distance: 7,
+            min_order_message: "Min Item value is ₹99"
+        };
+
+        // Tip settings
+        const tipSettings = {
+            defaultTips: [10, 20, 35],
+            customTipEnabled: true,
+            maxTipAmount: 100
+        };
+
+        // Mart Coupon Service
+        const martCouponService = {
+            async applyCoupon(couponCode, cartTotal) {
+                try {
+                    const response = await fetch('/api/mart/apply-coupon', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                        },
+                        body: JSON.stringify({
+                            coupon_code: couponCode,
+                            cart_total: cartTotal
+                        })
+                    });
+
+                    const data = await response.json();
+                    return data;
+                } catch (error) {
+                    console.error('Error applying coupon:', error);
+                    return {
+                        status: false,
+                        message: 'Failed to apply coupon. Please try again.'
+                    };
+                }
+            },
+
+            async removeCoupon() {
+                try {
+                    const response = await fetch('/api/mart/remove-coupon', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                        }
+                    });
+
+                    const data = await response.json();
+                    return data;
+                } catch (error) {
+                    console.error('Error removing coupon:', error);
+                    return {
+                        status: false,
+                        message: 'Failed to remove coupon. Please try again.'
+                    };
+                }
+            }
+        };
+
+        // Load Mart Delivery Settings from Firebase
+        async function loadMartDeliverySettings() {
+            try {
+                // Load from mart_settings collection
+                const martSettingsRef = database.collection('mart_settings').doc('delivery_settings');
+                const martSettingsDoc = await martSettingsRef.get();
+                
+                if (martSettingsDoc.exists) {
+                    const martData = martSettingsDoc.data();
+                    martDeliverySettings = {
+                        min_order_value: martData.min_order_value || 99,
+                        free_delivery_threshold: martData.free_delivery_threshold || 199,
+                        min_order_message: martData.min_order_message || "Min Item value is ₹99"
+                    };
+                }
+
+                // Load from settings collection (DeliveryCharge document)
+                const deliveryChargeRef = database.collection('settings').doc('DeliveryCharge');
+                const deliveryChargeDoc = await deliveryChargeRef.get();
+                
+                if (deliveryChargeDoc.exists) {
+                    const deliveryData = deliveryChargeDoc.data();
+                    martDeliverySettings = {
+                        ...martDeliverySettings,
+                        base_delivery_charge: deliveryData.base_delivery_charge || 23,
+                        free_delivery_distance_km: deliveryData.free_delivery_distance_km || 5,
+                        per_km_charge_above_free_distance: deliveryData.per_km_charge_above_free_distance || 7,
+                        item_total_threshold: deliveryData.item_total_threshold || 199
+                    };
+                }
+
+                console.log('Loaded mart delivery settings:', martDeliverySettings);
+            } catch (error) {
+                console.error('Error loading mart delivery settings:', error);
+                // Use default settings if Firebase fails
+            }
+        }
+
+        // Tax Calculation Service
+        const taxService = {
+            calculateTax(itemTotal, deliveryCharge) {
+                // SGST = 5% of item total (before any discounts)
+                const sgst = (itemTotal * 5) / 100;
+                
+                // GST = 18% of delivery charge
+                const gst = (deliveryCharge * 18) / 100;
+                
+                // Total tax = SGST + GST
+                const totalTax = sgst + gst;
+                
+                return {
+                    sgst: sgst,
+                    gst: gst,
+                    total_tax: totalTax,
+                    item_total_before_discount: itemTotal,
+                    delivery_charge: deliveryCharge
+                };
+            }
+        };
+
+        // Delivery Charge Calculation Service
+        const deliveryChargeService = {
+            calculateDeliveryCharge(itemTotal, distance, settings = martDeliverySettings) {
+                const baseDeliveryCharge = settings.base_delivery_charge;
+                const freeDeliveryThreshold = settings.free_delivery_threshold;
+                const freeDeliveryDistanceKm = settings.free_delivery_distance_km;
+                const perKmChargeAboveFreeDistance = settings.per_km_charge_above_free_distance;
+
+                // Calculate original fee (what would be charged without free delivery)
+                const originalFee = this.calculateOriginalFee(distance, baseDeliveryCharge, freeDeliveryDistanceKm, perKmChargeAboveFreeDistance);
+
+                // Calculate actual fee based on business rules
+                const actualFee = this.calculateActualFee(itemTotal, distance, settings);
+
+                const calculation = {
+                    original_fee: originalFee,
+                    actual_fee: actualFee,
+                    is_free_delivery: this.isFreeDelivery(itemTotal, distance, settings),
+                    savings: originalFee - actualFee,
+                    settings: settings,
+                    distance: distance,
+                    item_total: itemTotal,
+                    ui_components: this.getUIComponents(originalFee, actualFee, this.isFreeDelivery(itemTotal, distance, settings))
+                };
+
+                return calculation;
+            },
+
+            calculateOriginalFee(distance, baseDeliveryCharge, freeDeliveryDistanceKm, perKmChargeAboveFreeDistance) {
+                if (distance <= freeDeliveryDistanceKm) {
+                    return baseDeliveryCharge;
+                } else {
+                    const extraDistance = distance - freeDeliveryDistanceKm;
+                    return baseDeliveryCharge + (extraDistance * perKmChargeAboveFreeDistance);
+                }
+            },
+
+            calculateActualFee(itemTotal, distance, settings) {
+                const baseDeliveryCharge = settings.base_delivery_charge;
+                const freeDeliveryThreshold = settings.free_delivery_threshold;
+                const freeDeliveryDistanceKm = settings.free_delivery_distance_km;
+                const perKmChargeAboveFreeDistance = settings.per_km_charge_above_free_distance;
+
+                // If item total is below threshold
+                if (itemTotal < freeDeliveryThreshold) {
+                    return this.calculateOriginalFee(distance, baseDeliveryCharge, freeDeliveryDistanceKm, perKmChargeAboveFreeDistance);
+                }
+
+                // If item total is above threshold
+                if (distance <= freeDeliveryDistanceKm) {
+                    return 0; // Free delivery within free distance
+                } else {
+                    // Only charge for extra distance above free delivery distance
+                    const extraDistance = distance - freeDeliveryDistanceKm;
+                    return extraDistance * perKmChargeAboveFreeDistance;
+                }
+            },
+
+            isFreeDelivery(itemTotal, distance, settings) {
+                const freeDeliveryThreshold = settings.free_delivery_threshold;
+                const freeDeliveryDistanceKm = settings.free_delivery_distance_km;
+                return itemTotal >= freeDeliveryThreshold && distance <= freeDeliveryDistanceKm;
+            },
+
+            getUIComponents(originalFee, actualFee, isFreeDelivery) {
+                const savings = originalFee - actualFee;
+                
+                if (savings === 0) {
+                    return {
+                        type: 'normal',
+                        main_text: '₹' + actualFee.toFixed(2),
+                        sub_text: '',
+                        strikethrough: false
+                    };
+                } else if (isFreeDelivery) {
+                    return {
+                        type: 'free_delivery',
+                        main_text: 'Free Delivery',
+                        sub_text: '₹' + originalFee.toFixed(2),
+                        strikethrough: true,
+                        charged_amount: '₹0.00'
+                    };
+                } else {
+                    return {
+                        type: 'extra_distance',
+                        main_text: 'Free Delivery',
+                        sub_text: '₹' + originalFee.toFixed(2),
+                        strikethrough: true,
+                        charged_amount: '₹' + actualFee.toFixed(2)
+                    };
+                }
+            }
+        };
+
         Alpine.store('cart', {
             items: JSON.parse(localStorage.getItem('cartItems')) || {},
             appliedCoupon: JSON.parse(localStorage.getItem('appliedCoupon')) || null,
+            deliverySettings: martDeliverySettings,
+            deliveryDistance: 3.5, // Default distance in km
+            deliveryChargeCalculation: null,
+            tipAmount: parseFloat(localStorage.getItem('mart_tip_amount')) || 0,
+            selectedTip: localStorage.getItem('mart_selected_tip') || null,
+            
             save() {
                 localStorage.setItem('cartItems', JSON.stringify(this.items));
                 localStorage.setItem('appliedCoupon', JSON.stringify(this.appliedCoupon));
+                localStorage.setItem('mart_tip_amount', this.tipAmount.toString());
+                localStorage.setItem('mart_selected_tip', this.selectedTip || '');
             },
+            
             get grandTotal() {
                 return Object.values(this.items).reduce((sum, item) => sum + (item.price * item.quantity), 0);
             },
+            
             get originalTotal() {
                 return this.grandTotal;
             },
+            
             get finalTotal() {
+                let total = this.grandTotal;
                 if (this.appliedCoupon) {
-                    return Math.max(0, this.grandTotal - (this.appliedCoupon.discountAmount || 0));
+                    total = Math.max(0, total - (this.appliedCoupon.discountAmount || 0));
                 }
-                return this.grandTotal;
+                return total;
             },
-            applyCoupon(coupon) {
+            
+            get deliveryCharge() {
+                if (!this.deliveryChargeCalculation) {
+                    this.deliveryChargeCalculation = deliveryChargeService.calculateDeliveryCharge(
+                        this.finalTotal, 
+                        this.deliveryDistance, 
+                        this.deliverySettings
+                    );
+                }
+                return this.deliveryChargeCalculation.actual_fee;
+            },
+            
+            get taxCalculation() {
+                return taxService.calculateTax(this.grandTotal, this.deliveryCharge);
+            },
+            
+            get totalTax() {
+                return this.taxCalculation.total_tax;
+            },
+            
+            get sgst() {
+                return this.taxCalculation.sgst;
+            },
+            
+            get gst() {
+                return this.taxCalculation.gst;
+            },
+            
+            get totalWithDelivery() {
+                return this.finalTotal + this.deliveryCharge;
+            },
+            
+            get totalWithDeliveryAndTax() {
+                return this.finalTotal + this.deliveryCharge + this.totalTax;
+            },
+            
+            get isMinimumOrderMet() {
+                return this.finalTotal >= this.deliverySettings.min_order_value;
+            },
+            
+            get minimumOrderMessage() {
+                if (!this.isMinimumOrderMet) {
+                    const remaining = this.deliverySettings.min_order_value - this.finalTotal;
+                    return `Add ₹${remaining.toFixed(0)} more to place order`;
+                }
+                return null;
+            },
+            
+            get totalWithDeliveryTaxAndTip() {
+                return this.finalTotal + this.deliveryCharge + this.totalTax + this.tipAmount;
+            },
+            
+            selectTip(amount) {
+                this.tipAmount = amount;
+                this.selectedTip = amount;
+                this.save();
+            },
+            
+            clearTip() {
+                this.tipAmount = 0;
+                this.selectedTip = null;
+                this.save();
+            },
+            
+            async applyCoupon(coupon) {
                 this.appliedCoupon = coupon;
                 this.save();
+                this.recalculateDeliveryCharge();
             },
-            removeCoupon() {
+            
+            async removeCoupon() {
                 this.appliedCoupon = null;
                 this.save();
+                this.recalculateDeliveryCharge();
+            },
+            
+            async applyCouponByCode(couponCode) {
+                const result = await martCouponService.applyCoupon(couponCode, this.finalTotal);
+                if (result.status) {
+                    this.applyCoupon(result.coupon);
+                    return { success: true, message: result.message };
+                } else {
+                    return { success: false, message: result.message };
+                }
+            },
+            
+            recalculateDeliveryCharge() {
+                this.deliveryChargeCalculation = deliveryChargeService.calculateDeliveryCharge(
+                    this.finalTotal, 
+                    this.deliveryDistance, 
+                    this.deliverySettings
+                );
             }
         });
 
@@ -440,21 +821,109 @@
             cartItems: [],
             appliedCoupon: null,
             cartOpen: false,
+            deliverySettings: martDeliverySettings,
+            deliveryDistance: 3.5, // Default distance in km
+            deliveryChargeCalculation: null,
+            tipAmount: parseFloat(localStorage.getItem('mart_tip_amount')) || 0,
+            selectedTip: localStorage.getItem('mart_selected_tip') || null,
             
             get grandTotal() {
                 return this.cartItems.reduce((sum, item) => sum + ((item.disPrice || item.price) * item.quantity), 0);
             },
+            
             get originalTotal() {
                 return this.grandTotal;
             },
+            
             get finalTotal() {
+                let total = this.grandTotal;
                 if (this.appliedCoupon) {
-                    return Math.max(0, this.grandTotal - (this.appliedCoupon.discountAmount || 0));
+                    total = Math.max(0, total - (this.appliedCoupon.discountAmount || 0));
                 }
-                return this.grandTotal;
+                return total;
             },
             
-            init() {
+            get deliveryCharge() {
+                if (!this.deliveryChargeCalculation) {
+                    this.deliveryChargeCalculation = deliveryChargeService.calculateDeliveryCharge(
+                        this.finalTotal, 
+                        this.deliveryDistance, 
+                        this.deliverySettings
+                    );
+                }
+                return this.deliveryChargeCalculation.actual_fee;
+            },
+            
+            get taxCalculation() {
+                return taxService.calculateTax(this.grandTotal, this.deliveryCharge);
+            },
+            
+            get totalTax() {
+                return this.taxCalculation.total_tax;
+            },
+            
+            get sgst() {
+                return this.taxCalculation.sgst;
+            },
+            
+            get gst() {
+                return this.taxCalculation.gst;
+            },
+            
+            get totalWithDelivery() {
+                return this.finalTotal + this.deliveryCharge;
+            },
+            
+            get totalWithDeliveryAndTax() {
+                return this.finalTotal + this.deliveryCharge + this.totalTax;
+            },
+            
+            get isMinimumOrderMet() {
+                return this.finalTotal >= this.deliverySettings.min_order_value;
+            },
+            
+            get minimumOrderMessage() {
+                if (!this.isMinimumOrderMet) {
+                    const remaining = this.deliverySettings.min_order_value - this.finalTotal;
+                    return `Add ₹${remaining.toFixed(0)} more to place order`;
+                }
+                return null;
+            },
+            
+            get totalWithDeliveryTaxAndTip() {
+                return this.finalTotal + this.deliveryCharge + this.totalTax + this.tipAmount;
+            },
+            
+            selectTip(amount) {
+                this.tipAmount = amount;
+                this.selectedTip = amount;
+                localStorage.setItem('mart_tip_amount', amount.toString());
+                localStorage.setItem('mart_selected_tip', amount.toString());
+            },
+            
+            clearTip() {
+                this.tipAmount = 0;
+                this.selectedTip = null;
+                localStorage.setItem('mart_tip_amount', '0');
+                localStorage.setItem('mart_selected_tip', '');
+            },
+            
+            get deliveryChargeDisplay() {
+                if (!this.deliveryChargeCalculation) {
+                    this.deliveryChargeCalculation = deliveryChargeService.calculateDeliveryCharge(
+                        this.finalTotal, 
+                        this.deliveryDistance, 
+                        this.deliverySettings
+                    );
+                }
+                return this.deliveryChargeCalculation.ui_components;
+            },
+            
+            async init() {
+                // Load Firebase settings first
+                await loadMartDeliverySettings();
+                this.deliverySettings = martDeliverySettings;
+                
                 this.loadCartItems();
                 this.loadAppliedCoupon();
                 
@@ -505,6 +974,7 @@
                     cart[itemId].quantity++;
                     localStorage.setItem('mart_cart', JSON.stringify(cart));
                     this.loadCartItems();
+                    this.recalculateDeliveryCharge();
                     window.dispatchEvent(new CustomEvent('cart-updated'));
                     
                     // Update the specific item in the cart items array for immediate UI update
@@ -537,18 +1007,39 @@
                         }
                     }
                     localStorage.setItem('mart_cart', JSON.stringify(cart));
+                    this.recalculateDeliveryCharge();
                     window.dispatchEvent(new CustomEvent('cart-updated'));
                 }
             },
             
-            applyCoupon(coupon) {
+            async applyCoupon(coupon) {
                 this.appliedCoupon = coupon;
                 localStorage.setItem('appliedCoupon', JSON.stringify(coupon));
+                this.recalculateDeliveryCharge();
             },
             
-            removeCoupon() {
+            async removeCoupon() {
                 this.appliedCoupon = null;
                 localStorage.removeItem('appliedCoupon');
+                this.recalculateDeliveryCharge();
+            },
+            
+            async applyCouponByCode(couponCode) {
+                const result = await martCouponService.applyCoupon(couponCode, this.finalTotal);
+                if (result.status) {
+                    this.applyCoupon(result.coupon);
+                    return { success: true, message: result.message };
+                } else {
+                    return { success: false, message: result.message };
+                }
+            },
+            
+            recalculateDeliveryCharge() {
+                this.deliveryChargeCalculation = deliveryChargeService.calculateDeliveryCharge(
+                    this.finalTotal, 
+                    this.deliveryDistance, 
+                    this.deliverySettings
+                );
             },
             
             getCouponDescription(coupon) {

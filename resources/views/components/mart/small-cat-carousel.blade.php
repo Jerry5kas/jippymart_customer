@@ -12,7 +12,7 @@
 
     <!-- Featured Products Carousel -->
     @if(count($products) > 0)
-    <div class="relative px-4 bg-[#007F73] rounded-2xl mb-5" x-data="{ scroll: 0 }">
+    <div class="relative px-4 bg-[#007F73] rounded-b-2xl mb-5" x-data="{ scroll: 0 }">
         <!-- Left Button -->
         <button
             @click="$refs.scroller.scrollBy({ left: -200, behavior: 'smooth' })"
@@ -23,7 +23,7 @@
         <!-- Featured Products -->
         <div
             x-ref="scroller"
-            class="flex space-x-4 bg-[#007F73] overflow-x-auto scrollbar-hide scroll-smooth snap-x snap-mandatory pb-6 px-2 rounded-2xl ">
+            class="flex space-x-4 bg-[#007F73] overflow-x-auto scrollbar-hide scroll-smooth snap-x snap-mandatory pb-6 px-2 rounded-b-2xl ">
 
             @foreach($products as $product)
                 @if(!empty($product['subcategoryTitle']))
@@ -35,6 +35,9 @@
                             :disPrice="$product['disPrice']"
                             :rating="$product['rating']"
                             :reviews="$product['reviews']"
+                            :description="$product['description'] ?? 'Lorem ipsum dolor sit amet'"
+                            :grams="$product['grams'] ?? 200"
+                            :subcategoryTitle="$product['subcategoryTitle']"
                         />
                     </a>
                 @else
@@ -46,6 +49,9 @@
                             :disPrice="$product['disPrice']"
                             :rating="$product['rating']"
                             :reviews="$product['reviews']"
+                            :description="$product['description'] ?? 'Lorem ipsum dolor sit amet'"
+                            :grams="$product['grams'] ?? 200"
+                            :subcategoryTitle="$product['subcategoryTitle']"
                         />
                     </div>
                 @endif
