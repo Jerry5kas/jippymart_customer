@@ -24,7 +24,9 @@
             class="rounded-t-xl w-full h-40 object-cover group-hover:scale-105 transition-transform duration-300">
 
         <!-- Floating Add/Qty Button -->
-        <div x-data="martCartItem('{{ addslashes($title) }}', {{ $disPrice }}, {{ $price }}, '{{ addslashes($src) }}', '{{ addslashes($subcategoryTitle) }}', '{{ addslashes($description) }}', '{{ $grams }}', {{ $rating }}, {{ $reviews }})" class="absolute bottom-2 right-2">
+        <div x-data="martCartItem('{{ addslashes($title) }}', {{ $disPrice }}, {{ $price }}, '{{ addslashes($src) }}', '{{ addslashes($subcategoryTitle) }}', '{{ addslashes($description) }}', '{{ $grams }}', {{ $rating }}, {{ $reviews }})" 
+             x-cloak
+             class="absolute bottom-2 right-2">
             <!-- Loading state -->
             <div x-show="isLoading" class="px-5 py-1.5 rounded-full bg-[#007F73] text-white text-xs font-semibold shadow-md">
                 <div class="flex items-center gap-1">
@@ -35,7 +37,7 @@
 
             <!-- If not added yet -->
             <button x-show="!isLoading && quantity === 0"
-                    @click="addToCart()"
+                    @click.stop="addToCart()"
                     class="px-5 py-1.5 rounded-full border border-[#007F73]
                    text-[#007F73] text-xs font-semibold bg-white shadow-md hover:bg-[#E8F8DB] transition">
                 ADD
@@ -45,9 +47,9 @@
             <div x-show="!isLoading && quantity > 0"
                  x-transition
                  class="flex items-center gap-2 bg-[#007F73] text-white px-3 py-1.5 rounded-full text-xs font-semibold shadow-md">
-                <button @click="decreaseQuantity()" class="px-2 hover:bg-[#005f56] rounded">−</button>
+                <button @click.stop="decreaseQuantity()" class="px-2 hover:bg-[#005f56] rounded">−</button>
                 <span x-text="quantity"></span>
-                <button @click="increaseQuantity()" class="px-2 hover:bg-[#005f56] rounded">+</button>
+                <button @click.stop="increaseQuantity()" class="px-2 hover:bg-[#005f56] rounded">+</button>
             </div>
         </div>
     </div>
@@ -124,6 +126,7 @@ document.addEventListener('alpine:init', () => {
         isLoading: false,
         
         init() {
+            this.isLoading = false; // Initialize loading state
             this.loadCartState();
         },
         

@@ -1757,6 +1757,11 @@
                         if (isInZone) {
                             user_zone_id = zone.id;
                             console.log("✅ Zone detected:", user_zone_id, "-", zone.title || "No title");
+                            
+                            // Save zone ID to cookies for mart page
+                            setCookie('user_zone_id', user_zone_id, 365);
+                            console.log("Zone ID saved to cookies:", user_zone_id);
+                            
                             return; // Exit function once zone is found
                         }
                     } else {
@@ -1824,6 +1829,11 @@
                 var firstZone = snapshots.docs[0];
                 user_zone_id = firstZone.id;
                 console.log("🔄 Using fallback zone:", user_zone_id, "-", firstZone.data().title || "No title");
+                
+                // Save fallback zone ID to cookies for mart page
+                setCookie('user_zone_id', user_zone_id, 365);
+                console.log("Fallback zone ID saved to cookies:", user_zone_id);
+                
                 return true;
             } else {
                 // If no zones exist at all, try to create a default zone or use a system default
@@ -3521,8 +3531,15 @@
 
     // Function to check location and navigate to Mart
     function checkLocationAndNavigate(event) {
-        // BYPASS LOCATION CHECK FOR NOW - Allow direct access to Mart
-        console.log('Bypassing location check - allowing access to Mart');
+        // Check if basic location is available
+        if (typeof address_lat !== 'undefined' && typeof address_lng !== 'undefined' &&
+            address_lat && address_lng) {
+            console.log('Location available, allowing access to Mart');
+            return true;
+        }
+        
+        // If no location, show alert but still allow navigation
+        console.log('No location detected, but allowing access to Mart');
         return true;
         
         // Original location check code (commented out for now)
@@ -3566,10 +3583,17 @@
     function updateFloatingButtonStatus() {
         const floatingBtn = document.getElementById('mart-floating-btn');
         if (floatingBtn) {
-            // BYPASS LOCATION CHECK - Always show button as enabled
+            // Check if location is available
+            if (typeof address_lat !== 'undefined' && typeof address_lng !== 'undefined' &&
+                address_lat && address_lng) {
             floatingBtn.style.opacity = '1';
             floatingBtn.style.cursor = 'pointer';
             floatingBtn.title = 'Go to Mart';
+            } else {
+                floatingBtn.style.opacity = '0.8';
+                floatingBtn.style.cursor = 'pointer';
+                floatingBtn.title = 'Go to Mart (Location will be set if needed)';
+            }
             
             // Original location check code (commented out for now)
             /*

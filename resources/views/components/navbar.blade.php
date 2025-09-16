@@ -12,7 +12,14 @@
                     Mart
                 </a>
 
-            
+            <!-- Location display -->
+            <div class="flex items-center space-x-2 text-sm text-gray-600" id="location-display" style="display: none;">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 text-[#007F73]">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
+                </svg>
+                <span id="current-location-text" class="text-gray-600 font-medium">Loading location...</span>
+            </div>
             </div>
 
            
@@ -174,11 +181,11 @@ document.addEventListener('alpine:init', () => {
         },
         
         updateCartCount() {
-            // Get cart count from local storage
+            // Get cart count from local storage - count total quantities, not unique items
             const cartData = localStorage.getItem('mart_cart');
             if (cartData) {
                 const cart = JSON.parse(cartData);
-                this.cartCount = Object.keys(cart).length;
+                this.cartCount = Object.values(cart).reduce((total, item) => total + (item.quantity || 0), 0);
             } else {
                 this.cartCount = 0;
             }

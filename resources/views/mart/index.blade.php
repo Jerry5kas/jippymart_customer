@@ -2,6 +2,10 @@
     <!-- Alpine.js CDN -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     
+    <!-- Firebase for location detection -->
+    <script src="{{ asset('js/geofirestore.js') }}"></script>
+    <script src="https://cdn.firebase.com/libs/geofire/5.0.1/geofire.min.js"></script>
+    
     <x-mart.top-cat-items :categories="$categories"/>
     {{--   --}}
 
@@ -80,6 +84,10 @@
             @endif
         </div>
     </div>
+    
+    <!-- Cart Components -->
+    <x-mart.cart />
+    <x-mart.cart-popup />
 </x-layouts.app>
 
 <!-- Floating Button Styles -->
@@ -160,6 +168,11 @@
 
 <!-- Location Logic for Mart Page -->
 <script>
+    // Initialize Firebase (same as home page)
+    var firestore = firebase.firestore();
+    var database = firestore; // Alias for compatibility
+    var geoFirestore = new GeoFirestore(firestore);
+    
     // Location variables (same as home page)
     var address_lat, address_lng, user_zone_id;
 
@@ -226,17 +239,97 @@
             user_address: user_address
         });
 
-        // Check if location is properly set
-        if (!address_lat || !address_lng || !user_zone_id) {
-            console.log("Mart page - Location not set, redirecting to set-location page");
+        // Check if basic location is set (lat/lng are most important)
+        if (!address_lat || !address_lng) {
+            console.log("Mart page - Basic location not set, redirecting to set-location page");
             redirectToSetLocation();
             return false;
+        }
+
+        // If zone ID is not set, try to get it from the location
+        if (!user_zone_id) {
+            console.log("Mart page - Zone ID not found in cookies, attempting to detect zone...");
+            // We'll try to detect the zone, but don't block the page if it fails
+            detectZoneFromLocation();
         }
 
         // Update navbar with current address
         updateNavbarWithAddress(user_address);
 
         return true;
+    }
+
+    // Function to detect zone from location (similar to home page logic)
+    async function detectZoneFromLocation() {
+        if (!address_lat || !address_lng) {
+            console.log("Mart page - Cannot detect zone: no location data");
+            return;
+        }
+
+        try {
+            console.log("Mart page - Detecting zone for location:", address_lat, address_lng);
+            
+            // Use the same zone detection logic as home page
+            var zone_list = [];
+            var snapshots = await database.collection('zone').where("publish", "==", true).get();
+            
+            if (snapshots.docs.length > 0) {
+                snapshots.docs.forEach((snapshot) => {
+                    var zone_data = snapshot.data();
+                    zone_data.id = snapshot.id;
+                    zone_list.push(zone_data);
+                });
+            }
+
+            if (zone_list.length > 0) {
+                for (let i = 0; i < zone_list.length; i++) {
+                    var zone = zone_list[i];
+                    var vertices_x = [];
+                    var vertices_y = [];
+
+                    if (zone.area && zone.area.length > 0) {
+                        for (let j = 0; j < zone.area.length; j++) {
+                            var geopoint = zone.area[j];
+                            vertices_x.push(geopoint.longitude);
+                            vertices_y.push(geopoint.latitude);
+                        }
+
+                        var points_polygon = (vertices_x.length) - 1;
+                        var isInZone = is_in_polygon(points_polygon, vertices_x, vertices_y, address_lng, address_lat);
+                        
+                        if (isInZone) {
+                            user_zone_id = zone.id;
+                            console.log("✅ Mart page - Zone detected:", user_zone_id, "-", zone.title || "No title");
+                            
+                            // Save zone ID to cookies
+                            setCookie('user_zone_id', user_zone_id, 365);
+                            console.log("Mart page - Zone ID saved to cookies:", user_zone_id);
+                            
+                            return;
+                        }
+                    }
+                }
+            }
+            
+            console.log("Mart page - No zone found for current location");
+        } catch (error) {
+            console.error("Mart page - Error detecting zone:", error);
+        }
+    }
+
+    // Polygon point-in-polygon test function (same as home page)
+    function is_in_polygon($points_polygon, $vertices_x, $vertices_y, $longitude_x, $latitude_y) {
+        $i = $j = $c = $point = 0;
+        for ($i = 0, $j = $points_polygon; $i < $points_polygon; $j = $i++) {
+            $point = $i;
+            if ($point == $points_polygon)
+                $point = 0;
+            if ((($vertices_y[$point] > $latitude_y != ($vertices_y[$j] > $latitude_y)) && ($longitude_x < ($vertices_x[
+                    $j] - $vertices_x[$point]) * ($latitude_y - $vertices_y[$point]) / ($vertices_y[$j] -
+                    $vertices_y[$point]) + $vertices_x[$point])))
+                $c = !$c;
+        }
+        return $c;
     }
 
     // Function to redirect to set-location page
@@ -287,10 +380,25 @@
 
     // Function to update navbar with address
     function updateNavbarWithAddress(address) {
-        // Update the navbar location display if it exists
-        const locationSpan = document.querySelector('.navbar [x-text="currentLocation"]');
-        if (locationSpan && address) {
-            locationSpan.textContent = address;
+        console.log("Mart page - Updating navbar with address:", address);
+        
+        // Update the navbar location display
+        const locationDisplay = document.getElementById('location-display');
+        const locationText = document.getElementById('current-location-text');
+        
+        if (locationDisplay && locationText) {
+            if (address && address.trim() !== '') {
+                // Truncate long addresses for better display
+                const displayAddress = address.length > 30 ? address.substring(0, 30) + '...' : address;
+                locationText.textContent = displayAddress;
+                locationDisplay.style.display = 'flex';
+                console.log("Mart page - Location displayed in navbar:", displayAddress);
+            } else {
+                locationDisplay.style.display = 'none';
+                console.log("Mart page - No address to display in navbar");
+            }
+        } else {
+            console.log("Mart page - Navbar location elements not found");
         }
 
         // Update mart link in navbar if it exists

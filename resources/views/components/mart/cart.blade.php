@@ -64,22 +64,42 @@
                 <template x-for="item in cartItems" :key="item.id">
                     <div class="flex items-center justify-between bg-white p-4 rounded-xl shadow">
                         <div class="flex items-center space-x-3">
-                            <img :src="item.photo || 'data:image/jpeg;base64,/9j/4AAQSkAAAH/2Q=='" class="w-12 h-12 rounded-md border">
-                            <div>
-                                <h3 class="text-[10px] font-semibold text-gray-800" x-text="item.name"></h3>
-                                <p class="text-[10px] text-gray-500" x-text="item.grams || '1 Piece'"></p>
+                            <img :src="item.photo || 'data:image/jpeg;base64,/9j/4AAQSkAAAH/2Q=='" class="w-12 h-12 rounded-md border object-cover">
+                            <div class="flex-1">
+                                <h3 class="text-sm font-semibold text-gray-800" x-text="item.name"></h3>
+                                <p class="text-xs text-gray-500" x-text="item.subcategoryTitle"></p>
+                                <p class="text-xs text-gray-500" x-text="item.grams || '1 Piece'"></p>
+                                
+                                <!-- Price and Savings -->
+                                <div class="flex items-center gap-2 mt-1">
+                                    <span class="text-sm font-semibold text-green-700">
+                                        ₹<span x-text="item.disPrice"></span>
+                                    </span>
+                                    <span x-show="item.disPrice < item.price" class="text-xs text-red-400 line-through">
+                                        ₹<span x-text="item.price"></span>
+                                    </span>
+                                    <span class="text-xs text-green-600 font-semibold">
+                                        Save ₹<span x-text="item.savings"></span>
+                                    </span>
+                                </div>
                             </div>
                         </div>
-                        <div class="flex items-center space-x-3">
+                        <div class="flex flex-col items-end space-y-2">
                             <!-- Quantity controls -->
                             <div class="flex items-center border rounded-lg px-2">
-                                <button @click="decreaseQuantity(item.id)" class="text-[#007F73] px-2 text-lg font-bold">−</button>
-                                <span class="px-2 text-gray-700" x-text="item.quantity"></span>
-                                <button @click="increaseQuantity(item.id)" class="text-[#007F73] px-2 text-lg font-bold">+</button>
+                                <button @click="decreaseQuantity(item.id)" class="text-[#007F73] px-2 text-lg font-bold hover:bg-gray-100 rounded">−</button>
+                                <span class="px-3 text-gray-700 font-semibold" x-text="item.quantity"></span>
+                                <button @click="increaseQuantity(item.id)" class="text-[#007F73] px-2 text-lg font-bold hover:bg-gray-100 rounded">+</button>
                             </div>
-                            <span class="text-gray-900 font-semibold">
-                                ₹<span x-text="(item.disPrice || item.price) * item.quantity"></span>
-                            </span>
+                            <!-- Total Price -->
+                            <div class="text-right">
+                                <span class="text-sm font-semibold text-gray-900">
+                                    ₹<span x-text="item.totalPrice"></span>
+                                </span>
+                                <p class="text-xs text-gray-500">
+                                    <span x-text="item.quantity"></span> × ₹<span x-text="item.disPrice"></span>
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </template>
@@ -458,7 +478,13 @@
             loadCartItems() {
                 const cartData = localStorage.getItem('mart_cart');
                 if (cartData) {
-                    this.cartItems = Object.values(JSON.parse(cartData));
+                    const cart = JSON.parse(cartData);
+                    // Calculate totals for each item
+                    this.cartItems = Object.values(cart).map(item => ({
+                        ...item,
+                        totalPrice: item.disPrice * item.quantity,
+                        savings: (item.price - item.disPrice) * item.quantity
+                    }));
                 } else {
                     this.cartItems = [];
                 }
@@ -480,6 +506,14 @@
                     localStorage.setItem('mart_cart', JSON.stringify(cart));
                     this.loadCartItems();
                     window.dispatchEvent(new CustomEvent('cart-updated'));
+                    
+                    // Update the specific item in the cart items array for immediate UI update
+                    const itemIndex = this.cartItems.findIndex(item => item.id === itemId);
+                    if (itemIndex !== -1) {
+                        this.cartItems[itemIndex].quantity = cart[itemId].quantity;
+                        this.cartItems[itemIndex].totalPrice = cart[itemId].disPrice * cart[itemId].quantity;
+                        this.cartItems[itemIndex].savings = (cart[itemId].price - cart[itemId].disPrice) * cart[itemId].quantity;
+                    }
                 }
             },
             
@@ -491,9 +525,18 @@
                     cart[itemId].quantity--;
                     if (cart[itemId].quantity === 0) {
                         delete cart[itemId];
+                        // Remove from cart items array
+                        this.cartItems = this.cartItems.filter(item => item.id !== itemId);
+                    } else {
+                        // Update the specific item in the cart items array for immediate UI update
+                        const itemIndex = this.cartItems.findIndex(item => item.id === itemId);
+                        if (itemIndex !== -1) {
+                            this.cartItems[itemIndex].quantity = cart[itemId].quantity;
+                            this.cartItems[itemIndex].totalPrice = cart[itemId].disPrice * cart[itemId].quantity;
+                            this.cartItems[itemIndex].savings = (cart[itemId].price - cart[itemId].disPrice) * cart[itemId].quantity;
+                        }
                     }
                     localStorage.setItem('mart_cart', JSON.stringify(cart));
-                    this.loadCartItems();
                     window.dispatchEvent(new CustomEvent('cart-updated'));
                 }
             },
