@@ -1,4 +1,6 @@
-@include('layouts.app')
+@extends('layouts.app')
+
+@section('content')
 @include('layouts.header')
 <div class="siddhi-home-page">
 
@@ -3686,3 +3688,4 @@
 </a>
 
 @include('layouts.nav')
+@endsection

@@ -18,14 +18,14 @@
     $dynamicKeywords = $dynamicKeywords ?? null;
 
     // Build final SEO values
-    $finalTitle = $dynamicTitle ?: ($seoData ? $seoData->getMetaTitle() : $globalSettings['site_name']);
-    $finalDescription = $dynamicDescription ?: ($seoData ? $seoData->getMetaDescription() : $globalSettings['site_description']);
-    $finalKeywords = $dynamicKeywords ?: ($seoData ? $seoData->keywords : $globalSettings['site_keywords']);
-    $finalOgImage = $dynamicImage ?: ($seoData ? $seoData->getOgImage() : $globalSettings['default_og_image']);
+    $finalTitle = $dynamicTitle ?: ($seoData ? $seoData->getMetaTitle() : ($globalSettings['site_name'] ?? 'JippyMart'));
+    $finalDescription = $dynamicDescription ?: ($seoData ? $seoData->getMetaDescription() : ($globalSettings['site_description'] ?? 'Get groceries, medicines, and daily essentials delivered to your doorstep'));
+    $finalKeywords = $dynamicKeywords ?: ($seoData ? $seoData->keywords : 'groceries, delivery, online shopping');
+    $finalOgImage = $dynamicImage ?: ($seoData ? $seoData->getOgImage() : ($globalSettings['default_og_image'] ?? null));
 
     // Ensure title includes site name if not already present
-    if (!str_contains($finalTitle, $globalSettings['site_name'])) {
-        $finalTitle = $finalTitle . ' - ' . $globalSettings['site_name'];
+    if (!str_contains($finalTitle, ($globalSettings['site_name'] ?? 'JippyMart'))) {
+        $finalTitle = $finalTitle . ' - ' . ($globalSettings['site_name'] ?? 'JippyMart');
     }
 
     // Get current URL

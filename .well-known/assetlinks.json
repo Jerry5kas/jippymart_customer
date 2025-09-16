@@ -1,0 +1,15 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls",
+      "delegate_permission/common.get_login_creds"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.jippymart.customer",
+      "sha256_cert_fingerprints": [
+        "6E:DE:83:44:96:45:6F:B1:11:1D:A1:53:AF:7C:AA:41:0F:28:70:21:C2:F9:9E:12:2E:57:9E:54:54:4A:B0:70"
+      ]
+    }
+  }
+]

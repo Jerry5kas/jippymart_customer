@@ -19,7 +19,6 @@
             class="absolute left-0 top-1/2 -translate-y-1/2 bg-white shadow rounded-full p-1 text-xs text-gray-400 hidden md:block">
             ◀
         </button>
-
         <!-- Featured Products -->
         <div
             x-ref="scroller"

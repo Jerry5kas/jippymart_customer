@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Kreait\Firebase\Factory;
 use Kreait\Firebase\Exception\FirebaseException;
+use App\Traits\SeoTrait;
 
 class MartController extends Controller
 {
+    use SeoTrait;
     public function index()
     {
         try {
@@ -427,6 +429,12 @@ class MartController extends Controller
             // =========================
             \Log::info("Mart data loaded: " . count($categoryData) . " categories, " . count($products) . " spotlight products, " . count($featuredProducts) . " featured products, " . count($banners) . " banners, " . count($itemsBySection) . " sections with items");
 
+            // Get SEO data for mart page
+            $seoData = $this->getSeoData('home', [
+                'title' => 'JippyMart - Fresh Groceries & Daily Essentials Delivered',
+                'description' => 'Order fresh groceries, medicines, and daily essentials online. Fast delivery to your doorstep with quality guarantee.'
+            ]);
+
             return view('mart.index', [
                 'categories' => $categoryData,
                 'spotlight'  => $products,
@@ -439,7 +447,7 @@ class MartController extends Controller
                 'stealOfMomentProducts' => $stealOfMomentProducts,
                 'newArrivalProducts' => $newArrivalProducts,
                 'seasonalProducts' => $seasonalProducts,
-
+                'seoData' => $seoData
             ]);
 
         } catch (FirebaseException $e) {
@@ -1223,6 +1231,12 @@ class MartController extends Controller
     {
         \Log::info('Using fallback data due to Firebase unavailability');
         
+        // Get SEO data for fallback
+        $seoData = $this->getSeoData('home', [
+            'title' => 'JippyMart - Fresh Groceries & Daily Essentials Delivered',
+            'description' => 'Order fresh groceries, medicines, and daily essentials online. Fast delivery to your doorstep with quality guarantee.'
+        ]);
+
         return view('mart.index', [
             'categories' => [
                 [
@@ -1331,6 +1345,7 @@ class MartController extends Controller
                     ]
                 ]
             ],
+            'seoData' => $seoData
         ]);
     }
 }

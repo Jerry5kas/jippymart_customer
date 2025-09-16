@@ -6,9 +6,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use App\Models\SeoPage;
 use App\Models\SeoSetting;
+use App\Traits\SeoTrait;
 
 class HomeController extends Controller
 {
+    use SeoTrait;
     /**
      * Create a new controller instance.
      *
@@ -30,16 +32,14 @@ class HomeController extends Controller
      */
     public function index()
     {
-        // Get SEO data for homepage
-        $seoData = SeoPage::getForPage('home');
-        $globalSettings = SeoSetting::getGlobalSettings();
+        // Get SEO data for homepage using SeoTrait
+        $seoData = $this->getSeoData('home', [
+            'title' => 'JippyMart - Your One-Stop Destination for Groceries & Daily Essentials',
+            'description' => 'Get fresh groceries, medicines, and daily essentials delivered to your doorstep. Fast delivery, quality products, and great prices at JippyMart.'
+        ]);
         
         // Pass SEO data to your existing home view
-        return view('home', [
-            'pageKey' => 'home',
-            'seoData' => $seoData,
-            'globalSettings' => $globalSettings,
-        ]);
+        return view('home', compact('seoData'));
     }
     public function setLocation()
     {

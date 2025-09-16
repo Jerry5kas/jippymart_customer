@@ -933,3 +933,4 @@ Route::prefix('mart')->group(function () {
     Route::get('/cart', [App\Http\Controllers\MartCartController::class, 'getCart'])->name('mart.cart.get');
     Route::delete('/cart/clear', [App\Http\Controllers\MartCartController::class, 'clearCart'])->name('mart.cart.clear');
 });
+

@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-@if(isset($pageKey))
+@if(isset($seoData))
     <!-- SEO Meta Tags -->
     @include('partials.seo')
 @else
@@ -94,5 +94,6 @@
     </style>
 </head>
 <body class="fixed-bottom-bar">
+    @yield('content')
 </body>
 </html>
