@@ -49,11 +49,14 @@ Route::prefix('search')->group(function () {
     // Category search endpoints
     Route::get('/categories', [App\Http\Controllers\SearchController::class, 'searchCategories']);
     Route::get('/categories/published', [App\Http\Controllers\SearchController::class, 'getPublishedCategories']);
-    
+
     // Mart items search endpoints
     Route::get('/items', [App\Http\Controllers\SearchController::class, 'searchMartItems']);
     Route::get('/items/featured', [App\Http\Controllers\SearchController::class, 'getFeaturedMartItems']);
-    
+
+    // Food items search endpoints
+    Route::get('/food', [App\Http\Controllers\FoodSearchController::class, 'searchFoodItems']);
+
     // Health check endpoint
     Route::get('/health', [App\Http\Controllers\SearchController::class, 'healthCheck']);
 });

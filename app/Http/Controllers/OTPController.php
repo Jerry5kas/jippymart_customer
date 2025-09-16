@@ -18,10 +18,22 @@ use App\Services\FirebaseService;
 
 class OTPController extends Controller
 {
+    protected $firebaseService;
+    
     // SMS API Configuration
     private $smsApiUrl = 'https://restapi.smscountry.com/v0.1/Accounts/g3NwQZX8qbjHARPZktFZ/SMSes/';
     private $authKey = 'Basic ZzNOd1FaWDhxYmpIQVJQWmt0Rlo6Y2lXdzBZRHUzbTFRY3hkMEFBSmZXaHNmczQ4TXRXdEs4Sk91TnR0Zg==';
     private $senderId = 'JIPPYM';
+
+    /**
+     * Create a new controller instance.
+     *
+     * @return void
+     */
+    public function __construct(FirebaseService $firebaseService)
+    {
+        $this->firebaseService = $firebaseService;
+    }
 
     /**
      * Send OTP to phone number
@@ -158,8 +170,7 @@ class OTPController extends Controller
         $firebaseUid = 'user_' . $user->id; // or $user->phone
 
         // Generate Firebase custom token
-        $firebaseService = new FirebaseService();
-        $firebaseCustomToken = $firebaseService->createCustomToken($firebaseUid);
+        $firebaseCustomToken = $this->firebaseService->createCustomToken($firebaseUid);
 
         return response()->json([
             'success' => true,
