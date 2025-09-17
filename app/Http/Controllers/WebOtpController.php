@@ -171,10 +171,14 @@ class WebOtpController extends Controller
 
                 if (!$user) {
                     // Create Laravel user from Firebase data
+                    // Trim trailing spaces from Firebase data (Android format has trailing spaces)
+                    $firstName = trim($firebaseUser['firstName'] ?? '');
+                    $lastName = trim($firebaseUser['lastName'] ?? '');
+                    
                     $user = User::create([
-                        'name' => ($firebaseUser['firstName'] ?? '') . ' ' . ($firebaseUser['lastName'] ?? ''),
-                        'first_name' => $firebaseUser['firstName'] ?? '',
-                        'last_name' => $firebaseUser['lastName'] ?? '',
+                        'name' => $firstName . ' ' . $lastName,
+                        'first_name' => $firstName,
+                        'last_name' => $lastName,
                         'phone' => $phone,
                         'email' => $firebaseUser['email'] ?? '',
                         'password' => bcrypt(Str::random(16)),
@@ -266,25 +270,26 @@ class WebOtpController extends Controller
             // Generate UUID for new user
             $uuid = 'user_' . uniqid();
 
-            // Create user in Firebase first
+            // Create user in Firebase first - matching Android record structure exactly
             $firebaseUserData = [
                 'id' => $uuid,
-                'firstName' => $request->first_name,
-                'lastName' => $request->last_name,
+                'firstName' => $request->first_name . ' ', // Add trailing space like Android
+                'lastName' => $request->last_name . ' ', // Add trailing space like Android
                 'phoneNumber' => $phone,
                 'email' => $request->email,
                 'countryCode' => '+91',
                 'active' => true,
-                'isActive' => true,
+                'isActive' => false, // Match Android format (false, not true)
                 'isDocumentVerify' => false,
                 'appIdentifier' => 'web',
-                'provider' => 'phone',
+                'provider' => 'email', // Match Android format (email, not phone)
                 'role' => 'customer',
-//                'profilePictureURL' => '',
+                'profilePictureURL' => null, // Add null field like Android
                 'wallet_amount' => 0,
-                'createdAt' => now()->timestamp(),
+                'createdAt' => now()->timestamp(), // Keep timestamp format
                 'shippingAddress' => [],
-                'zoneId' => ''
+                'zoneId' => null // Add null field like Android
+                // Note: fcmToken is intentionally omitted for web users
             ];
 
             // Create user in Firebase
@@ -296,9 +301,9 @@ class WebOtpController extends Controller
 
             // Create user in Laravel database
             $user = User::create([
-                'name' => $request->first_name . ' ' . $request->last_name,
-                'first_name' => $request->first_name,
-                'last_name' => $request->last_name,
+                'name' => trim($request->first_name) . ' ' . trim($request->last_name),
+                'first_name' => trim($request->first_name),
+                'last_name' => trim($request->last_name),
                 'phone' => $phone,
                 'email' => $request->email,
                 'password' => bcrypt(Str::random(16)), // Generate random password
@@ -320,9 +325,9 @@ class WebOtpController extends Controller
 
             // Fallback: Create user only in Laravel database
             $user = User::create([
-                'name' => $request->first_name . ' ' . $request->last_name,
-                'first_name' => $request->first_name,
-                'last_name' => $request->last_name,
+                'name' => trim($request->first_name) . ' ' . trim($request->last_name),
+                'first_name' => trim($request->first_name),
+                'last_name' => trim($request->last_name),
                 'phone' => $phone,
                 'email' => $request->email,
                 'password' => bcrypt(Str::random(16)),
