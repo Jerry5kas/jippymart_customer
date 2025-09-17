@@ -16,7 +16,7 @@ use App\Services\DeliveryChargeService;
 class CheckoutController extends Controller
 {
     protected $deliveryChargeService;
-    
+
     /**
      * Create a new controller instance.
      *
@@ -39,6 +39,19 @@ class CheckoutController extends Controller
     {
         $email = Auth::user()->email;
         $user = VendorUsers::where('email', $email)->first();
+
+        // If not found in VendorUsers, check regular users table
+        if (!$user) {
+            $regularUser = User::where('email', $email)->first();
+            if ($regularUser) {
+                // Create a mock user object with uuid for compatibility
+                $user = (object) [
+                    'uuid' => $regularUser->firebase_uid ?? 'user_' . $regularUser->id,
+                    'email' => $regularUser->email,
+                    'name' => $regularUser->name
+                ];
+            }
+        }
         $cart = Session::get('cart', []);
         if (Session::get('takeawayOption') == 'true') {
         } else {
@@ -46,24 +59,24 @@ class CheckoutController extends Controller
             $address_lng = @$_COOKIE['address_lng'];
             $restaurant_latitude = @$_COOKIE['restaurant_latitude'];
             $restaurant_longitude = @$_COOKIE['restaurant_longitude'];
-            
+
             if (@$address_lat && @$address_lng && @$restaurant_latitude && @$restaurant_longitude) {
                 if (!empty($cart['distanceType'])) {
                     $distanceType = $cart['distanceType'];
                 } else {
                     $distanceType = 'km';
                 }
-                
+
                 $kmradius = $this->distance($address_lat, $address_lng, $restaurant_latitude, $restaurant_longitude, $distanceType);
-                
+
                 // Store distance for new delivery charge system
                 $cart['deliverykm'] = $kmradius;
-                
+
                 // Apply new delivery charge system if enabled
                 if ($this->deliveryChargeService->shouldUseNewDeliverySystem()) {
                     // Calculate item total for new delivery charge system
                     $itemTotal = $this->calculateCartItemTotal($cart);
-                    
+
                     // Debug information (remove in production)
                     if (isset($_GET['debug'])) {
                         error_log("DEBUG: Item total = " . $itemTotal);
@@ -73,13 +86,13 @@ class CheckoutController extends Controller
                         error_log("DEBUG: Restaurant lat = " . $restaurant_latitude);
                         error_log("DEBUG: Restaurant lng = " . $restaurant_longitude);
                     }
-                    
+
                     // Calculate new delivery charge
                     $calculation = $this->deliveryChargeService->calculateDeliveryCharge($itemTotal, $kmradius);
                     $cart['deliverycharge'] = $calculation['actual_fee'];
                     $cart['deliverychargemain'] = $calculation['original_fee'];
                     $cart['delivery_charge_calculation'] = $calculation;
-                    
+
                     // Debug information (remove in production)
                     if (isset($_GET['debug'])) {
                         error_log("DEBUG: Actual fee = " . $calculation['actual_fee']);
@@ -100,21 +113,21 @@ class CheckoutController extends Controller
                     // If no delivery charge calculation exists, try to calculate with default distance
                     if ($this->deliveryChargeService->shouldUseNewDeliverySystem()) {
                         $itemTotal = $this->calculateCartItemTotal($cart);
-                        
+
                         // Debug information (remove in production)
                         if (isset($_GET['debug'])) {
                             error_log("DEBUG FALLBACK: Item total = " . $itemTotal);
                             error_log("DEBUG FALLBACK: Address lat exists = " . (isset($_COOKIE['address_lat']) ? 'yes' : 'no'));
                             error_log("DEBUG FALLBACK: Address lng exists = " . (isset($_COOKIE['address_lng']) ? 'yes' : 'no'));
                         }
-                        
+
                         // Only use fallback if we have some location data
                         if (isset($_COOKIE['address_lat']) && isset($_COOKIE['address_lng'])) {
                             // For items below threshold, always use base delivery charge regardless of distance
                             if ($itemTotal < 299) {
                                 $cart['deliverycharge'] = 23; // Base delivery charge
                                 $cart['deliverychargemain'] = 23;
-                                
+
                                 // Debug information (remove in production)
                                 if (isset($_GET['debug'])) {
                                     error_log("DEBUG FALLBACK: Item < 299, using base charge 23 regardless of distance");
@@ -126,7 +139,7 @@ class CheckoutController extends Controller
                                 $cart['deliverycharge'] = $calculation['actual_fee'];
                                 $cart['deliverychargemain'] = $calculation['original_fee'];
                                 $cart['delivery_charge_calculation'] = $calculation;
-                                
+
                                 // Debug information (remove in production)
                                 if (isset($_GET['debug'])) {
                                     error_log("DEBUG FALLBACK: Using default distance calculation for item >= 299");
@@ -139,7 +152,7 @@ class CheckoutController extends Controller
                             if ($itemTotal < 299) {
                                 $cart['deliverycharge'] = 23; // Base delivery charge
                                 $cart['deliverychargemain'] = 23;
-                                
+
                                 // Debug information (remove in production)
                                 if (isset($_GET['debug'])) {
                                     error_log("DEBUG FALLBACK: No location data, item < 299, using base charge 23");
@@ -148,7 +161,7 @@ class CheckoutController extends Controller
                                 // For items above threshold, assume free delivery within range
                                 $cart['deliverycharge'] = 0;
                                 $cart['deliverychargemain'] = 23;
-                                
+
                                 // Debug information (remove in production)
                                 if (isset($_GET['debug'])) {
                                     error_log("DEBUG FALLBACK: No location data, item >= 299, using free delivery");
@@ -165,10 +178,10 @@ class CheckoutController extends Controller
             if (isset($cart['item']) && !empty($cart['item'])) {
                 $itemTotal = $this->calculateCartItemTotal($cart);
                 $delivery_charge_for_tax = $cart['deliverycharge'] ?? 0;
-                
+
                 // Calculate new tax (SGST + GST)
                 $taxCalculation = $this->calculateNewTax($cart, $itemTotal, $delivery_charge_for_tax);
-                
+
                 $cart['tax'] = $taxCalculation['total_tax'];
                 $cart['sgst'] = $taxCalculation['sgst'];
                 $cart['gst'] = $taxCalculation['gst'];
@@ -194,6 +207,19 @@ class CheckoutController extends Controller
     {
         $email = Auth::user()->email;
         $user = VendorUsers::where('email', $email)->first();
+
+        // If not found in VendorUsers, check regular users table
+        if (!$user) {
+            $regularUser = User::where('email', $email)->first();
+            if ($regularUser) {
+                // Create a mock user object with uuid for compatibility
+                $user = (object) [
+                    'uuid' => $regularUser->firebase_uid ?? 'user_' . $regularUser->id,
+                    'email' => $regularUser->email,
+                    'name' => $regularUser->name
+                ];
+            }
+        }
         $cart = Session::get('cart', []);
         if (@$cart['cart_order']) {
             // For COD payments, place order directly and redirect to success
@@ -925,7 +951,7 @@ class CheckoutController extends Controller
     private function calculateCartItemTotal($cart)
     {
         $total = 0;
-        
+
         if (isset($cart['item']) && is_array($cart['item'])) {
             foreach ($cart['item'] as $restaurantItems) {
                 if (is_array($restaurantItems)) {
@@ -933,13 +959,13 @@ class CheckoutController extends Controller
                         $basePrice = floatval($item['item_price'] ?? 0);
                         $extraPrice = floatval($item['extra_price'] ?? 0);
                         $quantity = floatval($item['quantity'] ?? 1);
-                        
+
                         $total += ($basePrice + $extraPrice) * $quantity;
                     }
                 }
             }
         }
-        
+
         return $total;
     }
 
@@ -953,7 +979,7 @@ class CheckoutController extends Controller
         $sgst = 0;
         $gst = 0;
         $total_tax = 0;
-        
+
         // Calculate SGST (5%) on Item Total (before any discounts)
         $item_total_before_discount = 0;
         if (isset($cart['item']) && is_array($cart['item'])) {
@@ -968,16 +994,16 @@ class CheckoutController extends Controller
                 }
             }
         }
-        
+
         // SGST = 5% of item total (before discounts)
         $sgst = ($item_total_before_discount * 5) / 100;
-        
+
         // GST = 18% of delivery charge
         $gst = ($delivery_charge * 18) / 100;
-        
+
         // Total tax = SGST + GST
         $total_tax = $sgst + $gst;
-        
+
         return [
             'sgst' => $sgst,
             'gst' => $gst,
@@ -1001,7 +1027,7 @@ class CheckoutController extends Controller
 
     //         // Here you can add any additional order processing logic
     //         // For example, creating order in database, sending notifications, etc.
-            
+
     //         return true;
     //     } catch (\Exception $e) {
     //         Log::error('Error placing COD order: ' . $e->getMessage());

@@ -58,9 +58,23 @@ Route::get('/faq', [App\Http\Controllers\Customer\PageController::class, 'faq'])
 Route::get('/offers', [App\Http\Controllers\Customer\PageController::class, 'offers'])->name('customer.offers');
 
 
-Route::get('login', [App\Http\Controllers\LoginController::class, 'login'])->name('login');
+// Web OTP Authentication Routes
+Route::get('otp-login', [App\Http\Controllers\WebOtpController::class, 'showPhoneInput'])->name('otp.phone');
+Route::post('otp-send', [App\Http\Controllers\WebOtpController::class, 'sendOtp'])->name('otp.send');
+Route::get('otp-verify', [App\Http\Controllers\WebOtpController::class, 'showOtpVerify'])->name('otp.verify');
+Route::post('otp-verify', [App\Http\Controllers\WebOtpController::class, 'verifyOtp'])->name('otp.verify');
+Route::get('otp-register', [App\Http\Controllers\WebOtpController::class, 'showRegistration'])->name('otp.register');
+Route::post('otp-register', [App\Http\Controllers\WebOtpController::class, 'completeRegistration'])->name('otp.register.complete');
+Route::get('otp-resend', [App\Http\Controllers\WebOtpController::class, 'resendOtp'])->name('otp.resend');
 
-Route::get('signup', [App\Http\Controllers\LoginController::class, 'signup'])->name('signup');
+// Redirect old login/signup to new OTP flow
+Route::get('login', function() {
+    return redirect()->route('otp.phone');
+})->name('login');
+
+Route::get('signup', function() {
+    return redirect()->route('otp.phone');
+})->name('signup');
 
 Route::get('socialsignup', [App\Http\Controllers\LoginController::class, 'socialsignup'])->name('socialsignup');
 
@@ -139,6 +153,7 @@ Route::get('products', [App\Http\Controllers\ProductController::class, 'productL
 Route::get('product/{id}', function ($id) {
     return redirect('/')->with('message', 'Product detail page is not available.');
 })->name('productDetail');
+
 Route::get('product/{id}/restaurant-info', [App\Http\Controllers\ProductController::class, 'getRestaurantInfo'])
     ->name('product.restaurant-info')
     ->middleware('cache.headers:public;max_age=3600;etag');
@@ -925,7 +940,7 @@ Route::prefix('mart')->group(function () {
         return view('mart.item-by-category');
     });
     Route::get('/items-by-subcategory/{subcategoryTitle}', [MartController::class, 'itemsBySubcategory'])->name('mart.items.by.subcategory');
-    
+
     // Cart routes
     Route::post('/cart/add', [App\Http\Controllers\MartCartController::class, 'addToCart'])->name('mart.cart.add');
     Route::post('/cart/update', [App\Http\Controllers\MartCartController::class, 'updateQuantity'])->name('mart.cart.update');

@@ -65,7 +65,7 @@ class AjaxController extends Controller
             ]);
 
         } else {
-            
+
             $user = VendorUsers::select('id')->where('email', $request->email)->first();
 
             $user = VendorUsers::find($user->id);
@@ -187,22 +187,15 @@ class AjaxController extends Controller
 
     public function logout(Request $request)
     {
-
-        $user_id = Auth::user()->user_id;
-        $user = VendorUsers::where('user_id', $user_id)->first();
-
         try {
             Auth::logout();
-            return redirect('/login');
+            // Clear all sessions
+            session()->flush();
+            return redirect()->route('home')->with('success', 'Logged out successfully');
         } catch (\Exception $e) {
-            $this->sendError($e->getMessage(), 401);
+            \Log::error('Logout error: ' . $e->getMessage());
+            return redirect()->route('home')->with('error', 'Logout failed');
         }
-
-        $data1 = array();
-        if (!Auth::check()) {
-            $data1['logoutuser'] = true;
-        }
-        return $data1;
     }
 
     public function newRegister(Request $request)
