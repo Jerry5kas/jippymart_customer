@@ -64,7 +64,7 @@ foreach ($countries as $keycountry => $valuecountry) {
                             <div class="form-group form-material" >
                                             <label class="col-3 control-label">{{trans('lang.user_phone')}}</label>
                                             <div class="col-12">
-                                                <div class="phone-box position-relative" id="phone-box"> 
+                                                <div class="phone-box position-relative" id="phone-box">
                                                     <select name="country" id="country_selector" disabled>
                                                         <?php foreach ($newcountries as $keycy => $valuecy) { ?>
                                                         <?php $selected = ""; ?>
@@ -248,7 +248,7 @@ foreach ($countries as $keycountry => $valuecountry) {
                 firebase.auth().signInWithEmailAndPassword(userEmail, userOldPassword).then((userCredential) => {
                     var user = userCredential.user;
                         user.updatePassword(userNewPassword).then(() => {
-                            showAlertMessage("{{trans('lang.password_updated_successfully')}}", "green", 3);  
+                            showAlertMessage("{{trans('lang.password_updated_successfully')}}", "green", 3);
                             window.scrollTo(0, 0);
                             $("#change_password .close").trigger( "click" );
                             }).catch((error) => {

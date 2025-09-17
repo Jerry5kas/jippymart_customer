@@ -165,6 +165,62 @@ class FirebaseService
     }
 
     /**
+     * Get user by phone number from Firestore
+     *
+     * @param string $phone
+     * @return array|null
+     */
+    public function getUserByPhone(string $phone)
+    {
+        try {
+            if (!$this->firestore) {
+                return null;
+            }
+
+            $query = $this->firestore->collection('users')
+                ->where('phoneNumber', '==', $phone)
+                ->limit(1);
+
+            $documents = $query->documents();
+
+            foreach ($documents as $document) {
+                if ($document->exists()) {
+                    return $document->data();
+                }
+            }
+
+            return null;
+        } catch (\Exception $e) {
+            \Log::error('Error fetching user by phone: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Create user in Firestore
+     *
+     * @param array $userData
+     * @return array|null
+     */
+    public function createUser(array $userData)
+    {
+        try {
+            if (!$this->firestore) {
+                return null;
+            }
+
+            $userId = $userData['id'] ?? 'user_' . uniqid();
+
+            $this->firestore->collection('users')->document($userId)->set($userData);
+
+            return $userData;
+        } catch (\Exception $e) {
+            \Log::error('Error creating user in Firebase: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
      * Get vendor data from Firestore
      *
      * @param string $vendorId
