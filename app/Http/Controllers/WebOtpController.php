@@ -174,7 +174,7 @@ class WebOtpController extends Controller
                     // Trim trailing spaces from Firebase data (Android format has trailing spaces)
                     $firstName = trim($firebaseUser['firstName'] ?? '');
                     $lastName = trim($firebaseUser['lastName'] ?? '');
-                    
+
                     $user = User::create([
                         'name' => $firstName . ' ' . $lastName,
                         'first_name' => $firstName,
@@ -289,7 +289,7 @@ class WebOtpController extends Controller
                 'createdAt' => now()->timestamp(), // Keep timestamp format
                 'shippingAddress' => [],
                 'zoneId' => null // Add null field like Android
-                // Note: fcmToken is intentionally omitted for web users
+                // Note: fcmToken is intentionaly omitted for web users
             ];
 
             // Create user in Firebase
