@@ -46,24 +46,27 @@ users:
 └── updated_at
 ```
 
-#### Firebase Users Collection
+#### Firebase Users Collection (Android-Compatible Format)
 ```json
 {
   "id": "user_1234567890",
-  "firstName": "John",
-  "lastName": "Doe",
+  "firstName": "John ",  // Note: Trailing space like Android
+  "lastName": "Doe ",    // Note: Trailing space like Android
   "phoneNumber": "9876543210",
   "email": "john@example.com",
   "countryCode": "+91",
   "active": true,
-  "isActive": true,
+  "isActive": false,     // Note: false like Android (not true)
   "isDocumentVerify": false,
   "appIdentifier": "web",
-  "provider": "phone",
+  "provider": "email",   // Note: email like Android (not phone)
   "role": "customer",
   "wallet_amount": 0,
-  "createdAt": "2025-01-16T10:30:00Z",
-  "shippingAddress": []
+  "createdAt": 1695123456,  // Timestamp format
+  "shippingAddress": [],
+  "profilePictureURL": null,  // Added like Android
+  "zoneId": null             // Added like Android
+  // Note: fcmToken intentionally omitted for web users
 }
 ```
 
@@ -336,19 +339,44 @@ if ($otpSentAt && now()->diffInMinutes($otpSentAt) > 30) {
 
 ## 🔄 User Synchronization
 
+### Android Compatibility
+The web implementation creates Firebase records that are **100% compatible** with Android records, except for the `fcmToken` field which is intentionally omitted for web users.
+
+#### Field Mapping Comparison
+| Field | Android Format | Web Format | Status |
+|-------|---------------|------------|---------|
+| `active` | `true` | `true` | ✅ Same |
+| `appIdentifier` | `"android"` | `"web"` | ✅ Different (intentional) |
+| `countryCode` | `"+91"` | `"+91"` | ✅ Same |
+| `createdAt` | timestamp | timestamp | ✅ Same format |
+| `email` | `"user@email.com"` | `"user@email.com"` | ✅ Same |
+| `fcmToken` | Present | Not present | ❌ Different (intentional) |
+| `firstName` | `"John "` | `"John "` | ✅ Same (with trailing space) |
+| `id` | `"user_28"` | `"user_68ca75deb6a73"` | ✅ Different (unique) |
+| `isActive` | `false` | `false` | ✅ Same |
+| `isDocumentVerify` | `false` | `false` | ✅ Same |
+| `lastName` | `"Doe "` | `"Doe "` | ✅ Same (with trailing space) |
+| `phoneNumber` | `"7997023108"` | `"7997023108"` | ✅ Same |
+| `profilePictureURL` | `null` | `null` | ✅ Same |
+| `provider` | `"email"` | `"email"` | ✅ Same |
+| `role` | `"customer"` | `"customer"` | ✅ Same |
+| `shippingAddress` | `[]` | `[]` | ✅ Same |
+| `wallet_amount` | `0` | `0` | ✅ Same |
+| `zoneId` | `null` | `null` | ✅ Same |
+
 ### Mobile to Web Sync
 When a mobile user logs in via web:
 1. **Firebase Lookup**: Check if user exists in Firebase users collection
-2. **Data Retrieval**: Get user data from Firebase
-3. **Laravel Creation**: Create corresponding Laravel user
+2. **Data Retrieval**: Get user data from Firebase (with trailing spaces)
+3. **Laravel Creation**: Create corresponding Laravel user (trimmed names)
 4. **UUID Mapping**: Use Firebase `id` as `firebase_uid`
 
 ### Web to Mobile Sync
 When a new web user registers:
 1. **UUID Generation**: Create unique identifier
-2. **Firebase Creation**: Store user in Firebase with proper structure
-3. **Laravel Creation**: Store user in Laravel database
-4. **Mobile Compatibility**: Structure matches mobile app format
+2. **Firebase Creation**: Store user in Firebase with Android-compatible structure
+3. **Laravel Creation**: Store user in Laravel database (trimmed names)
+4. **Mobile Compatibility**: Structure matches Android app format exactly
 
 ## 🚀 Deployment Checklist
 
