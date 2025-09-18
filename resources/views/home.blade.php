@@ -1116,6 +1116,12 @@
     });
 
     function getBanners() {
+        // Check if user_zone_id is available
+        if (!user_zone_id) {
+            console.log("User zone ID not available, skipping banner fetch");
+            return;
+        }
+
         var available_stores = [];
         geoFirestore.collection('vendors').where('zoneId', '==', user_zone_id).get().then(async function(snapshots) {
             snapshots.docs.forEach((doc) => {
@@ -1124,13 +1130,25 @@
                 }
             });
         });
+        
         var position1_banners = [];
-        bannerref.get().then(async function(banners) {
+        
+        // Filter banners by user's zone ID - using simpler query to avoid index issues
+        // Create a new reference without orderBy to avoid composite index requirement
+        var zoneBannerRef = database.collection('menu_items').where('zoneId', '==', user_zone_id).where('is_publish', '==', true);
+        zoneBannerRef.get().then(async function(banners) {
+            console.log("Fetching banners for zone:", user_zone_id);
+            console.log("Found banners:", banners.docs.length);
+            
             banners.docs.forEach((banner) => {
                 var bannerData = banner.data();
                 var redirect_type = '';
                 var redirect_id = '';
-                if (bannerData.position == 'top') {
+                
+                console.log("Processing banner:", bannerData.title, "Position:", bannerData.position, "ZoneId:", bannerData.zoneId);
+                
+                // Only process banners with position 'top' and matching zone
+                if (bannerData.position == 'top' && bannerData.zoneId == user_zone_id) {
                     if (bannerData.hasOwnProperty('redirect_type')) {
                         redirect_type = bannerData.redirect_type;
                         redirect_id = bannerData.redirect_id;
@@ -1139,10 +1157,20 @@
                         'photo': bannerData.photo,
                         'redirect_type': redirect_type,
                         'redirect_id': redirect_id,
+                        'restaurant_slug': bannerData.restaurant_slug || '',
+                        'zone_slug': bannerData.zone_slug || '',
+                        'set_order': bannerData.set_order || 0
                     }
                     position1_banners.push(object);
+                    console.log("✅ Added banner for zone:", user_zone_id, "Title:", bannerData.title);
+                } else {
+                    console.log("❌ Banner filtered out - Position:", bannerData.position, "Expected: 'top', ZoneId:", bannerData.zoneId, "Expected:", user_zone_id);
                 }
             });
+            
+            // Sort banners by set_order on client side
+            position1_banners.sort((a, b) => (a.set_order || 0) - (b.set_order || 0));
+            
             if (position1_banners.length > 0) {
                 var html = '';
                 for (banner of position1_banners) {
@@ -1153,8 +1181,9 @@
                         if (banner.redirect_type == "store") {
                             if (jQuery.inArray(banner.redirect_id, available_stores) === -1) {
                                 redirect_id = '#';
+                            } else {
+                                redirect_id = "/restaurant/" + banner.redirect_id + "/" + banner.restaurant_slug + "/" + banner.zone_slug;
                             }
-                            redirect_id = "/restaurant/" + banner.redirect_id + "/" + banner.restaurant_slug + "/" + banner.zone_slug;
                         } else if (banner.redirect_type == "product") {
                             redirect_id = "/productDetail/" + banner.redirect_id;
                         } else if (banner.redirect_type == "external_link") {
@@ -1167,12 +1196,67 @@
                     html += '</div>';
                 }
                 $("#top_banner").html(html);
+                console.log("Banners displayed for zone:", user_zone_id);
             } else {
+                console.log("No banners found for zone:", user_zone_id);
                 $('.ecommerce-banner').remove();
             }
             setTimeout(function() {
                 slickcatCarousel();
             }, 200)
+        }).catch(function(error) {
+            console.error("Error fetching banners for zone:", user_zone_id, error);
+            // Fallback: try without zone filter if the query fails
+            console.log("Trying fallback banner query without zone filter...");
+            bannerref.get().then(async function(fallbackBanners) {
+                var fallback_banners = [];
+                fallbackBanners.docs.forEach((banner) => {
+                    var bannerData = banner.data();
+                    if (bannerData.position == 'top') {
+                        var object = {
+                            'photo': bannerData.photo,
+                            'redirect_type': bannerData.redirect_type || '',
+                            'redirect_id': bannerData.redirect_id || '',
+                            'restaurant_slug': bannerData.restaurant_slug || '',
+                            'zone_slug': bannerData.zone_slug || ''
+                        }
+                        fallback_banners.push(object);
+                    }
+                });
+                
+                if (fallback_banners.length > 0) {
+                    var html = '';
+                    for (banner of fallback_banners) {
+                        html += '<div class="banner-item">';
+                        html += '<div class="banner-img">';
+                        var redirect_id = '#';
+                        if (banner.redirect_type != '') {
+                            if (banner.redirect_type == "store") {
+                                if (jQuery.inArray(banner.redirect_id, available_stores) === -1) {
+                                    redirect_id = '#';
+                                } else {
+                                    redirect_id = "/restaurant/" + banner.redirect_id + "/" + banner.restaurant_slug + "/" + banner.zone_slug;
+                                }
+                            } else if (banner.redirect_type == "product") {
+                                redirect_id = "/productDetail/" + banner.redirect_id;
+                            } else if (banner.redirect_type == "external_link") {
+                                redirect_id = banner.redirect_id;
+                            }
+                        }
+                        html += '<a href="' + redirect_id + '"><img onerror="this.onerror=null;this.src=\'' +
+                            placeholderImage + '\'" src="' + banner.photo + '"></a>';
+                        html += '</div>';
+                        html += '</div>';
+                    }
+                    $("#top_banner").html(html);
+                    console.log("Fallback banners displayed");
+                } else {
+                    $('.ecommerce-banner').remove();
+                }
+                setTimeout(function() {
+                    slickcatCarousel();
+                }, 200)
+            });
         });
     }
 
