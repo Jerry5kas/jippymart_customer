@@ -956,6 +956,7 @@
 <script type="text/javascript">
     jQuery("#data-table_processing").show();
 
+
     var firestore = firebase.firestore();
     var database = firestore; // Alias for compatibility
     var geoFirestore = new GeoFirestore(firestore);
@@ -1655,7 +1656,7 @@
                     function(error) {
                         console.error("Geolocation error:", error);
                         let errorMessage = "Unable to get your location";
-                        
+
                         switch(error.code) {
                             case error.PERMISSION_DENIED:
                                 errorMessage = "Location access denied. Please allow location access or set location manually.";
@@ -1667,9 +1668,9 @@
                                 errorMessage = "Location request timed out.";
                                 break;
                         }
-                        
+
                         console.log(errorMessage);
-                        
+
                         // Show user-friendly message
                         if (typeof Swal !== 'undefined') {
                             Swal.fire({
@@ -1691,7 +1692,7 @@
                         } else {
                             alert(errorMessage);
                         }
-                        
+
                         // Try to use a default location as fallback
                         console.log("Trying fallback location...");
                         tryFallbackLocation().then(resolve).catch(() => {
@@ -1759,11 +1760,11 @@
                         if (isInZone) {
                             user_zone_id = zone.id;
                             console.log("✅ Zone detected:", user_zone_id, "-", zone.title || "No title");
-                            
+
                             // Save zone ID to cookies for mart page
                             setCookie('user_zone_id', user_zone_id, 365);
                             console.log("Zone ID saved to cookies:", user_zone_id);
-                            
+
                             return; // Exit function once zone is found
                         }
                     } else {
@@ -1831,11 +1832,11 @@
                 var firstZone = snapshots.docs[0];
                 user_zone_id = firstZone.id;
                 console.log("🔄 Using fallback zone:", user_zone_id, "-", firstZone.data().title || "No title");
-                
+
                 // Save fallback zone ID to cookies for mart page
                 setCookie('user_zone_id', user_zone_id, 365);
                 console.log("Fallback zone ID saved to cookies:", user_zone_id);
-                
+
                 return true;
             } else {
                 // If no zones exist at all, try to create a default zone or use a system default
@@ -1889,13 +1890,13 @@
                 // Use a simple reverse geocoding service
                 const response = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`);
                 const data = await response.json();
-                
+
                 if (data && data.localityInfo && data.localityInfo.administrative) {
                     const address = data.localityInfo.administrative
                         .filter(admin => admin.order <= 3) // Get city, state, country
                         .map(admin => admin.name)
                         .join(', ');
-                    
+
                     if (address) {
                         setCookie('user_address', address, 365);
                         console.log("Address saved:", address);
@@ -1903,13 +1904,13 @@
                     }
                 }
             }
-            
+
             // Fallback: create a simple address from coordinates
             const fallbackAddress = `Location: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
             setCookie('user_address', fallbackAddress, 365);
             console.log("Fallback address saved:", fallbackAddress);
             return fallbackAddress;
-            
+
         } catch (error) {
             console.error("Error getting address from coordinates:", error);
             // Fallback: create a simple address from coordinates
@@ -3539,20 +3540,20 @@
             console.log('Location available, allowing access to Mart');
             return true;
         }
-        
+
         // If no location, show alert but still allow navigation
         console.log('No location detected, but allowing access to Mart');
         return true;
-        
+
         // Original location check code (commented out for now)
         /*
         // Check if location variables are defined and valid
         if (typeof address_lat === 'undefined' || typeof address_lng === 'undefined' || typeof user_zone_id === 'undefined' ||
             address_lat == '' || address_lng == '' || address_lat == null || address_lng == null ||
             user_zone_id == null || user_zone_id == '') {
-            
+
             event.preventDefault();
-            
+
             // Show alert to user
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
@@ -3575,7 +3576,7 @@
             }
             return false;
         }
-        
+
         // Location is set, allow navigation
         return true;
         */
@@ -3596,13 +3597,13 @@
                 floatingBtn.style.cursor = 'pointer';
                 floatingBtn.title = 'Go to Mart (Location will be set if needed)';
             }
-            
+
             // Original location check code (commented out for now)
             /*
             if (typeof address_lat === 'undefined' || typeof address_lng === 'undefined' || typeof user_zone_id === 'undefined' ||
                 address_lat == '' || address_lng == '' || address_lat == null || address_lng == null ||
                 user_zone_id == null || user_zone_id == '') {
-                
+
                 floatingBtn.style.opacity = '0.6';
                 floatingBtn.style.cursor = 'not-allowed';
                 floatingBtn.title = 'Please set your location first';
@@ -3619,18 +3620,18 @@
     $(document).ready(function() {
         // Update button status initially
         updateFloatingButtonStatus();
-        
+
         // Update button status periodically until location is set
         const locationCheckInterval = setInterval(() => {
             updateFloatingButtonStatus();
-            
+
             // Stop checking once location is set
             if (typeof address_lat !== 'undefined' && typeof address_lng !== 'undefined' && typeof user_zone_id !== 'undefined' &&
                 address_lat && address_lng && user_zone_id) {
                 clearInterval(locationCheckInterval);
             }
         }, 2000);
-        
+
         // Clear interval after 30 seconds to avoid infinite checking
         setTimeout(() => {
             clearInterval(locationCheckInterval);
@@ -3668,21 +3669,21 @@
 </style>
 
 <!-- Floating Button -->
-<a href="{{ url('mart') }}" 
-   class="floating-btn" 
+<a href="{{ url('mart') }}"
+   class="floating-btn"
    id="mart-floating-btn"
    title="Go to Mart"
    onclick="checkLocationAndNavigate(event)">
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-      <path stroke-linecap="round" stroke-linejoin="round" 
-        d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 
-        3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 
-        2.1-4.684 2.924-7.138a60.114 60.114 
-        0 0 0-16.536-1.84M7.5 14.25 
-        5.106 5.272M6 20.25a.75.75 0 
-        1 1-1.5 0 .75.75 0 0 1 
-        1.5 0Zm12.75 0a.75.75 0 
-        1 1-1.5 0 .75.75 0 0 1 
+      <path stroke-linecap="round" stroke-linejoin="round"
+        d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3
+        3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3
+        2.1-4.684 2.924-7.138a60.114 60.114
+        0 0 0-16.536-1.84M7.5 14.25
+        5.106 5.272M6 20.25a.75.75 0
+        1 1-1.5 0 .75.75 0 0 1
+        1.5 0Zm12.75 0a.75.75 0
+        1 1-1.5 0 .75.75 0 0 1
         1.5 0Z" />
     </svg>
 </a>
