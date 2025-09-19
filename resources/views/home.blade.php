@@ -462,7 +462,11 @@
         color: #2c3e50;
         line-height: 1.3;
     }
-
+    .restaurant-name:hover {
+        color: #007bff;
+        cursor: pointer;
+    }
+  
     .restaurant-location {
         display: flex;
         align-items: center;
@@ -955,6 +959,7 @@
 
 <script type="text/javascript">
     jQuery("#data-table_processing").show();
+
     var firestore = firebase.firestore();
     var database = firestore; // Alias for compatibility
     var geoFirestore = new GeoFirestore(firestore);
@@ -1115,6 +1120,12 @@
     });
 
     function getBanners() {
+        // Check if user_zone_id is available
+        if (!user_zone_id) {
+            console.log("User zone ID not available, skipping banner fetch");
+            return;
+        }
+
         var available_stores = [];
         geoFirestore.collection('vendors').where('zoneId', '==', user_zone_id).get().then(async function(snapshots) {
             snapshots.docs.forEach((doc) => {
@@ -1123,13 +1134,25 @@
                 }
             });
         });
+        
         var position1_banners = [];
-        bannerref.get().then(async function(banners) {
+        
+        // Filter banners by user's zone ID - using simpler query to avoid index issues
+        // Create a new reference without orderBy to avoid composite index requirement
+        var zoneBannerRef = database.collection('menu_items').where('zoneId', '==', user_zone_id).where('is_publish', '==', true);
+        zoneBannerRef.get().then(async function(banners) {
+            console.log("Fetching banners for zone:", user_zone_id);
+            console.log("Found banners:", banners.docs.length);
+            
             banners.docs.forEach((banner) => {
                 var bannerData = banner.data();
                 var redirect_type = '';
                 var redirect_id = '';
-                if (bannerData.position == 'top') {
+                
+                console.log("Processing banner:", bannerData.title, "Position:", bannerData.position, "ZoneId:", bannerData.zoneId);
+                
+                // Only process banners with position 'top' and matching zone
+                if (bannerData.position == 'top' && bannerData.zoneId == user_zone_id) {
                     if (bannerData.hasOwnProperty('redirect_type')) {
                         redirect_type = bannerData.redirect_type;
                         redirect_id = bannerData.redirect_id;
@@ -1138,10 +1161,20 @@
                         'photo': bannerData.photo,
                         'redirect_type': redirect_type,
                         'redirect_id': redirect_id,
+                        'restaurant_slug': bannerData.restaurant_slug || '',
+                        'zone_slug': bannerData.zone_slug || '',
+                        'set_order': bannerData.set_order || 0
                     }
                     position1_banners.push(object);
+                    console.log("✅ Added banner for zone:", user_zone_id, "Title:", bannerData.title);
+                } else {
+                    console.log("❌ Banner filtered out - Position:", bannerData.position, "Expected: 'top', ZoneId:", bannerData.zoneId, "Expected:", user_zone_id);
                 }
             });
+            
+            // Sort banners by set_order on client side
+            position1_banners.sort((a, b) => (a.set_order || 0) - (b.set_order || 0));
+            
             if (position1_banners.length > 0) {
                 var html = '';
                 for (banner of position1_banners) {
@@ -1152,8 +1185,9 @@
                         if (banner.redirect_type == "store") {
                             if (jQuery.inArray(banner.redirect_id, available_stores) === -1) {
                                 redirect_id = '#';
+                            } else {
+                                redirect_id = "/restaurant/" + banner.redirect_id + "/" + banner.restaurant_slug + "/" + banner.zone_slug;
                             }
-                            redirect_id = "/restaurant/" + banner.redirect_id + "/" + banner.restaurant_slug + "/" + banner.zone_slug;
                         } else if (banner.redirect_type == "product") {
                             redirect_id = "/productDetail/" + banner.redirect_id;
                         } else if (banner.redirect_type == "external_link") {
@@ -1166,12 +1200,67 @@
                     html += '</div>';
                 }
                 $("#top_banner").html(html);
+                console.log("Banners displayed for zone:", user_zone_id);
             } else {
+                console.log("No banners found for zone:", user_zone_id);
                 $('.ecommerce-banner').remove();
             }
             setTimeout(function() {
                 slickcatCarousel();
             }, 200)
+        }).catch(function(error) {
+            console.error("Error fetching banners for zone:", user_zone_id, error);
+            // Fallback: try without zone filter if the query fails
+            console.log("Trying fallback banner query without zone filter...");
+            bannerref.get().then(async function(fallbackBanners) {
+                var fallback_banners = [];
+                fallbackBanners.docs.forEach((banner) => {
+                    var bannerData = banner.data();
+                    if (bannerData.position == 'top') {
+                        var object = {
+                            'photo': bannerData.photo,
+                            'redirect_type': bannerData.redirect_type || '',
+                            'redirect_id': bannerData.redirect_id || '',
+                            'restaurant_slug': bannerData.restaurant_slug || '',
+                            'zone_slug': bannerData.zone_slug || ''
+                        }
+                        fallback_banners.push(object);
+                    }
+                });
+                
+                if (fallback_banners.length > 0) {
+                    var html = '';
+                    for (banner of fallback_banners) {
+                        html += '<div class="banner-item">';
+                        html += '<div class="banner-img">';
+                        var redirect_id = '#';
+                        if (banner.redirect_type != '') {
+                            if (banner.redirect_type == "store") {
+                                if (jQuery.inArray(banner.redirect_id, available_stores) === -1) {
+                                    redirect_id = '#';
+                                } else {
+                                    redirect_id = "/restaurant/" + banner.redirect_id + "/" + banner.restaurant_slug + "/" + banner.zone_slug;
+                                }
+                            } else if (banner.redirect_type == "product") {
+                                redirect_id = "/productDetail/" + banner.redirect_id;
+                            } else if (banner.redirect_type == "external_link") {
+                                redirect_id = banner.redirect_id;
+                            }
+                        }
+                        html += '<a href="' + redirect_id + '"><img onerror="this.onerror=null;this.src=\'' +
+                            placeholderImage + '\'" src="' + banner.photo + '"></a>';
+                        html += '</div>';
+                        html += '</div>';
+                    }
+                    $("#top_banner").html(html);
+                    console.log("Fallback banners displayed");
+                } else {
+                    $('.ecommerce-banner').remove();
+                }
+                setTimeout(function() {
+                    slickcatCarousel();
+                }, 200)
+            });
         });
     }
 
@@ -1481,7 +1570,7 @@
 
     // Add interactive functionality to restaurant cards
     function addRestaurantCardInteractivity() {
-        // Restaurant card click handlers
+        // Restaurant card click handlers - now handled by onclick attribute
         $('.restaurant-card').off('click').on('click', function(e) {
             // Don't trigger if clicking on badges
             if (!$(e.target).closest('.rating-badge').length) {
@@ -1494,8 +1583,7 @@
                     $(this).removeClass('card-clicked');
                 }, 200);
 
-                // Here you can add navigation to restaurant details page
-                // window.location.href = '/restaurant/' + restaurantId;
+                // Navigation is now handled by onclick attribute in the HTML
             }
         });
 
@@ -1587,8 +1675,11 @@
 
         // Rating badges are now included in the main HTML structure
 
+        // Create restaurant detail page URL
+        var restaurantUrl = "/restaurant/" + restaurant.id + "/" + (restaurant.restaurant_slug || 'restaurant') + "/" + (restaurant.zone_slug || 'zone');
+
         return `
-            <div class="restaurant-card">
+            <div class="restaurant-card" onclick="window.location.href='${restaurantUrl}'">
                 <div class="restaurant-image">
                     <img src="${photo}" alt="${restaurant.title}" onerror="this.src='${placeholderImageSrc}'">
                     <div class="restaurant-status ${statusclass}">${status}</div>
@@ -1654,7 +1745,7 @@
                     function(error) {
                         console.error("Geolocation error:", error);
                         let errorMessage = "Unable to get your location";
-
+                        
                         switch(error.code) {
                             case error.PERMISSION_DENIED:
                                 errorMessage = "Location access denied. Please allow location access or set location manually.";
@@ -1666,9 +1757,9 @@
                                 errorMessage = "Location request timed out.";
                                 break;
                         }
-
+                        
                         console.log(errorMessage);
-
+                        
                         // Show user-friendly message
                         if (typeof Swal !== 'undefined') {
                             Swal.fire({
@@ -1690,7 +1781,7 @@
                         } else {
                             alert(errorMessage);
                         }
-
+                        
                         // Try to use a default location as fallback
                         console.log("Trying fallback location...");
                         tryFallbackLocation().then(resolve).catch(() => {
@@ -1758,11 +1849,11 @@
                         if (isInZone) {
                             user_zone_id = zone.id;
                             console.log("✅ Zone detected:", user_zone_id, "-", zone.title || "No title");
-
+                            
                             // Save zone ID to cookies for mart page
                             setCookie('user_zone_id', user_zone_id, 365);
                             console.log("Zone ID saved to cookies:", user_zone_id);
-
+                            
                             return; // Exit function once zone is found
                         }
                     } else {
@@ -1830,11 +1921,11 @@
                 var firstZone = snapshots.docs[0];
                 user_zone_id = firstZone.id;
                 console.log("🔄 Using fallback zone:", user_zone_id, "-", firstZone.data().title || "No title");
-
+                
                 // Save fallback zone ID to cookies for mart page
                 setCookie('user_zone_id', user_zone_id, 365);
                 console.log("Fallback zone ID saved to cookies:", user_zone_id);
-
+                
                 return true;
             } else {
                 // If no zones exist at all, try to create a default zone or use a system default
@@ -1888,13 +1979,13 @@
                 // Use a simple reverse geocoding service
                 const response = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`);
                 const data = await response.json();
-
+                
                 if (data && data.localityInfo && data.localityInfo.administrative) {
                     const address = data.localityInfo.administrative
                         .filter(admin => admin.order <= 3) // Get city, state, country
                         .map(admin => admin.name)
                         .join(', ');
-
+                    
                     if (address) {
                         setCookie('user_address', address, 365);
                         console.log("Address saved:", address);
@@ -1902,13 +1993,13 @@
                     }
                 }
             }
-
+            
             // Fallback: create a simple address from coordinates
             const fallbackAddress = `Location: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
             setCookie('user_address', fallbackAddress, 365);
             console.log("Fallback address saved:", fallbackAddress);
             return fallbackAddress;
-
+            
         } catch (error) {
             console.error("Error getting address from coordinates:", error);
             // Fallback: create a simple address from coordinates
@@ -3538,20 +3629,20 @@
             console.log('Location available, allowing access to Mart');
             return true;
         }
-
+        
         // If no location, show alert but still allow navigation
         console.log('No location detected, but allowing access to Mart');
         return true;
-
+        
         // Original location check code (commented out for now)
         /*
         // Check if location variables are defined and valid
         if (typeof address_lat === 'undefined' || typeof address_lng === 'undefined' || typeof user_zone_id === 'undefined' ||
             address_lat == '' || address_lng == '' || address_lat == null || address_lng == null ||
             user_zone_id == null || user_zone_id == '') {
-
+            
             event.preventDefault();
-
+            
             // Show alert to user
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
@@ -3574,7 +3665,7 @@
             }
             return false;
         }
-
+        
         // Location is set, allow navigation
         return true;
         */
@@ -3595,13 +3686,13 @@
                 floatingBtn.style.cursor = 'pointer';
                 floatingBtn.title = 'Go to Mart (Location will be set if needed)';
             }
-
+            
             // Original location check code (commented out for now)
             /*
             if (typeof address_lat === 'undefined' || typeof address_lng === 'undefined' || typeof user_zone_id === 'undefined' ||
                 address_lat == '' || address_lng == '' || address_lat == null || address_lng == null ||
                 user_zone_id == null || user_zone_id == '') {
-
+                
                 floatingBtn.style.opacity = '0.6';
                 floatingBtn.style.cursor = 'not-allowed';
                 floatingBtn.title = 'Please set your location first';
@@ -3618,18 +3709,18 @@
     $(document).ready(function() {
         // Update button status initially
         updateFloatingButtonStatus();
-
+        
         // Update button status periodically until location is set
         const locationCheckInterval = setInterval(() => {
             updateFloatingButtonStatus();
-
+            
             // Stop checking once location is set
             if (typeof address_lat !== 'undefined' && typeof address_lng !== 'undefined' && typeof user_zone_id !== 'undefined' &&
                 address_lat && address_lng && user_zone_id) {
                 clearInterval(locationCheckInterval);
             }
         }, 2000);
-
+        
         // Clear interval after 30 seconds to avoid infinite checking
         setTimeout(() => {
             clearInterval(locationCheckInterval);
@@ -3667,21 +3758,21 @@
 </style>
 
 <!-- Floating Button -->
-<a href="{{ url('mart') }}"
-   class="floating-btn"
+<a href="{{ url('mart') }}" 
+   class="floating-btn" 
    id="mart-floating-btn"
    title="Go to Mart"
    onclick="checkLocationAndNavigate(event)">
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-      <path stroke-linecap="round" stroke-linejoin="round"
-        d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3
-        3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3
-        2.1-4.684 2.924-7.138a60.114 60.114
-        0 0 0-16.536-1.84M7.5 14.25
-        5.106 5.272M6 20.25a.75.75 0
-        1 1-1.5 0 .75.75 0 0 1
-        1.5 0Zm12.75 0a.75.75 0
-        1 1-1.5 0 .75.75 0 0 1
+      <path stroke-linecap="round" stroke-linejoin="round" 
+        d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 
+        3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 
+        2.1-4.684 2.924-7.138a60.114 60.114 
+        0 0 0-16.536-1.84M7.5 14.25 
+        5.106 5.272M6 20.25a.75.75 0 
+        1 1-1.5 0 .75.75 0 0 1 
+        1.5 0Zm12.75 0a.75.75 0 
+        1 1-1.5 0 .75.75 0 0 1 
         1.5 0Z" />
     </svg>
 </a>
