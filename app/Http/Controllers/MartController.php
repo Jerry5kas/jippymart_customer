@@ -1349,4 +1349,21 @@ class MartController extends Controller
         ]);
     }
 
+    /**
+     * Handle banner redirect - Fast redirect to all-items with search
+     */
+    public function bannerRedirect($bannerTitle)
+    {
+        try {
+            // Fast redirect to all-items with search parameter
+            return redirect()->route('mart.all.items', [
+                'search' => $bannerTitle
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error in bannerRedirect: ' . $e->getMessage());
+            return redirect()->route('mart.all.items');
+        }
+    }
+
 }
