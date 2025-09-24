@@ -1348,4 +1348,5 @@ class MartController extends Controller
             'seoData' => $seoData
         ]);
     }
+
 }

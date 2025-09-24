@@ -11,47 +11,14 @@
 
             @forelse ($banners ?? [] as $banner)
                 <div class="w-full flex-shrink-0 relative">
-                    <!-- Background Image with Overlay -->
-                    <div class="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent z-10"></div>
-                    <img src="{{ $banner['photo'] }}" 
-                         alt="{{ $banner['title'] ?? 'Banner' }}"
-                         class="w-full h-full object-cover object-center opacity-50 backdrop-blur-sm"
-                         loading="lazy">
-                    
-                    <!-- Content Overlay -->
-                    <div class="absolute inset-0 z-20 flex items-center">
-                        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-                            <div class="max-w-1/2 mx-auto text-center">
-                                <!-- Title -->
-                                <h2 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4 leading-tight">
-                                    {{ $banner['title'] ?? 'Special Offer' }}
-                                </h2>
-                                
-                                <!-- Subtitle -->
-                                @if(!empty($banner['text']))
-                                <p class="text-lg sm:text-xl md:text-2xl text-white/90 mb-6 font-medium">
-                                    {{ $banner['text'] }}
-                                </p>
-                                @endif
-                                
-                                <!-- Description -->
-                                @if(!empty($banner['description']))
-                                <p class="text-sm sm:text-base text-white/80 mb-8 leading-relaxed">
-                                    {{ $banner['description'] }}
-                                </p>
-                                @endif
-                                
-                                <!-- CTA Button -->
-                                <button class="group relative inline-flex items-center px-6 py-3 sm:px-8 sm:py-4 bg-[#007F73] hover:bg-[#005f56] text-white font-semibold rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 ease-out">
-                                    <span class="mr-2">🛒</span>
-                                    <span>Shop Now</span>
-                                    <svg class="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                    <!-- Clickable Banner Image -->
+                    <a href="{{ route('mart.all.items', ['search' => $banner['title'] ?? '']) }}" 
+                       class="block w-full h-full cursor-pointer">
+                        <img src="{{ $banner['photo'] }}" 
+                             alt="{{ $banner['title'] ?? 'Banner' }}"
+                             class="w-full h-full object-cover object-center hover:scale-105 transition-transform duration-300"
+                             loading="lazy">
+                    </a>
                 </div>
             @empty
                 <div class="w-full flex-shrink-0 flex items-center justify-center bg-gradient-to-br from-[#E8F8DB] to-[#C9EDAB]">
