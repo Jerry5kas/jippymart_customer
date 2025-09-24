@@ -1,4 +1,4 @@
-@props(['items' => [], 'categories' => [], 'subcategories' => [], 'filters' => [], 'totalItems' => 0])
+ @props(['items' => [], 'categories' => [], 'subcategories' => [], 'filters' => [], 'totalItems' => 0])
 
 <style>
     /* Enhanced grid layout for product cards */
