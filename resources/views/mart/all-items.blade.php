@@ -1,4 +1,4 @@
-@props(['items' => [], 'categories' => [], 'subcategories' => [], 'filters' => [], 'totalItems' => 0])
+ @props(['items' => [], 'categories' => [], 'subcategories' => [], 'filters' => [], 'totalItems' => 0])
 
 <style>
     /* Enhanced grid layout for product cards */
@@ -286,7 +286,7 @@
                         @if(!empty($filters['search']))
                             <input type="hidden" name="search" value="{{ $filters['search'] }}">
                         @endif
-                        
+
                         <!-- Category Filter -->
                         <div class="filter-group">
                             <label class="filter-label">
@@ -332,13 +332,13 @@
                                 Price Range
                             </label>
                             <div class="price-range-container">
-                                <input type="number" 
-                                       name="price_min" 
+                                <input type="number"
+                                       name="price_min"
                                        value="{{ $filters['price_min'] ?? '' }}"
                                        placeholder="Min ₹"
                                        class="filter-input">
-                                <input type="number" 
-                                       name="price_max" 
+                                <input type="number"
+                                       name="price_max"
                                        value="{{ $filters['price_max'] ?? '' }}"
                                        placeholder="Max ₹"
                                        class="filter-input">
@@ -417,13 +417,13 @@
                 <div class="inline-flex items-center gap-x-3">
                     @if(!empty($filters['search']))
                         <!-- Clear Search Button -->
-                        <a href="{{ route('mart.all.items') }}" 
+                        <a href="{{ route('mart.all.items') }}"
                            class="px-4 py-2 bg-white/20 backdrop-blur-sm border border-white/30 rounded-lg hover:bg-white/30 transition-colors text-sm">
                             Clear Search
                         </a>
                     @endif
                     <!-- Mobile Filter Button -->
-                    <button class="lg:hidden px-4 py-2 bg-white/20 backdrop-blur-sm border border-white/30 rounded-lg hover:bg-white/30 transition-colors" 
+                    <button class="lg:hidden px-4 py-2 bg-white/20 backdrop-blur-sm border border-white/30 rounded-lg hover:bg-white/30 transition-colors"
                             @click="filtersOpen = true">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                              stroke="currentColor" class="size-6">
@@ -507,7 +507,7 @@
     </div>
 
     <!-- Enhanced Mobile Filter Modal -->
-    <div x-show="filtersOpen" 
+    <div x-show="filtersOpen"
          x-transition:enter="transition ease-out duration-300"
          x-transition:enter-start="opacity-0"
          x-transition:enter-end="opacity-100"
@@ -518,7 +518,7 @@
          style="display: none;">
         <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
             <div class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm transition-opacity" @click="filtersOpen = false"></div>
-            
+
             <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
                 <!-- Modal Header -->
                 <div class="bg-gradient-to-r from-[#007F73] to-[#00A86B] px-6 py-4">
@@ -544,7 +544,7 @@
                         @if(!empty($filters['search']))
                             <input type="hidden" name="search" value="{{ $filters['search'] }}">
                         @endif
-                        
+
                         <!-- Category Filter -->
                         <div class="filter-group">
                             <label class="filter-label">
@@ -590,13 +590,13 @@
                                 Price Range
                             </label>
                             <div class="price-range-container">
-                                <input type="number" 
-                                       name="price_min" 
+                                <input type="number"
+                                       name="price_min"
                                        value="{{ $filters['price_min'] ?? '' }}"
                                        placeholder="Min ₹"
                                        class="filter-input">
-                                <input type="number" 
-                                       name="price_max" 
+                                <input type="number"
+                                       name="price_max"
                                        value="{{ $filters['price_max'] ?? '' }}"
                                        placeholder="Max ₹"
                                        class="filter-input">
@@ -639,7 +639,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Cart Popup -->
     <x-mart.cart-popup />
 </x-layouts.app>
