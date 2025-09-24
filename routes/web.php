@@ -940,6 +940,7 @@ Route::prefix('mart')->group(function () {
         return view('mart.item-by-category');
     });
     Route::get('/items-by-subcategory/{subcategoryTitle}', [MartController::class, 'itemsBySubcategory'])->name('mart.items.by.subcategory');
+    Route::get('/banner/{bannerTitle}', [MartController::class, 'bannerRedirect'])->name('mart.banner.redirect');
 
     // Cart routes
     Route::post('/cart/add', [App\Http\Controllers\MartCartController::class, 'addToCart'])->name('mart.cart.add');

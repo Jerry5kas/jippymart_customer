@@ -12,7 +12,7 @@
             @forelse ($banners ?? [] as $banner)
                 <div class="w-full flex-shrink-0 relative">
                     <!-- Clickable Banner Image -->
-                    <a href="{{ route('mart.all.items', ['search' => $banner['title'] ?? '']) }}" 
+                    <a href="{{ route('mart.banner.redirect', ['bannerTitle' => $banner['title'] ?? '']) }}" 
                        class="block w-full h-full cursor-pointer">
                         <img src="{{ $banner['photo'] }}" 
                              alt="{{ $banner['title'] ?? 'Banner' }}"
