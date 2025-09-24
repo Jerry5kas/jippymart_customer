@@ -480,45 +480,26 @@
                         </div>
                     </div>
                 @else
-                    <div class="text-center py-16 px-8">
-                        <div class="mx-auto mb-6">
-                            <div class="w-24 h-24 mx-auto bg-gradient-to-br from-green-100 to-green-200 rounded-full flex items-center justify-center">
-                                @if(!empty($filters['search']))
-                                    <svg class="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                                    </svg>
-                                @else
-                                    <svg class="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
-                                    </svg>
-                                @endif
-                            </div>
-                        </div>
+                    <div class="text-center py-12">
                         @if(!empty($filters['search']))
-                            <h3 class="text-2xl font-bold text-gray-800 mb-3">No search results found</h3>
-                            <p class="text-gray-600 mb-8 max-w-md mx-auto">We couldn't find any items matching "{{ $filters['search'] }}". Try different keywords or browse all items.</p>
+                            <div class="text-gray-400 text-6xl mb-4">🔍</div>
+                            <h3 class="text-lg font-semibold text-gray-700 mb-2">No search results found</h3>
+                            <p class="text-gray-500 mb-4">We couldn't find any items matching "{{ $filters['search'] }}". Try different keywords or browse all items.</p>
                         @else
-                            <h3 class="text-2xl font-bold text-gray-800 mb-3">No items found</h3>
-                            <p class="text-gray-600 mb-8 max-w-md mx-auto">We couldn't find any items matching your filters.</p>
+                            <div class="text-gray-400 text-6xl mb-4">📦</div>
+                            <h3 class="text-lg font-semibold text-gray-700 mb-2">No items found</h3>
+                            <p class="text-gray-500 mb-4">We couldn't find any items matching your filters.</p>
                         @endif
-                        <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                            <a href="{{ route('mart.index') }}" class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-[#007F73] to-[#00A86B] text-white rounded-lg hover:from-[#005f56] hover:to-[#008a5a] transition-all duration-300 shadow-lg hover:shadow-xl">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                                </svg>
-                                Back to Home
-                            </a>
-                            <a href="{{ route('mart.all.items') }}" class="inline-flex items-center px-6 py-3 bg-white text-[#007F73] border-2 border-[#007F73] rounded-lg hover:bg-[#007F73] hover:text-white transition-all duration-300">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                </svg>
-                                @if(!empty($filters['search']))
-                                    Browse All Items
-                                @else
-                                    Clear Filters
-                                @endif
-                            </a>
-                        </div>
+                        <a href="{{ route('mart.all.items') }}" class="inline-flex items-center px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 mr-2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+                            </svg>
+                            @if(!empty($filters['search']))
+                                Browse All Items
+                            @else
+                                Clear Filters
+                            @endif
+                        </a>
                     </div>
                 @endif
             </main>
