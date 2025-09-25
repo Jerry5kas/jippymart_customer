@@ -6,12 +6,16 @@
     <script src="{{ asset('js/geofirestore.js') }}"></script>
     <script src="https://cdn.firebase.com/libs/geofire/5.0.1/geofire.min.js"></script>
 
-    <x-mart.top-cat-items :categories="$categories"/>
+
+
+
+
+    <x-mart.top-cat-items :categories="$categories ?? []"/>
     {{--   --}}
 
-    <x-mart.carousel :banners="$banners"/>
-    <x-mart.banner-card :products="$spotlight" :header="'✨ In the Spotlight'"
-                        :idea="'Handpicked essentials shining bright—discover the products everyone’s talking about.'"/>
+    <x-mart.carousel :banners="$banners ?? []"/>
+    <x-mart.banner-card :products="$spotlight ?? []" :header="'✨ In the Spotlight'"
+                        :idea="'Handpicked essentials shining bright—discover the products everyone talking about.'"/>
 
 
     <!-- ✅ Our New Dynamic Section & Subcategories Block -->
@@ -42,14 +46,14 @@
     </div>
 
     <!-- ✅ End of New Section -->
-    <x-mart.banner-card :products="$stealOfMomentProducts" :header="'⚡ Grab It Before It’s Gone'"
+    <x-mart.banner-card :products="$stealOfMomentProducts" :header="'⚡ Grab It Before It Gone'"
                         :idea="'Unbeatable deals for a limited time—get yours before the clock runs out.'"/>
 
     <div class="w-full max-w-7xl mx-auto py-8">
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div class="bg-white rounded-2xl shadow-sm p-6">
                 <x-mart.small-cat-carousel :products="$featured"
-                                           title="🔥 Trending Products - Stay ahead with what everyone's loving — shop the hottest picks of the season."/>
+                                           title="🔥 Trending Products - Stay ahead with what everyone loving — shop the hottest picks of the season."/>
             </div>
             <div class="bg-white rounded-2xl shadow-sm p-6">
                 <x-mart.small-cat-carousel :products="$trendingProducts"

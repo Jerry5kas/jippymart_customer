@@ -41,7 +41,7 @@
     }
 </style>
 
-<div class="max-w-7xl w-full mx-auto my-10" x-data>
+<div class="max-w-7xl w-full mx-auto my-10">
     <div class="bg-[#E8F8DB] rounded-2xl p-4 sm:p-6 w-full flex-shrink-0 bg-cover bg-center"
          style="background-image: url('/')">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-center bg-[#E8F8DB] min-h-[200px]">
@@ -116,9 +116,16 @@
                             @endif
                         </div>
                     @empty
+                        <!-- Fallback content when no products -->
                         <div class="w-full flex-shrink-0">
                             <div class="text-center text-gray-500 py-8">
-                                <p>No banners available at the moment.</p>
+                                <div class="w-16 h-16 mx-auto mb-4 bg-gray-200 rounded-full flex items-center justify-center">
+                                    <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                                    </svg>
+                                </div>
+                                <p class="text-lg font-medium text-gray-600">Coming Soon!</p>
+                                <p class="text-sm text-gray-500">Great products will be available here soon</p>
                             </div>
                         </div>
                     @endforelse

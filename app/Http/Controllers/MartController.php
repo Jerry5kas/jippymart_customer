@@ -24,6 +24,10 @@ class MartController extends Controller
             $factory = (new Factory)->withServiceAccount($credentialsPath);
             $firestore = $factory->createFirestore()->database();
 
+            // Start performance monitoring
+            $startTime = microtime(true);
+            \Log::info('MartController: Starting data fetch');
+
         // =========================
         // 1️⃣ OPTIMIZED CATEGORIES & SUBCATEGORIES
         // =========================
@@ -425,9 +429,12 @@ class MartController extends Controller
             }
 
             // =========================
-            // 7️⃣ Return to Blade
+            // 7️⃣ Performance Logging & Return to Blade
             // =========================
-            \Log::info("Mart data loaded: " . count($categoryData) . " categories, " . count($products) . " spotlight products, " . count($featuredProducts) . " featured products, " . count($banners) . " banners, " . count($itemsBySection) . " sections with items");
+            $endTime = microtime(true);
+            $executionTime = round(($endTime - $startTime) * 1000, 2);
+            
+            \Log::info("Mart data loaded in {$executionTime}ms: " . count($categoryData) . " categories, " . count($products) . " spotlight products, " . count($featuredProducts) . " featured products, " . count($banners) . " banners, " . count($itemsBySection) . " sections with items");
 
             // Get SEO data for mart page
             $seoData = $this->getSeoData('home', [
