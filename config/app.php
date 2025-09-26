@@ -54,6 +54,18 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Play Store URL
+    |--------------------------------------------------------------------------
+    |
+    | This URL is used for deep link handling to redirect users to the Play Store
+    | when the app is not installed on their device.
+    |
+    */
+
+    'play_store_url' => env('PLAY_STORE_URL', 'https://play.google.com/store/apps/details?id=com.jippymart.customer'),
+
     'asset_url' => env('ASSET_URL', null),
 
     /*

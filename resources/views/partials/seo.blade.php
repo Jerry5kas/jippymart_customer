@@ -1,15 +1,9 @@
 @php
-    use App\Models\SeoPage;
-    use App\Models\SeoSetting;
-
-    // Get global SEO settings
-    $globalSettings = SeoSetting::getGlobalSettings();
+    // Static SEO implementation for performance optimization
+    // SEO models removed to prevent 503 errors on shared hosting
 
     // Determine page key based on current route or passed parameter
     $pageKey = $pageKey ?? 'home';
-
-    // Get SEO data for current page
-    $seoData = SeoPage::getForPage($pageKey);
 
     // Get dynamic data if provided
     $dynamicTitle = $dynamicTitle ?? null;
@@ -17,15 +11,20 @@
     $dynamicImage = $dynamicImage ?? null;
     $dynamicKeywords = $dynamicKeywords ?? null;
 
-    // Build final SEO values
-    $finalTitle = $dynamicTitle ?: ($seoData ? $seoData->getMetaTitle() : ($globalSettings['site_name'] ?? 'JippyMart'));
-    $finalDescription = $dynamicDescription ?: ($seoData ? $seoData->getMetaDescription() : ($globalSettings['site_description'] ?? 'Get groceries, medicines, and daily essentials delivered to your doorstep'));
-    $finalKeywords = $dynamicKeywords ?: ($seoData ? $seoData->keywords : 'groceries, delivery, online shopping');
-    $finalOgImage = $dynamicImage ?: ($seoData ? $seoData->getOgImage() : ($globalSettings['default_og_image'] ?? null));
+    // Static SEO settings for performance
+    $siteName = 'JippyMart';
+    $siteDescription = 'Get groceries, medicines, and daily essentials delivered to your doorstep. Fast delivery, quality products, and great prices.';
+    $defaultKeywords = 'groceries, delivery, online shopping, food delivery, medicines, essentials';
+
+    // Build final SEO values with static fallbacks
+    $finalTitle = $dynamicTitle ?: $siteName;
+    $finalDescription = $dynamicDescription ?: $siteDescription;
+    $finalKeywords = $dynamicKeywords ?: $defaultKeywords;
+    $finalOgImage = $dynamicImage ?: '/images/logo.png';
 
     // Ensure title includes site name if not already present
-    if (!str_contains($finalTitle, ($globalSettings['site_name'] ?? 'JippyMart'))) {
-        $finalTitle = $finalTitle . ' - ' . ($globalSettings['site_name'] ?? 'JippyMart');
+    if (!str_contains($finalTitle, $siteName)) {
+        $finalTitle = $finalTitle . ' - ' . $siteName;
     }
 
     // Get current URL
@@ -39,16 +38,16 @@
 <title>{{ $finalTitle }}</title>
 <meta name="description" content="{{ $finalDescription }}">
 <meta name="keywords" content="{{ $finalKeywords }}">
-<meta name="author" content="{{ $globalSettings['site_name'] }}">
+<meta name="author" content="{{ $siteName }}">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="{{ $canonicalUrl }}">
 
 <!-- Open Graph Meta Tags -->
 <meta property="og:type" content="website">
-<meta property="og:title" content="{{ $seoData ? $seoData->getOgTitle($finalTitle) : $finalTitle }}">
-<meta property="og:description" content="{{ $seoData ? $seoData->getOgDescription($finalDescription) : $finalDescription }}">
+<meta property="og:title" content="{{ $finalTitle }}">
+<meta property="og:description" content="{{ $finalDescription }}">
 <meta property="og:url" content="{{ $currentUrl }}">
-<meta property="og:site_name" content="{{ $globalSettings['site_name'] }}">
+<meta property="og:site_name" content="{{ $siteName }}">
 @if($finalOgImage)
 <meta property="og:image" content="{{ url($finalOgImage) }}">
 <meta property="og:image:width" content="1200">
@@ -58,14 +57,10 @@
 
 <!-- Twitter Card Meta Tags -->
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="{{ $seoData ? $seoData->getOgTitle($finalTitle) : $finalTitle }}">
-<meta name="twitter:description" content="{{ $seoData ? $seoData->getOgDescription($finalDescription) : $finalDescription }}">
+<meta name="twitter:title" content="{{ $finalTitle }}">
+<meta name="twitter:description" content="{{ $finalDescription }}">
 @if($finalOgImage)
 <meta name="twitter:image" content="{{ url($finalOgImage) }}">
-@endif
-@if($globalSettings['twitter_handle'])
-<meta name="twitter:site" content="{{ $globalSettings['twitter_handle'] }}">
-<meta name="twitter:creator" content="{{ $globalSettings['twitter_handle'] }}">
 @endif
 
 <!-- Additional Meta Tags -->
@@ -74,27 +69,17 @@
 <meta name="theme-color" content="#007bff">
 <meta name="msapplication-TileColor" content="#007bff">
 
-<!-- Google Analytics -->
-@if($globalSettings['google_analytics_id'])
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id={{ $globalSettings['google_analytics_id'] }}"></script>
+<!-- Google Analytics - Static implementation for performance -->
+<!-- Add your Google Analytics ID here if needed -->
+<!--
+<script async src="https://www.googletagmanager.com/gtag/js?id=GA_MEASUREMENT_ID"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
-  gtag('config', '{{ $globalSettings['google_analytics_id'] }}');
+  gtag('config', 'GA_MEASUREMENT_ID');
 </script>
-@endif
-
-<!-- Google Search Console Verification -->
-@if($globalSettings['google_search_console_verification'])
-<meta name="google-site-verification" content="{{ $globalSettings['google_search_console_verification'] }}">
-@endif
-
-<!-- Facebook App ID -->
-@if($globalSettings['facebook_app_id'])
-<meta property="fb:app_id" content="{{ $globalSettings['facebook_app_id'] }}">
-@endif
+-->
 
 <!-- Structured Data (JSON-LD) -->
 @if(isset($structuredData) && is_array($structuredData))
@@ -109,26 +94,11 @@
 {
   "@context": "https://schema.org",
   "@type": "Organization",
-  "name": "{{ $globalSettings['site_name'] }}",
+  "name": "{{ $siteName }}",
   "url": "{{ url('/') }}",
   "logo": "{{ url('/images/logo.png') }}",
-  "description": "{{ $globalSettings['site_description'] }}",
-  @if($globalSettings['contact_email'])
-  "email": "{{ $globalSettings['contact_email'] }}",
-  @endif
-  @if($globalSettings['contact_phone'])
-  "telephone": "{{ $globalSettings['contact_phone'] }}",
-  @endif
-  @if($globalSettings['business_address'])
-  "address": {
-    "@type": "PostalAddress",
-    "streetAddress": "{{ $globalSettings['business_address'] }}"
-  },
-  @endif
+  "description": "{{ $siteDescription }}",
   "sameAs": [
-    @if($globalSettings['twitter_handle'])
-    "https://twitter.com/{{ str_replace('@', '', $globalSettings['twitter_handle']) }}",
-    @endif
     "https://www.facebook.com/jippymart",
     "https://www.instagram.com/jippymart"
   ]
@@ -161,9 +131,9 @@
 {
   "@context": "https://schema.org",
   "@type": "WebSite",
-  "name": "{{ $globalSettings['site_name'] }}",
+  "name": "{{ $siteName }}",
   "url": "{{ url('/') }}",
-  "description": "{{ $globalSettings['site_description'] }}",
+  "description": "{{ $siteDescription }}",
   "potentialAction": {
     "@type": "SearchAction",
     "target": "{{ url('/search') }}?q={search_term_string}",

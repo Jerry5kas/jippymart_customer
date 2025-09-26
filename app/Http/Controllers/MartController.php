@@ -5,13 +5,14 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Kreait\Firebase\Factory;
 use Kreait\Firebase\Exception\FirebaseException;
-use App\Traits\SeoTrait;
-
 class MartController extends Controller
 {
-    use SeoTrait;
     public function index()
     {
+        // Set strict limits for shared hosting
+        ini_set('memory_limit', '128M');
+        set_time_limit(30); // 30 seconds max
+
         try {
             // Check if Firebase credentials exist
             $credentialsPath = base_path('storage/app/firebase/credentials.json');
@@ -32,9 +33,14 @@ class MartController extends Controller
         // 1️⃣ OPTIMIZED CATEGORIES & SUBCATEGORIES
         // =========================
 
+        // Check execution time before heavy operations
+        $startTime = microtime(true);
+        $maxExecutionTime = 25; // 25 seconds max
+
         // Fetch all categories first
         $categoriesSnapshot = $firestore->collection('mart_categories')
             ->where('publish', '=', true)
+            ->limit(50) // Limit for shared hosting
             ->documents();
 
         $categoryData = [];
@@ -47,9 +53,16 @@ class MartController extends Controller
             $categoryData[] = $cat;
         }
 
+        // Check timeout before subcategories
+        if ((microtime(true) - $startTime) > $maxExecutionTime) {
+            \Log::warning('Timeout reached before subcategories, using fallback');
+            return $this->getFallbackData();
+        }
+
         // Fetch all subcategories in one query
         $subcategoriesSnapshot = $firestore->collection('mart_subcategories')
             ->where('publish', '=', true)
+            ->limit(100) // Limit for shared hosting
             ->documents();
 
         $subcategoriesByParent = [];
@@ -85,9 +98,16 @@ class MartController extends Controller
         // =========================
         // 2️⃣ OPTIMIZED ITEMS QUERY - Single Query for All Products
         // =========================
+        // Check timeout before items query
+        if ((microtime(true) - $startTime) > $maxExecutionTime) {
+            \Log::warning('Timeout reached before items query, using fallback');
+            return $this->getFallbackData();
+        }
+
         // Single optimized query to fetch all published items (reused for all product types)
         $itemsRef = $firestore->collection('mart_items');
-        $query = $itemsRef->where('publish', '=', true);
+        $query = $itemsRef->where('publish', '=', true)
+                         ->limit(200); // Limit for shared hosting
 
         $documents = $query->documents();
 
@@ -144,7 +164,7 @@ class MartController extends Controller
                 if (($data['isFeature'] ?? false) && ($data['isAvailable'] ?? false)) {
                 $rating = $data['rating'] ?? round(4.0 + (mt_rand() / mt_getrandmax()) * 1.0, 1);
                 $reviews = $data['reviews'] ?? mt_rand(10, 500);
-           
+
                     $featuredProducts[] = [
                         'id' => $doc->id(),
                         'disPrice' => $data['disPrice'] ?? 0,
@@ -172,7 +192,7 @@ class MartController extends Controller
                     if (($data['isTrending'] ?? false) && ($data['isAvailable'] ?? false)) {
                 $rating = $data['rating'] ?? round(4.0 + (mt_rand() / mt_getrandmax()) * 1.0, 1);
                 $reviews = $data['reviews'] ?? mt_rand(10, 500);
-       
+
                         $trendingProducts[] = [
                             'id' => $doc->id(),
                             'disPrice' => $data['disPrice'] ?? 0,
@@ -233,7 +253,7 @@ class MartController extends Controller
 
                         $rating = $data['rating'] ?? round(4.0 + (mt_rand() / mt_getrandmax()) * 1.0, 1);
                         $reviews = $data['reviews'] ?? mt_rand(10, 500);
-               
+
                         $bestSellerProducts[] = [
                             'id' => $doc->id(),
                             'disPrice' => $data['disPrice'] ?? 0,
@@ -307,7 +327,7 @@ class MartController extends Controller
 
                         $rating = $data['rating'] ?? round(4.0 + (mt_rand() / mt_getrandmax()) * 1.0, 1);
                         $reviews = $data['reviews'] ?? mt_rand(10, 500);
-               
+
                         $stealOfMomentProducts[] = [
                             'id' => $doc->id(),
                             'disPrice' => $data['disPrice'] ?? 0,
@@ -328,7 +348,7 @@ class MartController extends Controller
 
                         $rating = $data['rating'] ?? round(4.0 + (mt_rand() / mt_getrandmax()) * 1.0, 1);
                         $reviews = $data['reviews'] ?? mt_rand(10, 500);
-               
+
                         $newArrivalProducts[] = [
                             'id' => $doc->id(),
                             'disPrice' => $data['disPrice'] ?? 0,
@@ -349,7 +369,7 @@ class MartController extends Controller
 
                         $rating = $data['rating'] ?? round(4.0 + (mt_rand() / mt_getrandmax()) * 1.0, 1);
                         $reviews = $data['reviews'] ?? mt_rand(10, 500);
-               
+
                         $seasonalProducts[] = [
                             'id' => $doc->id(),
                             'disPrice' => $data['disPrice'] ?? 0,
@@ -373,25 +393,25 @@ class MartController extends Controller
         // 6️⃣ Items Grouped by Sections (using cached data)
             // =========================
         $itemsBySection = [];
-        
+
         // Group items by their section using cached data
         foreach ($allItems as $item) {
             $doc = $item['doc'];
             $data = $item['data'];
-            
+
             // Only include available and published items
             if (($data['isAvailable'] ?? false) && ($data['publish'] ?? false)) {
                 $sectionName = $data['section'] ?? 'Others';
-                
+
                 if (!isset($itemsBySection[$sectionName])) {
                     $itemsBySection[$sectionName] = [];
                 }
-                
+
                 // Limit items per section to avoid performance issues
                 if (count($itemsBySection[$sectionName]) < 20) {
                     $rating = $data['rating'] ?? round(4.0 + (mt_rand() / mt_getrandmax()) * 1.0, 1);
                     $reviews = $data['reviews'] ?? mt_rand(10, 500);
-       
+
                     $itemsBySection[$sectionName][] = [
                         'id' => $doc->id(),
                         'disPrice' => $data['disPrice'] ?? 0,
@@ -420,7 +440,7 @@ class MartController extends Controller
                 }
             }
         }
-            
+
             // Sort items within each section by name
             foreach ($itemsBySection as &$sectionItems) {
                 usort($sectionItems, function($a, $b) {
@@ -433,14 +453,14 @@ class MartController extends Controller
             // =========================
             $endTime = microtime(true);
             $executionTime = round(($endTime - $startTime) * 1000, 2);
-            
+
             \Log::info("Mart data loaded in {$executionTime}ms: " . count($categoryData) . " categories, " . count($products) . " spotlight products, " . count($featuredProducts) . " featured products, " . count($banners) . " banners, " . count($itemsBySection) . " sections with items");
 
-            // Get SEO data for mart page
-            $seoData = $this->getSeoData('home', [
+            // SEO data removed for performance optimization
+            $seoData = [
                 'title' => 'JippyMart - Fresh Groceries & Daily Essentials Delivered',
                 'description' => 'Order fresh groceries, medicines, and daily essentials online. Fast delivery to your doorstep with quality guarantee.'
-            ]);
+            ];
 
             return view('mart.index', [
                 'categories' => $categoryData,
@@ -807,7 +827,7 @@ class MartController extends Controller
         // Step 2: Get item counts for all subcategories in one optimized query
         if (!empty($subcategoryTitles)) {
             $itemCounts = $this->getSubcategoryItemCounts($firestore, $subcategoryTitles);
-            
+
             // Step 3: Update subcategories with actual counts
             foreach ($subcategories as &$subcategory) {
                 $subcategory['itemCount'] = $itemCounts[$subcategory['title']] ?? 0;
@@ -834,7 +854,7 @@ class MartController extends Controller
     private function getSubcategoryItemCounts($firestore, $subcategoryTitles)
     {
         $itemCounts = [];
-        
+
         // Initialize all counts to 0
         foreach ($subcategoryTitles as $title) {
             $itemCounts[$title] = 0;
@@ -852,7 +872,7 @@ class MartController extends Controller
                 if ($doc->exists()) {
                     $data = $doc->data();
                     $subcategoryTitle = $data['subcategoryTitle'] ?? '';
-                    
+
                     if (in_array($subcategoryTitle, $subcategoryTitles)) {
                         $itemCounts[$subcategoryTitle]++;
                     }
@@ -1237,12 +1257,12 @@ class MartController extends Controller
     private function getFallbackData()
     {
         \Log::info('Using fallback data due to Firebase unavailability');
-        
-        // Get SEO data for fallback
-        $seoData = $this->getSeoData('home', [
+
+        // SEO data removed for performance optimization
+        $seoData = [
             'title' => 'JippyMart - Fresh Groceries & Daily Essentials Delivered',
             'description' => 'Order fresh groceries, medicines, and daily essentials online. Fast delivery to your doorstep with quality guarantee.'
-        ]);
+        ];
 
         return view('mart.index', [
             'categories' => [
@@ -1256,7 +1276,7 @@ class MartController extends Controller
                     ]
                 ],
                 [
-                    'id' => 'fallback-2', 
+                    'id' => 'fallback-2',
                     'title' => 'Household',
                     'photo' => '/img/pro1.jpg',
                     'subcategories' => [

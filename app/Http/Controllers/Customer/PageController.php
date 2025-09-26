@@ -3,8 +3,7 @@
 namespace App\Http\Controllers\Customer;
 
 use App\Http\Controllers\Controller;
-use App\Models\SeoPage;
-use App\Models\SeoSetting;
+// SEO models removed for performance optimization
 use Illuminate\Http\Request;
 
 class PageController extends Controller
@@ -20,15 +19,16 @@ class PageController extends Controller
             abort(404);
         }
 
-        // Get SEO data for the page
-        $seoData = SeoPage::getForPage($page);
-        $globalSettings = SeoSetting::getGlobalSettings();
+        // SEO data removed for performance optimization
+        $seoData = [
+            'title' => ucfirst($page) . ' - JippyMart',
+            'description' => 'Learn more about ' . $page . ' at JippyMart. Get groceries, medicines, and daily essentials delivered to your doorstep.'
+        ];
 
         // Prepare data for view
         $data = [
             'pageKey' => $page,
             'seoData' => $seoData,
-            'globalSettings' => $globalSettings,
             'pageTitle' => ucfirst(str_replace('-', ' ', $page)),
         ];
 

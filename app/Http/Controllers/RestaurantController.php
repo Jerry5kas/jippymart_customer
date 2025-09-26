@@ -7,8 +7,7 @@ use Session;
 use Illuminate\Support\Facades\Storage;
 use Google\Client as Google_Client;
 use App\Helpers\UrlHelper;
-use App\Models\SeoPage;
-use App\Models\SeoSetting;
+// SEO models removed for performance optimization
 
 class RestaurantController extends Controller
 {
@@ -29,16 +28,17 @@ class RestaurantController extends Controller
     public function index()
     {
         $cart = session()->get('cart', []);
-        
-        // Get SEO data for restaurants page
-        $seoData = SeoPage::getForPage('restaurants');
-        $globalSettings = SeoSetting::getGlobalSettings();
-        
+
+        // SEO data removed for performance optimization
+        $seoData = [
+            'title' => 'Restaurants - JippyMart',
+            'description' => 'Find the best restaurants and food delivery options near you. Order from top-rated restaurants with fast delivery.'
+        ];
+
         return view('restaurant.restaurant', [
             'cart' => $cart,
             'pageKey' => 'restaurants',
             'seoData' => $seoData,
-            'globalSettings' => $globalSettings,
         ]);
     }
 
@@ -46,23 +46,24 @@ class RestaurantController extends Controller
     {
         // In a real app, fetch restaurant from DB/Firestore using $id
         // Optionally, check if slugs match and redirect to canonical URL if not
-        
-        // Get SEO data for restaurant page
-        $seoData = SeoPage::getForPage('restaurant');
-        $globalSettings = SeoSetting::getGlobalSettings();
-        
+
+        // SEO data removed for performance optimization
+        $seoData = [
+            'title' => 'Restaurant - JippyMart',
+            'description' => 'Order from this restaurant with fast delivery. Fresh food delivered to your doorstep.'
+        ];
+
         // Dynamic SEO data for this specific restaurant
         $dynamicTitle = ucwords(str_replace('-', ' ', $restaurantSlug)) . ' - Restaurant - JippyMart';
         $dynamicDescription = 'Order food from ' . ucwords(str_replace('-', ' ', $restaurantSlug)) . ' restaurant. Fast delivery, fresh food, and great prices at JippyMart.';
         $dynamicImage = '/images/restaurants/' . $restaurantSlug . '.jpg';
-        
+
         return view('restaurant.restaurant', [
             'restaurantId' => $id,
             'restaurantSlug' => $restaurantSlug,
             'zoneSlug' => $zoneSlug,
             'pageKey' => 'restaurant',
             'seoData' => $seoData,
-            'globalSettings' => $globalSettings,
             'dynamicTitle' => $dynamicTitle,
             'dynamicDescription' => $dynamicDescription,
             'dynamicImage' => $dynamicImage,
@@ -70,14 +71,15 @@ class RestaurantController extends Controller
     }
     public function categoryList()
     {
-        // Get SEO data for categories page
-        $seoData = SeoPage::getForPage('categories');
-        $globalSettings = SeoSetting::getGlobalSettings();
-        
+        // SEO data removed for performance optimization
+        $seoData = [
+            'title' => 'Food Categories - JippyMart',
+            'description' => 'Browse food categories and find your favorite dishes. Order from various cuisines with fast delivery.'
+        ];
+
         return view('restaurant.categorylist', [
             'pageKey' => 'categories',
             'seoData' => $seoData,
-            'globalSettings' => $globalSettings,
         ]);
     }
 

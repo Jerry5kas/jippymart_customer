@@ -553,8 +553,15 @@ class FirebaseService
         $startTime = microtime(true);
         $cacheKey = 'food_search_' . md5($searchTerm . '_' . $limit . '_' . $offset);
 
-        // Set execution time limit to prevent timeout
-        $maxExecutionTime = 25; // 25 seconds max (leave 5 seconds buffer)
+        // Set execution time limit to prevent timeout (reduced for shared hosting)
+        $maxExecutionTime = 15; // 15 seconds max for shared hosting
+
+        // Check if this is admin panel request and use stricter limits
+        $isAdminRequest = request()->is('admin*') || request()->getHost() === 'admin.jippymart.in';
+        if ($isAdminRequest) {
+            $maxExecutionTime = 8; // Even stricter for admin panel
+            $limit = min($limit, 10); // Reduce limit for admin panel
+        }
 
         try {
             // Check circuit breaker
@@ -1279,6 +1286,10 @@ class FirebaseService
         ];
     }
 
+    // SEO methods removed for performance optimization
+
+    // All SEO methods removed for performance optimization
+
     /**
      * Sanitize data to remove Inf and NaN values
      *
@@ -1311,7 +1322,7 @@ class FirebaseService
         // Optimized: Only search the primary collection first
         $primaryCollection = 'vendor_products';
         $startTime = microtime(true);
-        $maxExecutionTime = 20; // 20 seconds max for this method
+        $maxExecutionTime = 12; // 12 seconds max for shared hosting
 
         \Log::info('Starting optimized Firestore food search', [
             'search_term' => $searchTerm,

@@ -6,7 +6,7 @@ use Illuminate\Console\Command;
 use Spatie\Sitemap\Sitemap;
 use Spatie\Sitemap\Tags\Url;
 use Carbon\Carbon;
-use App\Models\SeoPage;
+// SEO models removed for performance optimization
 use App\Services\FirebaseService;
 
 class GenerateSitemap extends Command
@@ -48,14 +48,19 @@ class GenerateSitemap extends Command
     {
         $this->info('Starting sitemap generation...');
 
+        // Set memory and time limits for shared hosting
+        ini_set('memory_limit', '256M');
+        set_time_limit(300); // 5 minutes max
+
         try {
             $sitemap = Sitemap::create();
 
             // Add static pages
             $this->addStaticPages($sitemap);
 
-            // Add dynamic pages from Firebase
-            $this->addFirebasePages($sitemap);
+            // Skip Firebase pages for shared hosting to prevent resource conflicts
+            $this->warn('Skipping Firebase pages for shared hosting compatibility');
+            // $this->addFirebasePages($sitemap);
 
             // Write sitemap to file
             $sitemapPath = public_path('sitemap.xml');

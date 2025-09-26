@@ -323,7 +323,7 @@
             setCookie('address_city', address_city, 365);
             setCookie('address_state', address_state, 365);
             setCookie('address_country', address_country, 365);
-            
+
             // Save location data for mart page compatibility
             setCookie('user_address', address_name, 365);
             setCookie('user_zone_id', '1', 365);
@@ -498,11 +498,11 @@
                                     setCookie('address_city', address_city, 365);
                                     setCookie('address_state', address_state, 365);
                                     setCookie('address_country', address_country, 365);
-                                    
+
                                     // Save location data for mart page compatibility
                                     setCookie('user_address', address_name, 365);
                                     setCookie('user_zone_id', '1', 365); // Default zone ID
-                                    
+
                                     console.log('Location saved for mart page:', {
                                         address_lat: address_lat,
                                         address_lng: address_lng,
@@ -573,18 +573,18 @@
                 setCookie('address_city', address_city, 365);
                 setCookie('address_state', address_state, 365);
                 setCookie('address_country', address_country, 365);
-                
+
                 // Save location data for mart page compatibility
                 setCookie('user_address', address_name, 365);
                 setCookie('user_zone_id', '1', 365); // Default zone ID
-                
+
                 console.log('Location saved for mart page (non-Google):', {
                     address_lat: address_lat,
                     address_lng: address_lng,
                     user_address: address_name,
                     user_zone_id: '1'
                 });
-                
+
                 if (type == 'reload') {
                     window.location.reload(true);
                 }
@@ -634,8 +634,8 @@
         return null;
     }
 
-    const BATCH_SIZE = 100;
-    const MAX_PARALLEL_BATCHES = 5;
+    const BATCH_SIZE = 50; // Reduced for shared hosting
+    const MAX_PARALLEL_BATCHES = 3; // Reduced for shared hosting
     database.collection('settings').doc("restaurant").get().then(async function(snapshots) {
         var subscriptionSetting = snapshots.data();
         localStorage.setItem('subscriptionModel', subscriptionSetting.subscription_model);
@@ -659,8 +659,11 @@
             // Keep track of the vendor batch promises
             let batchPromises = [];
 
-            // While there are more vendors to process
-            while (!vendorSnapshots.empty) {
+            // Process vendors with limits for shared hosting
+            let processedBatches = 0;
+            const MAX_BATCHES = 10; // Limit total batches to prevent overload
+
+            while (!vendorSnapshots.empty && processedBatches < MAX_BATCHES) {
                 const vendorPromise = processBatch(vendorSnapshots, expiredStores);
                 batchPromises.push(vendorPromise);
 
@@ -673,6 +676,8 @@
                     .startAfter(vendorSnapshots.docs[vendorSnapshots.docs.length - 1])
                     .limit(BATCH_SIZE)
                     .get();
+
+                processedBatches++;
             }
 
             // Wait for any remaining promises to finish

@@ -4,12 +4,55 @@
     <div class="container">
         <div class="row m-5">
             <div class="col-md-12">
-                <div id="product-list"></div>
+                @if(!$hasFirebaseCredentials)
+                    <!-- Fallback products when Firebase is not available -->
+                    <div class="row">
+                        @foreach($fallbackProducts as $product)
+                            <div class="col-md-4 pb-3 product-list">
+                                <div class="list-card position-relative">
+                                    <div class="list-card-image">
+                                        <div class="member-plan position-absolute">
+                                            <span class="badge badge-dark open">Veg</span>
+                                        </div>
+                                        <a href="#">
+                                            <img src="{{ $product['photo'] }}" alt="{{ $product['name'] }}" class="img-fluid item-img w-100"
+                                                 onerror="this.onerror=null;this.src='{{ asset('img/placeholder.png') }}'">
+                                        </a>
+                                    </div>
+                                    <div class="py-2 position-relative">
+                                        <div class="list-card-body">
+                                            <h6 class="mb-1">
+                                                <a href="#" class="text-black">{{ $product['name'] }}</a>
+                                            </h6>
+                                            @if($product['disPrice'] < $product['price'])
+                                                <span class="pro-price">₹{{ $product['disPrice'] }} <s>₹{{ $product['price'] }}</s></span>
+                                            @else
+                                                <span class="pro-price">₹{{ $product['price'] }}</span>
+                                            @endif
+                                            <div class="star position-relative mt-3">
+                                                <span class="badge badge-success">
+                                                    <i class="feather-star"></i>{{ $product['rating'] }} ({{ $product['reviews'] }})
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                    <div class="alert alert-info mt-3">
+                        <strong>Note:</strong> Showing sample products. Firebase connection is not configured. Please contact administrator to set up Firebase credentials.
+                    </div>
+                @else
+                    <!-- Original Firebase-powered product list -->
+                    <div id="product-list"></div>
+                @endif
             </div>
         </div>
     </div>
 </div>
 @include('layouts.footer')
+@if($hasFirebaseCredentials)
 <script src="https://unpkg.com/geofirestore/dist/geofirestore.js"></script>
 <script src="https://cdn.firebase.com/libs/geofire/5.0.1/geofire.min.js"></script>
 <script type="text/javascript">
@@ -17,10 +60,10 @@
     var geoFirestore=new GeoFirestore(firestore);
     var VendorNearBy='';
     var inValidVendors=new Set();
-    
+
     // Initialize randomized ratings for fallback
     window.randomizedRatings = {};
-    
+
     var DriverNearByRef=database.collection('settings').doc('RestaurantNearBy');
     var priceData={};
     var placeholderImageRef=database.collection('settings').doc('placeHolderImage');
@@ -63,7 +106,7 @@
         let updateTimeout = null;
         let lastUpdateTime = 0;
         const MIN_UPDATE_INTERVAL = 30000; // Minimum 30 seconds between updates
-        
+
         // Update store data when page becomes visible
         document.addEventListener('visibilitychange', function() {
             if (document.visibilityState === 'visible') {
@@ -184,9 +227,9 @@
                 rating=Math.round(rating*10)/10;
             }
             datas.rating=rating;
-            
+
             if($.inArray(datas.vendorID,vendorIds)!==-1) {
-             
+
                 if(subscriptionModel==true||subscriptionModel=="true") {
 
                     if(!groupedData[datas.vendorID]) {
@@ -201,7 +244,7 @@
         if(subscriptionModel==true||subscriptionModel=="true") {
             await Promise.all(Object.keys(groupedData).map(async (vendorID) => {
                 let products=groupedData[vendorID];
-                
+
                 var vendorItemLimit=await getVendorItemLimit(vendorID);
                 await products.sort((a,b) => {
                     if(a.hasOwnProperty('createdAt')&&b.hasOwnProperty('createdAt')) {
@@ -232,7 +275,7 @@
         if(alldata.length) {
             alldata.forEach((listval) => {
                 var val=listval;
-               
+
                 var rating=0;
                 var reviewsCount=0;
                 if(val.hasOwnProperty('reviewsSum')&&val.reviewsSum!=0&&val.reviewsSum!=null&&val.reviewsSum!=''&&val.hasOwnProperty(
@@ -322,4 +365,5 @@
             return itemLimit;
         }
 </script>
+@endif
 @include('layouts.nav')

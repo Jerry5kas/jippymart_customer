@@ -90,8 +90,8 @@
     </div>
 
     <!-- Cart Components -->
-    <x-mart.cart />
-    <x-mart.cart-popup />
+    <x-mart.cart/>
+    <x-mart.cart-popup/>
 </x-layouts.app>
 
 <!-- Floating Button Styles -->
@@ -329,8 +329,8 @@
             if ($point == $points_polygon)
                 $point = 0;
             if ((($vertices_y[$point] > $latitude_y != ($vertices_y[$j] > $latitude_y)) && ($longitude_x < ($vertices_x[
-                    $j] - $vertices_x[$point]) * ($latitude_y - $vertices_y[$point]) / ($vertices_y[$j] -
-                    $vertices_y[$point]) + $vertices_x[$point])))
+                $j] - $vertices_x[$point]) * ($latitude_y - $vertices_y[$point]) / ($vertices_y[$j] -
+                $vertices_y[$point]) + $vertices_x[$point])))
                 $c = !$c;
         }
         return $c;
@@ -447,5 +447,5 @@
 </script>
 
 <!-- Cart Popup -->
-<x-mart.cart-popup />
+<x-mart.cart-popup/>
 

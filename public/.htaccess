@@ -3,12 +3,22 @@
     #Header set Pragma "no-cache"
     #Header set Expires 0
 </IfModule>
+
+# Allow access to .well-known directory
+<Directory ".well-known">
+    AllowOverride None
+    Require all granted
+</Directory>
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes
     </IfModule>
 
     RewriteEngine On
+
+    # Serve .well-known files directly
+    RewriteCond %{REQUEST_URI} ^/\.well-known/
+    RewriteRule ^(.*)$ - [L]
 
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .

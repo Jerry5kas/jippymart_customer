@@ -40,12 +40,23 @@ use Illuminate\Support\Facades\Route;
 
 */
 
+// Deep link handlers for mobile app (PUT THESE AT THE TOP TO AVOID CONFLICTS)
+Route::get('product/{id}', [App\Http\Controllers\ProductController::class, 'deepLinkHandler'])->name('productDetail');
+Route::get('product/{id}/detail', [App\Http\Controllers\ProductController::class, 'productDetail'])->name('product.detail');
+Route::get('restaurant/{id}', [App\Http\Controllers\ProductController::class, 'deepLinkHandler'])->name('restaurant.deep');
+Route::get('mart/{id}', [App\Http\Controllers\ProductController::class, 'deepLinkHandler'])->name('mart.deep');
+
+// Additional deep link routes for better coverage
+Route::get('products/{id}', [App\Http\Controllers\ProductController::class, 'deepLinkHandler'])->name('products.deep');
+Route::get('categories/{id}', [App\Http\Controllers\ProductController::class, 'deepLinkHandler'])->name('categories.deep');
+
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
 // Google Search Console verification
 Route::get('googlee8775aee3a719706.html', function () {
     return response()->view('google-verification')->header('Content-Type', 'text/html');
 });
+
 
 Route::get('set-location', [App\Http\Controllers\HomeController::class, 'setLocation'])->name('set-location');
 
@@ -139,6 +150,10 @@ Route::get('category/{id}', [App\Http\Controllers\RestaurantController::class, '
 Route::get('restaurant', [App\Http\Controllers\RestaurantController::class, 'index'])->name('restaurant');
 Route::get('restaurant/{id}/{restaurant_slug}/{zone_slug}', [App\Http\Controllers\RestaurantController::class, 'show'])->name('restaurant.show');
 
+// Deep link handlers for mobile app
+Route::get('restaurant/{id}', [App\Http\Controllers\ProductController::class, 'deepLinkHandler'])->name('restaurant.deep');
+Route::get('mart/{id}', [App\Http\Controllers\ProductController::class, 'deepLinkHandler'])->name('mart.deep');
+
 Route::get('cart', [App\Http\Controllers\ProductController::class, 'cart'])->name('cart');
 
 Route::post('cart/sync', [App\Http\Controllers\ProductController::class, 'syncCart'])->name('cart.sync');
@@ -148,11 +163,6 @@ Route::post('add-to-cart', [App\Http\Controllers\ProductController::class, 'addT
 Route::post('reorder-add-to-cart', [App\Http\Controllers\ProductController::class, 'reorderaddToCart'])->name('reorder-add-to-cart');
 
 Route::get('products', [App\Http\Controllers\ProductController::class, 'productListAll'])->name('productlist.all');
-
-// Route::get('product/{id}', [App\Http\Controllers\ProductController::class, 'productDetail'])->name('productDetail');
-Route::get('product/{id}', function ($id) {
-    return redirect('/')->with('message', 'Product detail page is not available.');
-})->name('productDetail');
 
 Route::get('product/{id}/restaurant-info', [App\Http\Controllers\ProductController::class, 'getRestaurantInfo'])
     ->name('product.restaurant-info')
