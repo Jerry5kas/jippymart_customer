@@ -59,13 +59,13 @@
     }
 </style>
 
-<div class="w-full max-w-7xl mx-auto px-4 py-6" x-data>
-    <!-- Section Header -->
-    <div class="text-2xl font-semibold mb-6 text-[#007F73] px-2">
-        {{$headings}}
-    </div>
+<div class="w-full max-w-7xl mx-auto px-4 py-6">
+        <!-- Section Header -->
+        <div class="text-2xl font-semibold mb-6 text-[#007F73] px-2">
+            {{$headings}}
+        </div>
 
-    <!-- Product Cards Container -->
+        <!-- Product Cards Container -->
     <div class="relative">
         <!-- Left Arrow -->
         <button
