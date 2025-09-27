@@ -7,24 +7,45 @@
 
             <!-- Left section -->
             <div class="flex items-center space-x-4">
-                <a href="/mart" 
+                <a href="/mart"
                    class="text-2xl font-extrabold text-[#007F73] hover:text-[#005f56] transition-colors">
                     Mart
                 </a>
 
-            <!-- Location display -->
-            <div class="flex items-center space-x-2 text-sm text-gray-600" id="location-display" style="display: none;">
+            <!-- Location display with in-place editing -->
+            <div class="flex items-center space-x-2 text-sm text-gray-600" id="location-container">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 text-[#007F73]">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
                     <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
                 </svg>
-                <span id="current-location-text" class="text-gray-600 font-medium">Loading location...</span>
+                <span id="current-location-text" class="text-gray-600 font-medium cursor-pointer hover:text-[#007F73]" onclick="editLocationInPlace()">Loading location...</span>
+                <!-- <input type="text"
+                       id="mart-location-input"
+                       class="location-input border border-gray-300 rounded-lg px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-[#007F73] focus:border-[#007F73]"
+                       placeholder="Enter your location"
+                       onchange="handleMartLocationChange()"
+                       onkeypress="if(event.key==='Enter') handleMartLocationChange()"
+                       onblur="handleMartLocationChange()"
+                       style="min-width: 200px;"> -->
+                <!-- <button onclick="getCurrentLocationForMart()"
+                        class="bg-[#007F73] text-white px-3 py-1 rounded-md text-xs hover:bg-[#005f56] transition-colors hidden"
+                        id="location-pin-btn"
+                        title="Use current location">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
+                    </svg>
+                </button>
+                <button onclick="cancelLocationEdit()"
+                        class="bg-gray-500 text-white px-3 py-1 rounded-md text-xs hover:bg-gray-600 transition-colors hidden"
+                        id="location-cancel-btn"
+                        title="Cancel">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button> -->
             </div>
             </div>
-
-           
-
-           
 
 
             <!-- Right section -->
@@ -95,7 +116,7 @@
                         </svg>
 
                         <!-- Search Button -->
-                        <button type="submit" 
+                        <button type="submit"
                                 :disabled="isSearching || !searchQuery.trim()"
                                 class="absolute right-2 top-2 px-3 py-1.5 bg-[#007F73] text-white text-xs rounded-md hover:bg-[#005f56] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                             <span x-show="!isSearching">Search</span>
@@ -161,25 +182,35 @@
     <x-mart.cart />
 </header>
 
+<!-- Include Shared Location Service -->
+<script src="{{ asset('js/shared-location-service.js') }}"></script>
+
 <script>
 document.addEventListener('alpine:init', () => {
     Alpine.data('martCartNavbar', () => ({
         cartCount: 0,
-        
+        showLocationInput: false,
+
         init() {
             this.updateCartCount();
-            
+            this.initializeLocation();
+
             // Listen for cart updates
             window.addEventListener('cart-updated', () => {
                 this.updateCartCount();
             });
-            
+
             // Listen for item added events
             window.addEventListener('item-added-to-cart', () => {
                 this.updateCartCount();
             });
+
+            // Listen for location updates
+            window.addEventListener('location-updated', (event) => {
+                this.updateLocationDisplay(event.detail);
+            });
         },
-        
+
         updateCartCount() {
             // Get cart count from local storage - count total quantities, not unique items
             const cartData = localStorage.getItem('mart_cart');
@@ -190,11 +221,224 @@ document.addEventListener('alpine:init', () => {
                 this.cartCount = 0;
             }
         },
-        
+
         openCart() {
             // Trigger cart drawer to open
             window.dispatchEvent(new CustomEvent('open-cart'));
+        },
+
+        initializeLocation() {
+            // Initialize location display
+            if (window.sharedLocationService) {
+                const location = window.sharedLocationService.getLocation();
+                this.updateLocationDisplay(location);
+
+                // Listen for location updates from other sections
+                window.sharedLocationService.addListener((locationData) => {
+                    this.updateLocationDisplay(locationData);
+                });
+            }
+        },
+
+        updateLocationDisplay(locationData) {
+            const locationText = locationData?.user_address || locationData?.address_name;
+            const locationTextElement = document.getElementById('current-location-text');
+            const locationInput = document.getElementById('mart-location-input');
+            const pinBtn = document.getElementById('location-pin-btn');
+            const cancelBtn = document.getElementById('location-cancel-btn');
+
+            if (locationTextElement) {
+                locationTextElement.textContent = locationText || 'Loading location...';
+            }
+
+            if (locationText && locationText !== 'Loading location...') {
+                // Show location text, hide input and buttons
+                if (locationTextElement) {
+                    locationTextElement.classList.remove('hidden');
+                }
+
+                if (locationInput && pinBtn && cancelBtn) {
+                    locationInput.classList.add('hidden');
+                    pinBtn.classList.add('hidden');
+                    cancelBtn.classList.add('hidden');
+                }
+            } else {
+                // If no location is set, show the input
+                if (locationTextElement) {
+                    locationTextElement.textContent = 'Click to set location';
+                    locationTextElement.classList.add('hidden');
+                }
+
+                if (locationInput && pinBtn && cancelBtn) {
+                    locationInput.classList.remove('hidden');
+                    pinBtn.classList.remove('hidden');
+                    cancelBtn.classList.remove('hidden');
+                }
+            }
+        },
+
+        toggleLocationInput() {
+            this.showLocationInput = !this.showLocationInput;
+            const inputContainer = document.getElementById('location-input-container');
+            if (inputContainer) {
+                inputContainer.style.display = this.showLocationInput ? 'flex' : 'none';
+            }
         }
     }));
+});
+
+// Global function for getting current location in Mart
+async function getCurrentLocationForMart() {
+    try {
+        if (window.sharedLocationService) {
+            const locationData = await window.sharedLocationService.getCurrentLocation();
+            console.log('Mart: Current location obtained', locationData);
+
+            // Update the location text and hide input/buttons
+            const locationText = document.getElementById('current-location-text');
+            const locationInput = document.getElementById('mart-location-input');
+            const pinBtn = document.getElementById('location-pin-btn');
+            const cancelBtn = document.getElementById('location-cancel-btn');
+
+            if (locationText) {
+                locationText.textContent = locationData.user_address || locationData.address_name;
+            }
+
+            // Hide input and buttons, show text
+            if (locationText && locationInput && pinBtn && cancelBtn) {
+                locationText.classList.remove('hidden');
+                locationInput.classList.add('hidden');
+                pinBtn.classList.add('hidden');
+                cancelBtn.classList.add('hidden');
+            }
+        }
+    } catch (error) {
+        console.error('Error getting current location for Mart:', error);
+        alert('Unable to get your current location. Please enter it manually.');
+    }
+}
+
+// Function to edit location in place
+function editLocationInPlace() {
+    const locationText = document.getElementById('current-location-text');
+    const locationInput = document.getElementById('mart-location-input');
+    const pinBtn = document.getElementById('location-pin-btn');
+    const cancelBtn = document.getElementById('location-cancel-btn');
+
+    if (locationText && locationInput && pinBtn && cancelBtn) {
+        // Hide text, show input and buttons
+        locationText.classList.add('hidden');
+        locationInput.classList.remove('hidden');
+        pinBtn.classList.remove('hidden');
+        cancelBtn.classList.remove('hidden');
+
+        // Set current value and focus
+        locationInput.value = locationText.textContent;
+        locationInput.focus();
+        locationInput.select();
+    }
+}
+
+// Function to cancel location editing
+function cancelLocationEdit() {
+    const locationText = document.getElementById('current-location-text');
+    const locationInput = document.getElementById('mart-location-input');
+    const pinBtn = document.getElementById('location-pin-btn');
+    const cancelBtn = document.getElementById('location-cancel-btn');
+
+    if (locationText && locationInput && pinBtn && cancelBtn) {
+        // Show text, hide input and buttons
+        locationText.classList.remove('hidden');
+        locationInput.classList.add('hidden');
+        pinBtn.classList.add('hidden');
+        cancelBtn.classList.add('hidden');
+
+        // Reset input value
+        locationInput.value = '';
+    }
+}
+
+// Function to handle location input changes in Mart
+function handleMartLocationChange() {
+    const locationInput = document.getElementById('mart-location-input');
+    const locationText = document.getElementById('current-location-text');
+    const pinBtn = document.getElementById('location-pin-btn');
+    const cancelBtn = document.getElementById('location-cancel-btn');
+
+    if (locationInput && locationInput.value.trim()) {
+        // For manual input, we'll need to geocode the address
+        // This is a simplified version - in production you'd want proper geocoding
+        const locationData = {
+            address_name: locationInput.value.trim(),
+            user_address: locationInput.value.trim(),
+            address_lat: null, // Would need geocoding
+            address_lng: null, // Would need geocoding
+            timestamp: Date.now()
+        };
+
+        if (window.sharedLocationService) {
+            window.sharedLocationService.setLocation(locationData);
+        }
+
+        // Update the text and hide input/buttons
+        if (locationText) {
+            locationText.textContent = locationInput.value.trim();
+        }
+
+        // Hide input and buttons, show text
+        if (locationText && locationInput && pinBtn && cancelBtn) {
+            locationText.classList.remove('hidden');
+            locationInput.classList.add('hidden');
+            pinBtn.classList.add('hidden');
+            cancelBtn.classList.add('hidden');
+        }
+    } else {
+        // If empty, cancel the edit
+        cancelLocationEdit();
+    }
+}
+
+// Initialize location sync when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    // Load shared location service
+    if (typeof SharedLocationService !== 'undefined') {
+        window.sharedLocationService = new SharedLocationService();
+
+        // Initialize location display
+        setTimeout(() => {
+            const location = window.sharedLocationService.getLocation();
+            const locationText = location?.user_address || location?.address_name;
+            const locationTextElement = document.getElementById('current-location-text');
+            const locationInput = document.getElementById('mart-location-input');
+            const pinBtn = document.getElementById('location-pin-btn');
+            const cancelBtn = document.getElementById('location-cancel-btn');
+
+            if (locationText && locationText !== 'Loading location...') {
+                // Show location text, hide input and buttons
+                if (locationTextElement) {
+                    locationTextElement.textContent = locationText;
+                    locationTextElement.classList.remove('hidden');
+                }
+
+                if (locationInput && pinBtn && cancelBtn) {
+                    locationInput.classList.add('hidden');
+                    pinBtn.classList.add('hidden');
+                    cancelBtn.classList.add('hidden');
+                }
+            } else {
+                // If no location is set, show the input
+                if (locationTextElement) {
+                    locationTextElement.textContent = 'Click to set location';
+                    locationTextElement.classList.add('hidden');
+                }
+
+                if (locationInput && pinBtn && cancelBtn) {
+                    locationInput.classList.remove('hidden');
+                    pinBtn.classList.remove('hidden');
+                    cancelBtn.classList.remove('hidden');
+                }
+            }
+        }, 100);
+    }
 });
 </script>

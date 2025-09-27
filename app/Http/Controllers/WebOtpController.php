@@ -286,7 +286,7 @@ class WebOtpController extends Controller
                 'role' => 'customer',
                 'profilePictureURL' => null, // Add null field like Android
                 'wallet_amount' => 0,
-                'createdAt' => now()->timestamp(), // Keep timestamp format
+                'createdAt' => now(), // Keep timestamp format
                 'shippingAddress' => [],
                 'zoneId' => null // Add null field like Android
                 // Note: fcmToken is intentionaly omitted for web users
