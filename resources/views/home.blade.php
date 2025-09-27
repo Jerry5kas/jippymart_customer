@@ -353,17 +353,19 @@
     /* Restaurant Card Styles - Matching Existing Design */
     #all_stores {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(280px, 320px));
         gap: 1.5rem;
         margin-top: 1rem;
+        justify-content: start;
     }
 
     /* Popular Restaurants Grid Layout */
     .restaurant-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(280px, 320px));
         gap: 1.5rem;
         margin-top: 1rem;
+        justify-content: start;
     }
 
     .restaurant-card {
@@ -376,6 +378,8 @@
         border: 1px solid #f0f0f0;
         cursor: pointer;
         position: relative;
+        max-width: 320px;
+        width: 100%;
     }
     .restaurant-card:hover {
         transform: translateY(-4px);
@@ -630,22 +634,35 @@
         #all_stores, .restaurant-grid {
             grid-template-columns: 1fr;
             gap: 1rem;
+            justify-content: start;
         }
         .restaurant-card {
             margin: 0 0.5rem;
+            max-width: 400px;
         }
     }
 
     @media (min-width: 769px) and (max-width: 1024px) {
         #all_stores, .restaurant-grid {
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: repeat(auto-fit, minmax(280px, 320px));
+            justify-content: start;
         }
     }
 
     @media (min-width: 1025px) {
         #all_stores, .restaurant-grid {
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(280px, 320px));
+            justify-content: start;
         }
+    }
+
+    /* Special handling for single restaurant card */
+    #all_stores:has(.restaurant-card:only-child),
+    .restaurant-grid:has(.restaurant-card:only-child) {
+        justify-content: start;
+        max-width: 400px;
+        margin-left: 0;
+        margin-right: auto;
     }
 
     .top-categories-slider .slide-item {
@@ -694,6 +711,74 @@
     }
     .top-categories-slider .top-cat-list {
         margin: 0 5px;
+    }
+    
+    /* Banner Slider Styles */
+    #top_banner {
+        position: relative;
+        overflow: hidden;
+    }
+    
+    #top_banner .banner-item {
+        position: relative;
+        width: 100%;
+        height: 450px;
+        overflow: hidden;
+    }
+    
+    #top_banner .banner-img {
+        width: 100%;
+        height: 100%;
+        position: relative;
+    }
+    
+    #top_banner .banner-img img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center;
+        display: block;
+    }
+    
+    #top_banner .banner-img a {
+        display: block;
+        width: 100%;
+        height: 100%;
+        text-decoration: none;
+    }
+    
+    /* Slick slider customizations */
+    #top_banner .slick-slide {
+        height: 600px;
+    }
+    
+    #top_banner .slick-dots {
+        bottom: 15px;
+        z-index: 10;
+    }
+    
+    #top_banner .slick-dots li button:before {
+        color: white;
+        font-size: 12px;
+        opacity: 0.7;
+    }
+    
+    #top_banner .slick-dots li.slick-active button:before {
+        opacity: 1;
+        color: #007F73;
+    }
+    
+    /* Navigation arrows removed - using dots only */
+    
+    /* Responsive banner styles */
+    @media (max-width: 768px) {
+        #top_banner .banner-item {
+            height: 350px;
+        }
+        
+        #top_banner .slick-slide {
+            height: 350px;
+        }
     }
     .top-categories-slider .cat-img {
         display: block;
@@ -1047,7 +1132,6 @@
             }
 
         } catch (error) {
-            console.error('Error fetching delivery settings:', error);
         }
     }
 
@@ -1079,7 +1163,6 @@
             deliveryOptionsCache.set(vendorId, deliveryDetails);
             return deliveryDetails;
         } catch (error) {
-            console.error('Error fetching vendor delivery details:', error);
             return null;
         }
     }
@@ -1122,7 +1205,6 @@
     function getBanners() {
         // Check if user_zone_id is available
         if (!user_zone_id) {
-            console.log("User zone ID not available, skipping banner fetch");
             return;
         }
 
@@ -1141,15 +1223,12 @@
         // Create a new reference without orderBy to avoid composite index requirement
         var zoneBannerRef = database.collection('menu_items').where('zoneId', '==', user_zone_id).where('is_publish', '==', true);
         zoneBannerRef.get().then(async function(banners) {
-            console.log("Fetching banners for zone:", user_zone_id);
-            console.log("Found banners:", banners.docs.length);
             
             banners.docs.forEach((banner) => {
                 var bannerData = banner.data();
                 var redirect_type = '';
                 var redirect_id = '';
                 
-                console.log("Processing banner:", bannerData.title, "Position:", bannerData.position, "ZoneId:", bannerData.zoneId);
                 
                 // Only process banners with position 'top' and matching zone
                 if (bannerData.position == 'top' && bannerData.zoneId == user_zone_id) {
@@ -1165,10 +1244,10 @@
                         'zone_slug': bannerData.zone_slug || '',
                         'set_order': bannerData.set_order || 0
                     }
+                    
+                    // Log banner data for debugging
                     position1_banners.push(object);
-                    console.log("✅ Added banner for zone:", user_zone_id, "Title:", bannerData.title);
                 } else {
-                    console.log("❌ Banner filtered out - Position:", bannerData.position, "Expected: 'top', ZoneId:", bannerData.zoneId, "Expected:", user_zone_id);
                 }
             });
             
@@ -1176,42 +1255,16 @@
             position1_banners.sort((a, b) => (a.set_order || 0) - (b.set_order || 0));
             
             if (position1_banners.length > 0) {
-                var html = '';
-                for (banner of position1_banners) {
-                    html += '<div class="banner-item">';
-                    html += '<div class="banner-img">';
-                    var redirect_id = '#';
-                    if (banner.redirect_type != '') {
-                        if (banner.redirect_type == "store") {
-                            if (jQuery.inArray(banner.redirect_id, available_stores) === -1) {
-                                redirect_id = '#';
-                            } else {
-                                redirect_id = "/restaurant/" + banner.redirect_id + "/" + banner.restaurant_slug + "/" + banner.zone_slug;
-                            }
-                        } else if (banner.redirect_type == "product") {
-                            redirect_id = "/productDetail/" + banner.redirect_id;
-                        } else if (banner.redirect_type == "external_link") {
-                            redirect_id = banner.redirect_id;
-                        }
-                    }
-                    html += '<a href="' + redirect_id + '"><img onerror="this.onerror=null;this.src=\'' +
-                        placeholderImage + '\'" src="' + banner.photo + '"></a>';
-                    html += '</div>';
-                    html += '</div>';
-                }
-                $("#top_banner").html(html);
-                console.log("Banners displayed for zone:", user_zone_id);
+                // Process banners asynchronously to handle missing restaurant data
+                processBannersAsync(position1_banners, available_stores);
             } else {
-                console.log("No banners found for zone:", user_zone_id);
                 $('.ecommerce-banner').remove();
             }
             setTimeout(function() {
                 slickcatCarousel();
             }, 200)
         }).catch(function(error) {
-            console.error("Error fetching banners for zone:", user_zone_id, error);
             // Fallback: try without zone filter if the query fails
-            console.log("Trying fallback banner query without zone filter...");
             bannerref.get().then(async function(fallbackBanners) {
                 var fallback_banners = [];
                 fallbackBanners.docs.forEach((banner) => {
@@ -1229,31 +1282,8 @@
                 });
                 
                 if (fallback_banners.length > 0) {
-                    var html = '';
-                    for (banner of fallback_banners) {
-                        html += '<div class="banner-item">';
-                        html += '<div class="banner-img">';
-                        var redirect_id = '#';
-                        if (banner.redirect_type != '') {
-                            if (banner.redirect_type == "store") {
-                                if (jQuery.inArray(banner.redirect_id, available_stores) === -1) {
-                                    redirect_id = '#';
-                                } else {
-                                    redirect_id = "/restaurant/" + banner.redirect_id + "/" + banner.restaurant_slug + "/" + banner.zone_slug;
-                                }
-                            } else if (banner.redirect_type == "product") {
-                                redirect_id = "/productDetail/" + banner.redirect_id;
-                            } else if (banner.redirect_type == "external_link") {
-                                redirect_id = banner.redirect_id;
-                            }
-                        }
-                        html += '<a href="' + redirect_id + '"><img onerror="this.onerror=null;this.src=\'' +
-                            placeholderImage + '\'" src="' + banner.photo + '"></a>';
-                        html += '</div>';
-                        html += '</div>';
-                    }
-                    $("#top_banner").html(html);
-                    console.log("Fallback banners displayed");
+                    // Process fallback banners asynchronously
+                    processBannersAsync(fallback_banners, available_stores);
                 } else {
                     $('.ecommerce-banner').remove();
                 }
@@ -1279,7 +1309,6 @@
 
     // Initialize filter functionality
     function initializeFilters() {
-        console.log("Initializing restaurant filters...");
 
         // Set default filters
         activeFilters = {
@@ -1348,7 +1377,6 @@
 
     // Apply a filter
     function applyFilter(filterType, filterValue, filterText) {
-        console.log("Applying filter:", filterType, "=", filterValue);
 
         // Update active filters
         activeFilters[filterType] = filterValue;
@@ -1391,7 +1419,6 @@
 
     // Filter restaurants based on active filters
     function filterRestaurants() {
-        console.log("Filtering restaurants with:", activeFilters);
 
         var filtered = [...originalRestaurants]; // Copy original array
 
@@ -1428,7 +1455,6 @@
         filtered = sortRestaurants(filtered, activeFilters.sort);
 
         filteredRestaurants = filtered;
-        console.log("Filtered restaurants:", filtered.length);
 
         // Re-render restaurant list
         renderFilteredRestaurants();
@@ -1489,7 +1515,6 @@
 
     // Render filtered restaurants
     function renderFilteredRestaurants() {
-        console.log("Rendering", filteredRestaurants.length, "filtered restaurants");
 
         // Clear existing restaurants
         $('#all_stores').empty();
@@ -1516,7 +1541,6 @@
 
     // Clear all filters
     function clearAllFilters() {
-        console.log("Clearing all filters");
 
         // Reset active filters
         activeFilters = {
@@ -1565,7 +1589,6 @@
     function storeOriginalRestaurants(restaurants) {
         originalRestaurants = restaurants;
         filteredRestaurants = [...restaurants];
-        console.log("Stored", restaurants.length, "original restaurants");
     }
 
     // Add interactive functionality to restaurant cards
@@ -1575,7 +1598,6 @@
             // Don't trigger if clicking on badges
             if (!$(e.target).closest('.rating-badge').length) {
                 var restaurantName = $(this).find('.restaurant-name').text();
-                console.log('Restaurant clicked:', restaurantName);
 
                 // Add click animation
                 $(this).addClass('card-clicked');
@@ -1594,7 +1616,6 @@
             var badgeText = $(this).text().trim();
             var badgeType = $(this).attr('title');
 
-            console.log('Rating badge clicked:', badgeType, badgeText);
 
             // Add badge click animation
             $(this).addClass('badge-clicked');
@@ -1611,7 +1632,6 @@
             e.stopPropagation(); // Prevent card click
 
             var locationText = $(this).find('.location-text').text();
-            console.log('Location clicked:', locationText);
 
             // Here you can add functionality like opening maps
             // openInMaps(locationText);
@@ -1724,7 +1744,6 @@
                         try {
                             address_lat = position.coords.latitude;
                             address_lng = position.coords.longitude;
-                            console.log("Location obtained:", address_lat, address_lng);
 
                             // Set cookies for future use
                             setCookie('address_lat', address_lat, 365);
@@ -1738,12 +1757,10 @@
 
                             resolve();
                         } catch (error) {
-                            console.error("Error processing location:", error);
                             reject(error);
                         }
                     },
                     function(error) {
-                        console.error("Geolocation error:", error);
                         let errorMessage = "Unable to get your location";
                         
                         switch(error.code) {
@@ -1758,7 +1775,6 @@
                                 break;
                         }
                         
-                        console.log(errorMessage);
                         
                         // Show user-friendly message
                         if (typeof Swal !== 'undefined') {
@@ -1783,7 +1799,6 @@
                         }
                         
                         // Try to use a default location as fallback
-                        console.log("Trying fallback location...");
                         tryFallbackLocation().then(resolve).catch(() => {
                             showLocationError();
                             reject(error);
@@ -1796,7 +1811,6 @@
                     }
                 );
             } else {
-                console.error("Geolocation not supported");
                 showLocationError();
                 reject(new Error("Geolocation not supported"));
             }
@@ -1806,27 +1820,22 @@
     // Function to get user zone ID (moved from footer.blade.php)
     async function getUserZoneId() {
         if (!address_lat || !address_lng) {
-            console.log("No location available for zone detection");
             return;
         }
 
         try {
             var zone_list = [];
-            console.log("Fetching zones from database...");
             var snapshots = await database.collection('zone').where("publish", "==", true).get();
-            console.log("Found", snapshots.docs.length, "published zones");
 
             if (snapshots.docs.length > 0) {
                 snapshots.docs.forEach((snapshot) => {
                     var zone_data = snapshot.data();
                     zone_data.id = snapshot.id;
                     zone_list.push(zone_data);
-                    console.log("Zone:", zone_data.id, "-", zone_data.title || "No title");
                 });
             }
 
             if (zone_list.length > 0) {
-                console.log("Checking location", address_lat, address_lng, "against", zone_list.length, "zones...");
 
                 for (i = 0; i < zone_list.length; i++) {
                     var zone = zone_list[i];
@@ -1834,7 +1843,6 @@
                     var vertices_y = [];
 
                     if (zone.area && zone.area.length > 0) {
-                        console.log("Checking zone", zone.id, "with", zone.area.length, "boundary points");
 
                         for (j = 0; j < zone.area.length; j++) {
                             var geopoint = zone.area[j];
@@ -1844,42 +1852,33 @@
 
                         var points_polygon = (vertices_x.length) - 1;
                         var isInZone = is_in_polygon(points_polygon, vertices_x, vertices_y, address_lng, address_lat);
-                        console.log("Zone", zone.id, "polygon test result:", isInZone);
 
                         if (isInZone) {
                             user_zone_id = zone.id;
-                            console.log("✅ Zone detected:", user_zone_id, "-", zone.title || "No title");
                             
                             // Save zone ID to cookies for mart page
                             setCookie('user_zone_id', user_zone_id, 365);
-                            console.log("Zone ID saved to cookies:", user_zone_id);
                             
                             return; // Exit function once zone is found
                         }
                     } else {
-                        console.log("⚠️ Zone", zone.id, "has no area boundaries defined");
                     }
                 }
             } else {
-                console.log("❌ No published zones found in database");
             }
 
             // If no zone found, try fallback approaches
             if (!user_zone_id) {
-                console.log("No zone found for current location. Trying fallback approaches...");
                 var fallbackSuccess = await tryFallbackZoneAssignment();
                 if (fallbackSuccess) {
-                    console.log("✅ Fallback zone assignment successful:", user_zone_id);
                     // Trigger data loading now that we have a zone
                     setTimeout(() => {
                         callStore();
                     }, 1000);
                 } else {
-                    console.log("❌ All zone assignment attempts failed");
                     showLocationError();
                 }
             } else {
-                console.log("✅ Zone assignment successful:", user_zone_id);
                 // Trigger data loading now that we have a zone
                 setTimeout(() => {
                     callStore();
@@ -1887,7 +1886,6 @@
             }
 
         } catch (error) {
-            console.error("Error getting zone ID:", error);
             // Try fallback on error too
             await tryFallbackZoneAssignment();
         }
@@ -1911,7 +1909,6 @@
     // Function to try fallback zone assignment
     async function tryFallbackZoneAssignment() {
         try {
-            console.log("Attempting fallback zone assignment...");
 
             // First, try to get any published zone (as a fallback)
             var snapshots = await database.collection('zone').where("publish", "==", true).get();
@@ -1920,21 +1917,16 @@
                 // Use the first available zone as fallback
                 var firstZone = snapshots.docs[0];
                 user_zone_id = firstZone.id;
-                console.log("🔄 Using fallback zone:", user_zone_id, "-", firstZone.data().title || "No title");
                 
                 // Save fallback zone ID to cookies for mart page
                 setCookie('user_zone_id', user_zone_id, 365);
-                console.log("Fallback zone ID saved to cookies:", user_zone_id);
                 
                 return true;
             } else {
                 // If no zones exist at all, try to create a default zone or use a system default
-                console.log("❌ No zones exist in database. This is a configuration issue.");
-                console.log("Please create at least one zone in your admin panel.");
                 return false;
             }
         } catch (error) {
-            console.error("Error in fallback zone assignment:", error);
             return false;
         }
     }
@@ -1946,7 +1938,6 @@
             address_lat = 12.9716; // Chennai latitude
             address_lng = 80.2206; // Chennai longitude
 
-            console.log("Using fallback location:", address_lat, address_lng);
 
             // Set cookies for the fallback location
             setCookie('address_lat', address_lat, 365);
@@ -1988,7 +1979,6 @@
                     
                     if (address) {
                         setCookie('user_address', address, 365);
-                        console.log("Address saved:", address);
                         return address;
                     }
                 }
@@ -1997,11 +1987,9 @@
             // Fallback: create a simple address from coordinates
             const fallbackAddress = `Location: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
             setCookie('user_address', fallbackAddress, 365);
-            console.log("Fallback address saved:", fallbackAddress);
             return fallbackAddress;
             
         } catch (error) {
-            console.error("Error getting address from coordinates:", error);
             // Fallback: create a simple address from coordinates
             const fallbackAddress = `Location: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
             setCookie('user_address', fallbackAddress, 365);
@@ -2009,9 +1997,76 @@
         }
     }
 
+    // Function to fetch restaurant details for banner redirects
+    async function fetchRestaurantDetails(restaurantId) {
+        try {
+            const restaurantDoc = await database.collection('vendors').doc(restaurantId).get();
+            if (restaurantDoc.exists) {
+                const data = restaurantDoc.data();
+                return {
+                    restaurant_slug: data.restaurant_slug || 'restaurant',
+                    zone_slug: data.zone_slug || 'zone'
+                };
+            }
+        } catch (error) {
+        }
+        return {
+            restaurant_slug: 'restaurant',
+            zone_slug: 'zone'
+        };
+    }
+
+    // Function to process banners asynchronously
+    async function processBannersAsync(banners, available_stores) {
+        var html = '';
+        
+        for (banner of banners) {
+            html += '<div class="banner-item">';
+            html += '<div class="banner-img">';
+            var redirect_id = '#';
+            
+            if (banner.redirect_type != '') {
+                if (banner.redirect_type == "store") {
+                    if (jQuery.inArray(banner.redirect_id, available_stores) === -1) {
+                        redirect_id = '#';
+                    } else {
+                        // Check if we have restaurant_slug and zone_slug, otherwise fetch them
+                        if (banner.restaurant_slug && banner.zone_slug) {
+                            redirect_id = "/restaurant/" + banner.redirect_id + "/" + banner.restaurant_slug + "/" + banner.zone_slug;
+                        } else {
+                            try {
+                                // Fetch restaurant details and construct URL
+                                const details = await fetchRestaurantDetails(banner.redirect_id);
+                                redirect_id = "/restaurant/" + banner.redirect_id + "/" + details.restaurant_slug + "/" + details.zone_slug;
+                            } catch (error) {
+                                // Fallback: redirect to restaurants listing page with restaurant filter
+                                redirect_id = "/restaurants?restaurant=" + banner.redirect_id;
+                            }
+                        }
+                    }
+                } else if (banner.redirect_type == "product") {
+                    redirect_id = "/productDetail/" + banner.redirect_id;
+                } else if (banner.redirect_type == "external_link") {
+                    redirect_id = banner.redirect_id;
+                }
+            }
+            
+            html += '<a href="' + redirect_id + '"><img onerror="this.onerror=null;this.src=\'' +
+                placeholderImage + '\'" src="' + banner.photo + '"></a>';
+            html += '</div>';
+            html += '</div>';
+        }
+        
+        $("#top_banner").html(html);
+        
+        // Initialize the slider after HTML is set
+        setTimeout(function() {
+            initializeBannerSlider();
+        }, 100);
+    }
+
     // Function to show location error
     function showLocationError() {
-        console.log("Showing location error message");
         jQuery(".section-content").remove();
         jQuery(".zone-error").show();
 
@@ -2040,17 +2095,12 @@
     }
 
     $(document).ready(async function() {
-        console.log("Initial user_zone_id:", typeof user_zone_id, user_zone_id);
-        console.log("Initial address_lat:", typeof address_lat, address_lat);
-        console.log("Initial address_lng:", typeof address_lng, address_lng);
 
         // Initialize location if not available
         if (typeof address_lat === 'undefined' || address_lat === null || address_lat === '' ||
             typeof address_lng === 'undefined' || address_lng === null || address_lng === '') {
-            console.log("Location not found in cookies, attempting to get current location...");
             await initializeLocation();
         } else {
-            console.log("Location found in cookies, proceeding with zone detection...");
             // Trigger zone detection with existing location
             await getUserZoneId();
         }
@@ -2119,15 +2169,12 @@
                 address_lat !== null && address_lng !== null &&
                 typeof user_zone_id !== 'undefined' && user_zone_id !== null) {
                 clearInterval(locationRetryInterval);
-                console.log("Location and zone detected, initializing data...");
                 callStore();
             } else if (locationRetryCount >= maxLocationRetries) {
                 clearInterval(locationRetryInterval);
-                console.log("Location detection timeout, showing error...");
                 jQuery(".section-content").remove();
                 jQuery(".zone-error").show();
             } else {
-                console.log(`Location retry ${locationRetryCount + 1}/${maxLocationRetries} - address_lat: ${address_lat}, address_lng: ${address_lng}, user_zone_id: ${user_zone_id}`);
             }
             locationRetryCount++;
         }, 3000); // Increased interval to 3 seconds
@@ -2144,17 +2191,14 @@
 
     function myStopTimer() {
         // No longer needed with new approach, but keeping for compatibility
-        console.log('Timer stopped - using efficient updates now');
     }
 
     async function callStore() {
-        console.log("callStore - address_lat:", typeof address_lat, address_lat, "address_lng:", typeof address_lng, address_lng, "user_zone_id:", typeof user_zone_id, user_zone_id);
 
         // Check if location variables are defined and valid
         if (typeof address_lat === 'undefined' || typeof address_lng === 'undefined' || typeof user_zone_id === 'undefined' ||
             address_lat == '' || address_lng == '' || address_lng == NaN || address_lat == NaN || address_lat == null || address_lng == null ||
             user_zone_id == null || user_zone_id == '') {
-            console.log("Location or zone not detected yet, waiting...");
             return false;
         }
         DriverNearByRef.get().then(async function(DriverNearByRefSnapshots) {
@@ -2190,20 +2234,82 @@
 
     function slickcatCarousel() {
         if ($("#top_banner").length > 0 && $("#top_banner").html().trim() !== "") {
+            // Destroy existing slider if it exists
+            if ($('#top_banner').hasClass('slick-initialized')) {
+                $('#top_banner').slick('destroy');
+            }
+            
             $('#top_banner').slick({
                 slidesToShow: 1,
+                slidesToScroll: 1,
                 dots: true,
-                arrows: true,
-                autoplay: true, // Optional: autoplay
-                autoplaySpeed: 3000, // Optional: 3 seconds autoplay delay
+                arrows: false,
+                autoplay: true,
+                autoplaySpeed: 4000,
+                fade: false,
+                cssEase: 'linear',
+                infinite: true,
+                pauseOnHover: true,
+                pauseOnFocus: true,
+                responsive: [
+                    {
+                        breakpoint: 768,
+                        settings: {
+                            arrows: false,
+                            dots: true
+                        }
+                    }
+                ]
             });
         } else {
-            console.log("Top banner element not found or empty.");
+        }
+    }
+
+    // New function for better banner slider initialization
+    function initializeBannerSlider() {
+        
+        if ($("#top_banner").length > 0 && $("#top_banner").html().trim() !== "") {
+            const bannerItems = $("#top_banner .banner-item");
+            
+            if (bannerItems.length > 0) {
+                // Destroy existing slider if it exists
+                if ($('#top_banner').hasClass('slick-initialized')) {
+                    $('#top_banner').slick('destroy');
+                }
+                
+                // Initialize new slider
+                $('#top_banner').slick({
+                    slidesToShow: 1,
+                    slidesToScroll: 1,
+                    dots: true,
+                    arrows: false,
+                    autoplay: bannerItems.length > 1,
+                    autoplaySpeed: 4000,
+                    fade: false,
+                    cssEase: 'linear',
+                    infinite: bannerItems.length > 1,
+                    pauseOnHover: true,
+                    pauseOnFocus: true,
+                    adaptiveHeight: false,
+                    responsive: [
+                        {
+                            breakpoint: 768,
+                            settings: {
+                                arrows: false,
+                                dots: true,
+                                autoplay: bannerItems.length > 1
+                            }
+                        }
+                    ]
+                });
+                
+            } else {
+            }
+        } else {
         }
     }
 
     async function getAllStore() {
-        console.log("Loading restaurants with optimized query...");
 
         // Simplified query to avoid complex index requirements
         var nearestRestauantRefnew = geoFirestore.collection('vendors')
@@ -2213,7 +2319,6 @@
 
         nearestRestauantRefnew.get().then(async function(snapshots) {
             if (snapshots.docs.length > 0) {
-                console.log("Initial restaurants loaded:", snapshots.docs.length);
 
                 // Initialize vendors array for initial display
                 let vendors = [];
@@ -2235,7 +2340,6 @@
 
                 // Store vendors data
                 allVendorsData = vendors;
-                console.log("Initial vendors stored:", allVendorsData.length);
 
                 // Store restaurants for filter functionality
                 storeOriginalRestaurants(vendors);
@@ -2249,7 +2353,6 @@
                 }, 1000);
 
             } else {
-                console.log("No restaurants found for this zone");
                 $(".all-stores-section").remove();
                 $(".section-content").remove();
                 jQuery(".zone-error").show();
@@ -2257,16 +2360,13 @@
                 jQuery(".zone-error").find('.text').text('{{ trans('lang.restaurant_error_text') }}');
             }
         }).catch(function(error) {
-            console.error("Error loading restaurants:", error);
             // Fallback: try without vType filter
-            console.log("Trying fallback query without vType filter...");
             geoFirestore.collection('vendors')
                 .where('zoneId', '==', user_zone_id)
                 .limit(initialLoadSize)
                 .get()
                 .then(async function(fallbackSnapshots) {
                     if (fallbackSnapshots.docs.length > 0) {
-                        console.log("Fallback query successful, filtering restaurants client-side");
                         let vendors = [];
                         fallbackSnapshots.docs.forEach((listval) => {
                             var datas = listval.data();
@@ -2286,16 +2386,13 @@
                             });
 
                             allVendorsData = vendors;
-                            console.log("Fallback vendors stored:", allVendorsData.length);
                             displayRestaurants();
                         } else {
-                            console.log("No restaurants found in fallback query");
                             $(".all-stores-section").remove();
                         }
                     }
                 })
                 .catch(function(fallbackError) {
-                    console.error("Fallback query also failed:", fallbackError);
                     $(".all-stores-section").remove();
                 });
         });
@@ -2307,7 +2404,6 @@
 
     // Background loading function for additional restaurants
     async function loadMoreRestaurantsInBackground() {
-        console.log("Loading more restaurants in background...");
         try {
             let additionalRestaurants = [];
             // Simplified query to avoid complex index requirements
@@ -2329,16 +2425,13 @@
 
             // Add to existing data
             allVendorsData = allVendorsData.concat(additionalRestaurants);
-            console.log("Background loading complete. Total restaurants:", allVendorsData.length);
 
             // Update the load more button visibility after background loading
             if (allVendorsData.length > currentDisplayCount) {
                 $('#loadmore').show();
-                console.log("Showing load more button after background loading");
             }
 
         } catch (error) {
-            console.log("Background loading failed:", error);
         }
     }
 
@@ -2379,7 +2472,6 @@
 
             initialDataLoaded = true;
         } catch (error) {
-            console.error('Error preloading vendor data:', error);
         }
     }
 
@@ -2489,7 +2581,6 @@
             });
 
         } catch (error) {
-            console.error('Error getting vendor minimum prices:', error);
         }
         return minPrices;
     }
@@ -2528,7 +2619,6 @@
                 }
             });
         } catch (error) {
-            console.error('Error getting vendor minimum price:', error);
         }
         return minPrice === Infinity ? 0 : minPrice;
     }
@@ -2593,9 +2683,7 @@
     }
 
     async function getItemCategories() {
-        console.log("Fetching categories...");
         itemCategoriesref.get().then(async function(foodCategories) {
-            console.log("Categories fetched:", foodCategories.docs.length);
             top_categories = document.getElementById('top_categories');
             top_categories.innerHTML = '';
             foodCategorieshtml = await buildHTMLItemCategory(foodCategories);
@@ -2650,11 +2738,8 @@
     }
 
     async function catHaveStores(categoryId) {
-        console.log("Checking stores for category:", categoryId);
-        console.log("Current user zone:", user_zone_id);
         var snapshots = await database.collection('vendors').where("categoryID", "array-contains", categoryId).where('zoneId',
             '==', user_zone_id).get();
-        console.log("Found stores:", snapshots.docs.length);
         if (snapshots.docs.length > 0) {
             return true;
         } else {
@@ -2692,7 +2777,6 @@
     }
 
     async function buildHTMLItemCategory(foodCategories) {
-        console.log("Building HTML for categories:", foodCategories.docs.length);
         var html = '';
         var alldata = [];
         for (const listval of foodCategories.docs) {
@@ -2701,9 +2785,7 @@
             // Temporarily show all categories for testing
             alldata.push(datas);
             // Log category data for debugging
-            console.log("Category:", datas.id, datas.title);
         }
-        console.log("Total categories:", alldata.length);
 
         // Create slider container
         html += '<div class="top-categories-slider">';
@@ -2780,7 +2862,6 @@
 
             // Check if element exists (Popular Items section was removed)
             if (!most_popular_item) {
-                console.log("Popular Items section not found, skipping...");
                 return;
             }
 
@@ -2822,26 +2903,21 @@
 
         await popularRestauantRefnew.get().then(async function(popularRestauantSnapshot) {
             if (popularRestauantSnapshot.docs.length > 0) {
-                console.log("Popular restaurants loaded:", popularRestauantSnapshot.docs.length);
                 var most_popular_store = document.getElementById('most_popular_store');
                 most_popular_store.innerHTML = '';
                 var popularStorehtml = await buildHTMLPopularStore(popularRestauantSnapshot);
                 most_popular_store.innerHTML = popularStorehtml;
             } else {
-                console.log("No popular restaurants found");
                 $(".most-popular-store-section").remove();
             }
         }).catch(function(error) {
-            console.error("Error loading popular restaurants:", error);
             // Fallback: try without vType filter
-            console.log("Trying fallback query for popular restaurants...");
             geoFirestore.collection('vendors')
                 .where('zoneId', '==', user_zone_id)
                 .limit(4)
                 .get()
                 .then(async function(fallbackSnapshot) {
                     if (fallbackSnapshot.docs.length > 0) {
-                        console.log("Fallback popular restaurants query successful");
                         let restaurants = [];
                         fallbackSnapshot.docs.forEach((doc) => {
                             const data = doc.data();
@@ -2866,7 +2942,6 @@
                     }
                 })
                 .catch(function(fallbackError) {
-                    console.error("Fallback popular restaurants query failed:", fallbackError);
                     $(".most-popular-store-section").remove();
                 });
         });
@@ -3321,7 +3396,6 @@
 
                     // Check if element exists (Offers & Coupons section was removed)
                     if (!offers_coupons) {
-                        console.log("Offers & Coupons section not found, skipping...");
                         return;
                     }
 
@@ -3500,15 +3574,11 @@
 
     // Function to display restaurants with load more functionality
     function displayRestaurants() {
-        console.log("Displaying restaurants. Total vendors:", allVendorsData.length);
-        console.log("Current display count:", currentDisplayCount);
 
         // Since we're already filtering restaurants in the query, just use allVendorsData directly
         const restaurants = allVendorsData; // Already filtered to restaurants only
         const displayData = restaurants.slice(0, currentDisplayCount);
 
-        console.log("Displaying restaurants:", displayData.length);
-        console.log("Remaining restaurants:", restaurants.length - currentDisplayCount);
 
         const html = buildAllStoresHTMLFromArray(displayData);
         $('#all_stores').html(html);
@@ -3530,34 +3600,26 @@
 
         // Show/hide load more button based on remaining restaurants
         const remainingCount = restaurants.length - currentDisplayCount;
-        console.log("Remaining restaurants for load more:", remainingCount);
 
         if (remainingCount > 0) {
             $('#loadmore').show();
-            console.log("Showing load more button");
         } else {
             $('#loadmore').hide();
-            console.log("Hiding load more button - no more restaurants");
         }
     }
 
     // Function to load more restaurants
     function loadMoreRestaurants() {
-        console.log("Load more clicked. Current count:", currentDisplayCount);
-        console.log("Total available restaurants:", allVendorsData.length);
 
         // Since we're already filtering restaurants in the query, just use allVendorsData directly
         const restaurants = allVendorsData; // Already filtered to restaurants only
         const remainingCount = restaurants.length - currentDisplayCount;
 
-        console.log("Remaining restaurants:", remainingCount);
 
         if (remainingCount > 0) {
             currentDisplayCount += Math.min(loadMoreStep, remainingCount);
-            console.log("New display count:", currentDisplayCount);
             displayRestaurants();
         } else {
-            console.log("No more restaurants to load");
             $('#loadmore').hide();
         }
     }
@@ -3626,12 +3688,10 @@
         // Check if basic location is available
         if (typeof address_lat !== 'undefined' && typeof address_lng !== 'undefined' &&
             address_lat && address_lng) {
-            console.log('Location available, allowing access to Mart');
             return true;
         }
         
         // If no location, show alert but still allow navigation
-        console.log('No location detected, but allowing access to Mart');
         return true;
         
         // Original location check code (commented out for now)

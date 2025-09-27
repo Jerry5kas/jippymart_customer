@@ -10,11 +10,30 @@
     <!-- Include Shared Location Service -->
     <script src="{{ asset('js/shared-location-service.js') }}"></script>
 
-    <!-- Google Maps API -->
+    <!-- Google Maps API - Loaded dynamically in footer to avoid duplicates -->
     <script>
         const GOOGLE_MAP_KEY = 'AIzaSyCwGZ2HyUDONfY-qEUt4gzEXVZVIVYbO_E'; // Replace with your actual Google API key
     </script>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCwGZ2HyUDONfY-qEUt4gzEXVZVIVYbO_E&libraries=places" async defer></script>
+    
+    <!-- Cloudflare Rocket Loader compatibility -->
+    <script data-cfasync="false">
+        // Prevent Rocket Loader from interfering with critical scripts
+        if (typeof window.RocketLoader !== 'undefined') {
+            window.RocketLoader = {
+                config: {
+                    enabled: false
+                }
+            };
+        }
+        
+        // Add data-cfasync="false" to prevent Cloudflare from optimizing critical scripts
+        document.addEventListener('DOMContentLoaded', function() {
+            const criticalScripts = document.querySelectorAll('script[src*="maps.googleapis.com"], script[src*="firebase"], script[src*="slick"]');
+            criticalScripts.forEach(script => {
+                script.setAttribute('data-cfasync', 'false');
+            });
+        });
+    </script>
 
     <script>
         <?php if($takeaway_options){ ?>
@@ -137,6 +156,65 @@
                  /* Ensure our custom suggestions are on top */
                  .location-suggestions {
                      z-index: 9999 !important;
+                 }
+
+                 /* Location Input Styles */
+                 .location-input {
+                     border: 1px solid #e9ecef !important;
+                     border-radius: 8px !important;
+                     padding: 8px 12px !important;
+                     font-size: 14px !important;
+                     width: 100% !important;
+                     max-width: max-content !important;
+                     min-width: 200px !important;
+                     background-color: #f8f9fa !important;
+                     color: #495057 !important;
+                     transition: all 0.3s ease !important;
+                     outline: none !important;
+                     box-sizing: border-box !important;
+                 }
+
+                 .location-input:focus {
+                     border-color: #007F73 !important;
+                     background-color: white !important;
+                     box-shadow: 0 0 0 2px rgba(0, 127, 115, 0.1) !important;
+                 }
+
+                 .location-input::placeholder {
+                     color: #6c757d !important;
+                     font-size: 14px !important;
+                 }
+
+                 /* Location Container Styles */
+                 .head-loc {
+                     width: 100% !important;
+                     max-width: max-content !important;
+                     min-width: 250px !important;
+                 }
+
+                 /* Responsive Location Input */
+                 @media (max-width: 768px) {
+                     .location-input {
+                         min-width: 180px !important;
+                         font-size: 13px !important;
+                         padding: 6px 10px !important;
+                     }
+                     
+                     .head-loc {
+                         min-width: 200px !important;
+                     }
+                 }
+
+                 @media (max-width: 576px) {
+                     .location-input {
+                         min-width: 150px !important;
+                         font-size: 12px !important;
+                         padding: 5px 8px !important;
+                     }
+                     
+                     .head-loc {
+                         min-width: 170px !important;
+                     }
                  }
             `;
             document.head.appendChild(style);
@@ -740,14 +818,14 @@
                         <img alt="#" class="img-fluid" src="{{asset('img/logo_web.png')}}" id="logo_web">
                     </a>
                 </div>
-                <div class="col-3 d-flex align-items-center m-none head-search">
+                <div class="col-4 col-lg-3 d-flex align-items-center m-none head-search">
                     <!-- <div class="dropdown ml-4"> -->
                     <!-- <a class="text-dark dropdown-toggle d-flex align-items-center p-0" href="#" id="navbarDropdown"
                        role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"> -->
                     <div class="head-loc d-flex align-items-center position-relative" id="location-container">
                         <i class="feather-map-pin mr-2 bg-light rounded-pill p-2 icofont-size"></i>
-                        <input id="user_locationnew" type="text" size="80" class="location-input" placeholder="Enter your location"
-                               title="" style="padding: 0px 16px;" autocomplete="off">
+                        <input id="user_locationnew" type="text" class="location-input" placeholder="Enter your location"
+                               title="" autocomplete="off">
 
                         <!-- Location Suggestions Dropdown -->
                         <div id="location-suggestions" class="location-suggestions" style="display: none;">
@@ -761,7 +839,7 @@
                     </div>
                     <!-- </div> -->
                 </div>
-                <div class="col-7 header-right">
+                <div class="col-6 col-lg-7 header-right">
                     <div class="d-flex align-items-center justify-content-end pr-5">
                         <a href="{{url('search')}}" class="widget-header mr-4 text-dark">
                             <div class="icon d-flex align-items-center">

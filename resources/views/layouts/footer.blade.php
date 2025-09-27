@@ -259,13 +259,42 @@
         }, timeInSec * 1000);
     }
     async function loadGoogleMapsScript() {
+        // Check if Google Maps is already loaded to prevent duplicate loading
+        if (typeof google !== 'undefined' && google.maps && google.maps.places) {
+            console.log('Google Maps already loaded, initializing...');
+            setTimeout(function() {
+                if (mapType == 'google') {
+                    initialize();
+                } else {
+                    init();
+                }
+            }, 100);
+            return;
+        }
+
         await database.collection('settings').doc("googleMapKey").get().then(function(googleMapKeySnapshotsHeader) {
             var placeholderImageHeaderData = googleMapKeySnapshotsHeader.data();
             googleMapKey = placeholderImageHeaderData.key;
+            
+            // Check if script already exists
+            const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
+            if (existingScript) {
+                console.log('Google Maps script already exists, waiting for load...');
+                // Wait for the existing script to load
+                setTimeout(function() {
+                    if (mapType == 'google') {
+                        initialize();
+                    } else {
+                        init();
+                    }
+                }, 1000);
+                return;
+            }
+
             const script = document.createElement('script');
             if (mapType == 'google') {
                 script.src = "https://maps.googleapis.com/maps/api/js?key=" + googleMapKey +
-                    "&libraries=places";
+                    "&libraries=places&loading=async";
                 script.async = true;
                 script.defer = true;
                 document.head.appendChild(script);
@@ -274,24 +303,66 @@
                 document.head.appendChild(script);
             }
             script.onload = function() {
-                if (mapType == 'google') {
-                    initialize();
-                } else {
-                    init();
-                }
+                console.log('Google Maps script loaded successfully');
+                // Add a small delay to ensure the API is fully initialized
+                setTimeout(function() {
+                    if (mapType == 'google') {
+                        initialize();
+                    } else {
+                        init();
+                    }
+                }, 100);
+            }
+            
+            script.onerror = function() {
+                console.error('Failed to load Google Maps script');
             }
         });
     }
     loadGoogleMapsScript();
 
+    // Flag to prevent multiple initializations
+    var isInitialized = false;
+
     function initialize() {
-        if (address_name != '') {
-            document.getElementById('user_locationnew').value = address_name;
+        // Prevent multiple initializations
+        if (isInitialized) {
+            console.log('Google Maps Autocomplete already initialized, skipping...');
+            return;
         }
+
+        // Check if Google Maps API is fully loaded
+        if (typeof google === 'undefined' || !google.maps || !google.maps.places) {
+            console.log('Google Maps API not fully loaded yet, retrying in 500ms...');
+            setTimeout(initialize, 500);
+            return;
+        }
+
+        // Check if the input element exists
         var input = document.getElementById('user_locationnew');
-        autocomplete = new google.maps.places.Autocomplete(input);
+        if (!input) {
+            console.log('Location input element not found, retrying in 500ms...');
+            setTimeout(initialize, 500);
+            return;
+        }
+
+        if (address_name != '') {
+            input.value = address_name;
+        }
+
+        try {
+            autocomplete = new google.maps.places.Autocomplete(input);
+            isInitialized = true;
+            console.log('Google Maps Autocomplete initialized successfully');
+        } catch (error) {
+            console.error('Error initializing Google Maps Autocomplete:', error);
+            // Retry after a delay
+            setTimeout(initialize, 1000);
+            return;
+        }
         google.maps.event.addListener(autocomplete, 'place_changed', function() {
-            var place = autocomplete.getPlace();
+            try {
+                var place = autocomplete.getPlace();
             address_name = place.name;
             address_lat = place.geometry.location.lat();
             address_lng = place.geometry.location.lng();
@@ -345,6 +416,9 @@
             }
             <?php } ?>
             window.location.reload();
+            } catch (error) {
+                console.error('Error in place_changed event:', error);
+            }
         });
     }
 
