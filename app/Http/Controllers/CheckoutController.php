@@ -37,6 +37,12 @@ class CheckoutController extends Controller
      */
     public function checkout()
     {
+        // Set default takeaway option if not set
+        if (!Session::has('takeawayOption')) {
+            Session::put('takeawayOption', 'false');
+            Session::save();
+        }
+        
         $email = Auth::user()->email;
         $user = VendorUsers::where('email', $email)->first();
 

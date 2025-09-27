@@ -54,31 +54,22 @@
                                 <div class="custom-control custom-radio border-bottom py-2">
                                     <input type="radio" name="save_as" id="home" value="Home"
                                            class="custom-control-input" checked>
-                                    <label class="custom-control-label" for="home"><span
-                                                class="currency-symbol-left"></span> <?php echo 'Home';?><span
-                                                class="currency-symbol-right"></span></label>
+                                    <label class="custom-control-label" for="home">Home</label>
                                 </div>
                                 <div class="custom-control custom-radio border-bottom py-2">
                                     <input type="radio" name="save_as" id="work" value="Work"
                                            class="custom-control-input">
-                                    <label class="custom-control-label" for="work"><span
-                                                class="currency-symbol-left"></span> <?php echo 'Work';?><span
-                                                class="currency-symbol-right"></span></label>
+                                    <label class="custom-control-label" for="work">Work</label>
                                 </div>
                                 <div class="custom-control custom-radio border-bottom py-2">
                                     <input type="radio" name="save_as" id="hotel" value="Hotel"
                                            class="custom-control-input">
-                                    <label class="custom-control-label" for="hotel"><span
-                                                class="currency-symbol-left"></span>
-                                        <?php echo 'Hotel';?><span class="currency-symbol-right"></span>
-                                    </label>
+                                    <label class="custom-control-label" for="hotel">Hotel</label>
                                 </div>
                                 <div class="custom-control custom-radio border-bottom py-2">
                                     <input type="radio" name="save_as" id="other" value="Other"
                                            class="custom-control-input">
-                                    <label class="custom-control-label" for="other"><span
-                                                class="currency-symbol-left"></span> <?php echo 'Other';?><span
-                                                class="currency-symbol-right"></span></label>
+                                    <label class="custom-control-label" for="other">Other</label>
                                 </div>
                             </div>
                             <input type="hidden" name="address_lat" id="address_lat">
@@ -105,6 +96,12 @@
 @include('layouts.footer')
 @include('layouts.nav')
 <script type="text/javascript">
+    // Ensure user_uuid is available
+    if (typeof user_uuid === 'undefined') {
+        console.error('user_uuid is not defined. Please check if user is logged in.');
+        // You might want to redirect to login or show an error message
+    }
+    
     var ref = database.collection('users').where('id', '==', user_uuid);
     var pagesize = 10;
     var offest = 1;
@@ -130,7 +127,7 @@
         append_list = document.getElementById('append_list1');
         append_list.innerHTML = '';
         ref.get().then(async function (snapshots) {
-            if (snapshots != undefined) {
+            if (snapshots != undefined && snapshots.docs && snapshots.docs.length > 0) {
                 var html = '';
                 html = buildHTML(snapshots);
                 jQuery("#data-table_processing").hide();
@@ -143,12 +140,29 @@
                     $('.not_found_div').show();
                     $('#addAddress').modal('show');
                 }
+            } else {
+                // No user document found, show add address modal
+                jQuery("#data-table_processing").hide();
+                $('.not_found_div').show();
+                $('#addAddress').modal('show');
             }
+        }).catch(function(error) {
+            console.error('Error fetching user data:', error);
+            jQuery("#data-table_processing").hide();
+            $('.not_found_div').show();
+            $('#addAddress').modal('show');
         });
     });
     function buildHTML(snapshots) {
         var html = '';
         var shippingAddress = [];
+        
+        // Check if snapshots has documents
+        if (!snapshots || !snapshots.docs || snapshots.docs.length === 0) {
+            console.log('No user document found in Firestore');
+            return html;
+        }
+        
         var val = snapshots.docs[0].data();
         if (val.hasOwnProperty('shippingAddress') && Array.isArray(val.shippingAddress)) {
             shippingAddress = val.shippingAddress;
@@ -232,6 +246,9 @@
         } else if ((Lat == undefined && Lng == undefined) || (Lat == '' && Lng == '') || (Lat == null && Lng == null)) {
             $('#address_err').text('{{trans("lang.select_location_from_map_result")}}')
             return false;
+        } else if (typeof user_uuid === 'undefined' || user_uuid === '') {
+            $('#address_err').text('User not authenticated. Please login again.')
+            return false;
         } else {
             var location = {'latitude': parseFloat(Lat), 'longitude': parseFloat(Lng)}
             var addAddress = {
@@ -281,28 +298,34 @@
     $(document).on("click", "a[name='edit-address']", function () {
         var id = this.id;
         ref.get().then(async function (snapshots) {
-            userData = snapshots.docs[0].data();
-            var shippingAddress = userData.shippingAddress;
-            shippingAddress.forEach((listval) => {
-                if (listval.id == id) {
-                    $('#addressId').val(listval.id);
-                    $('#address').val(listval.address);
-                    $('#locality').val(listval.locality);
-                    $('#landmark').val(listval.landmark);
-                    $('#locality').attr('lat', listval.location.latitude);
-                    $('#locality').attr('lng', listval.location.longitude);
-                    $('input[name="save_as"][value="' + listval.addressAs + '"]').prop('checked', true);
-                }
-            })
-            $('#addAddress').modal('show');
-        })
+            if (snapshots && snapshots.docs && snapshots.docs.length > 0) {
+                userData = snapshots.docs[0].data();
+                var shippingAddress = userData.shippingAddress;
+                shippingAddress.forEach((listval) => {
+                    if (listval.id == id) {
+                        $('#addressId').val(listval.id);
+                        $('#address').val(listval.address);
+                        $('#locality').val(listval.locality);
+                        $('#landmark').val(listval.landmark);
+                        $('#locality').attr('lat', listval.location.latitude);
+                        $('#locality').attr('lng', listval.location.longitude);
+                        $('input[name="save_as"][value="' + listval.addressAs + '"]').prop('checked', true);
+                    }
+                })
+                $('#addAddress').modal('show');
+            } else {
+                console.error('User document not found');
+            }
+        }).catch(function(error) {
+            console.error('Error fetching user data for edit:', error);
+        });
     })
     $(document).on("click", "a[name='mark-as-default']", function (e) {
         var index = (this.id).split("_")[1];
         checkDefault = $(this).attr('data-default');
         if (checkDefault == "false") {
             database.collection('users').where('id', '==', user_uuid).get().then(async function (snapshot) {
-                if (snapshot.docs.length > 0) {
+                if (snapshot && snapshot.docs && snapshot.docs.length > 0) {
                     var userData = snapshot.docs[0].data();
                     var shippingAddress = userData.shippingAddress;
                     shippingAddress.forEach((listval, i) => {
@@ -318,8 +341,12 @@
                     database.collection('users').doc(user_uuid).update({'shippingAddress': shippingAddress}).then(function (result) {
                         
                     })
+                } else {
+                    console.error('User document not found for mark as default');
                 }
-            })
+            }).catch(function(error) {
+                console.error('Error fetching user data for mark as default:', error);
+            });
         } else {
             e.preventDefault();
         }
@@ -328,17 +355,23 @@
         var id = $(this).attr('data-id');
         var newShiipingAddress = [];
         ref.get().then(async function (snapshots) {
-            userData = snapshots.docs[0].data();
-            var shippingAddress = userData.shippingAddress;
-            shippingAddress.forEach((listval) => {
-                if (listval.id != id) {
-                    newShiipingAddress.push(listval);
-                }
-            })
-            database.collection('users').doc(user_uuid).update({'shippingAddress': newShiipingAddress}).then(function (result) {
-                window.location.reload();
-            })
-        })
+            if (snapshots && snapshots.docs && snapshots.docs.length > 0) {
+                userData = snapshots.docs[0].data();
+                var shippingAddress = userData.shippingAddress;
+                shippingAddress.forEach((listval) => {
+                    if (listval.id != id) {
+                        newShiipingAddress.push(listval);
+                    }
+                })
+                database.collection('users').doc(user_uuid).update({'shippingAddress': newShiipingAddress}).then(function (result) {
+                    window.location.reload();
+                })
+            } else {
+                console.error('User document not found for delete');
+            }
+        }).catch(function(error) {
+            console.error('Error fetching user data for delete:', error);
+        });
     })
     $(document).on("click", "a.change-address", function () {
         
