@@ -89,15 +89,17 @@
         <div class="loading"></div>
         <div class="status" id="status">Redirecting to your product...</div>
         
-        @if(isset($detectionInfo))
-        <div style="background: rgba(255,255,255,0.1); padding: 10px; margin: 10px 0; border-radius: 5px; font-size: 12px;">
-            <strong>Debug Info:</strong><br>
-            Mobile: {{ $detectionInfo['isMobile'] ? 'Yes' : 'No' }}<br>
-            Mobile App: {{ $detectionInfo['isMobileApp'] ? 'Yes' : 'No' }}<br>
-            Deep Link: {{ $detectionInfo['isDeepLink'] ? 'Yes' : 'No' }}<br>
-            Mobile Headers: {{ $detectionInfo['hasMobileHeaders'] ? 'Yes' : 'No' }}<br>
-            User Agent: {{ substr($userAgent, 0, 50) }}...
-        </div>
+        @if(isset($debug) && $debug)
+            @if(isset($detectionInfo))
+            <div style="background: rgba(255,255,255,0.1); padding: 10px; margin: 10px 0; border-radius: 5px; font-size: 12px;">
+                <strong>Debug Info:</strong><br>
+                Mobile: {{ $detectionInfo['isMobile'] ? 'Yes' : 'No' }}<br>
+                Mobile App: {{ $detectionInfo['isMobileApp'] ? 'Yes' : 'No' }}<br>
+                Deep Link: {{ $detectionInfo['isDeepLink'] ? 'Yes' : 'No' }}<br>
+                Mobile Headers: {{ $detectionInfo['hasMobileHeaders'] ? 'Yes' : 'No' }}<br>
+                User Agent: {{ substr($userAgent, 0, 50) }}...
+            </div>
+            @endif
         @endif
         
         <div id="app-install" style="display: none;">
