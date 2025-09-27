@@ -7,6 +7,15 @@
         $takeaway_options = false;
     }
     ?>
+    <!-- Include Shared Location Service -->
+    <script src="{{ asset('js/shared-location-service.js') }}"></script>
+
+    <!-- Google Maps API -->
+    <script>
+        const GOOGLE_MAP_KEY = 'AIzaSyCwGZ2HyUDONfY-qEUt4gzEXVZVIVYbO_E'; // Replace with your actual Google API key
+    </script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCwGZ2HyUDONfY-qEUt4gzEXVZVIVYbO_E&libraries=places" async defer></script>
+
     <script>
         <?php if($takeaway_options){ ?>
         var takeaway_options = true;
@@ -75,12 +84,60 @@
                 .dropdown-divider {
                     border-top: 1px solid #e9ecef !important;
                 }
-                .pac-target-input:focus {
-                    outline: 2px solid orange !important;
-                    box-shadow: 0 0 0 2px orange !important;
-                    border: 1px solid orange !important;
-                    border-radius: 25px !important; /* or use 8px for less rounding */
-                }
+                 .pac-target-input:focus {
+                     outline: 2px solid orange !important;
+                     box-shadow: 0 0 0 2px orange !important;
+                     border: 1px solid orange !important;
+                     border-radius: 25px !important; /* or use 8px for less rounding */
+                 }
+
+                 /* Location Suggestions Styles */
+                 .location-suggestions {
+                     position: absolute;
+                     top: 100%;
+                     left: 0;
+                     right: 0;
+                     background: white;
+                     border: 1px solid #ddd;
+                     border-radius: 8px;
+                     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                     z-index: 1000;
+                     max-height: 300px;
+                     overflow-y: auto;
+                 }
+
+                 .suggestion-item {
+                     padding: 12px 16px;
+                     cursor: pointer;
+                     display: flex;
+                     align-items: center;
+                     border-bottom: 1px solid #f0f0f0;
+                     transition: background-color 0.2s;
+                 }
+
+                 .suggestion-item:hover {
+                     background-color: #f8f9fa;
+                 }
+
+                 .suggestion-item:last-child {
+                     border-bottom: none;
+                 }
+
+                 .suggestion-item i {
+                     color: #007F73;
+                     width: 16px;
+                     text-align: center;
+                 }
+
+                 /* Hide Google Places autocomplete */
+                 .pac-container {
+                     display: none !important;
+                 }
+
+                 /* Ensure our custom suggestions are on top */
+                 .location-suggestions {
+                     z-index: 9999 !important;
+                 }
             `;
             document.head.appendChild(style);
         });
@@ -127,6 +184,553 @@
                 tooltip.style.display = 'none';
             }
         }
+
+          // Location suggestions functionality
+          let locationSuggestions = [];
+          let isShowingSuggestions = false;
+          let isRequestingLocation = false;
+
+         // Initialize location suggestions
+         function initializeLocationSuggestions() {
+             const locationInput = document.getElementById('user_locationnew');
+             const suggestionsContainer = document.getElementById('location-suggestions');
+
+             if (!locationInput || !suggestionsContainer) return;
+
+             // Show suggestions on focus
+             locationInput.addEventListener('focus', function() {
+                 if (this.value.trim() === '') {
+                     showDefaultSuggestions();
+                 }
+             });
+
+             // Handle input changes
+             locationInput.addEventListener('input', function() {
+                 const query = this.value.trim();
+                 if (query.length > 0) {
+                     searchLocationSuggestions(query);
+                 } else {
+                     showDefaultSuggestions();
+                 }
+             });
+
+              // Hide suggestions when clicking outside
+              document.addEventListener('click', function(e) {
+                  if (!locationInput.contains(e.target) && !suggestionsContainer.contains(e.target)) {
+                      hideLocationSuggestions();
+                  }
+              });
+
+              // Handle blur event to save location
+              locationInput.addEventListener('blur', function() {
+                  const query = this.value.trim();
+                  if (query.length > 0) {
+                      // Update shared location service
+                      if (window.sharedLocationService) {
+                          window.sharedLocationService.setLocation({
+                              address_name: query,
+                              user_address: query,
+                              timestamp: Date.now()
+                          });
+                      }
+                  }
+              });
+
+              // Handle keyboard navigation
+              locationInput.addEventListener('keydown', function(e) {
+                  if (e.key === 'Escape') {
+                      hideLocationSuggestions();
+                  } else if (e.key === 'Enter') {
+                      // Handle Enter key - update location and reload
+                      const query = this.value.trim();
+                      if (query.length > 0) {
+                          // Update shared location service
+                          if (window.sharedLocationService) {
+                              window.sharedLocationService.setLocation({
+                                  address_name: query,
+                                  user_address: query,
+                                  timestamp: Date.now()
+                              });
+                          }
+
+                          // Reload page to update location
+                          console.log('About to reload page in 500ms (current location)...');
+                          setTimeout(() => {
+                              console.log('Executing page reload (current location)...');
+                              try {
+                                  location.reload();
+                              } catch (error) {
+                                  console.error('Reload failed, trying alternative method:', error);
+                                  window.location.href = window.location.href;
+                              }
+                          }, 500);
+                      }
+                      hideLocationSuggestions();
+                  }
+              });
+         }
+
+         // Show location suggestions
+         function showLocationSuggestions() {
+             const suggestionsContainer = document.getElementById('location-suggestions');
+             if (suggestionsContainer) {
+                 suggestionsContainer.style.display = 'block';
+                 isShowingSuggestions = true;
+             }
+         }
+
+         // Hide location suggestions
+         function hideLocationSuggestions() {
+             const suggestionsContainer = document.getElementById('location-suggestions');
+             if (suggestionsContainer) {
+                 suggestionsContainer.style.display = 'none';
+                 isShowingSuggestions = false;
+             }
+         }
+
+         // Search for location suggestions using Google Places API
+         async function searchLocationSuggestions(query) {
+             if (query.length < 2) {
+                 hideLocationSuggestions();
+                 return;
+             }
+
+             try {
+                 // Use Google Places API for location search
+                 const service = new google.maps.places.AutocompleteService();
+                 const request = {
+                     input: query,
+                     componentRestrictions: { country: 'in' },
+                     types: ['geocode']
+                 };
+
+                 service.getPlacePredictions(request, (predictions, status) => {
+                     if (status === google.maps.places.PlacesServiceStatus.OK && predictions) {
+                         updateLocationSuggestionsWithGoogle(predictions);
+                         showLocationSuggestions();
+                     } else {
+                         // If no results, show default suggestions
+                         showDefaultSuggestions();
+                     }
+                 });
+             } catch (error) {
+                 console.error('Error searching locations:', error);
+                 // Show default suggestions on error
+                 showDefaultSuggestions();
+             }
+         }
+
+         // Show default suggestions when no search results
+         function showDefaultSuggestions() {
+             const suggestionsContainer = document.getElementById('location-suggestions');
+             if (!suggestionsContainer) return;
+
+             // Clear existing suggestions
+             suggestionsContainer.innerHTML = '';
+
+              // Add default suggestions
+              const defaultSuggestions = [
+                  { icon: 'feather-navigation', text: 'Use My Current Location', action: 'useCurrentLocation' },
+                  { icon: 'feather-map-pin', text: 'Other', action: 'selectLocation("Other")' }
+              ];
+
+             defaultSuggestions.forEach(suggestion => {
+                 const suggestionItem = document.createElement('div');
+                 suggestionItem.className = 'suggestion-item';
+                 suggestionItem.innerHTML = `<i class="${suggestion.icon} mr-2"></i><span>${suggestion.text}</span>`;
+
+                 // Properly bind the onclick event
+                 if (suggestion.action === 'useCurrentLocation') {
+                     suggestionItem.onclick = useCurrentLocation;
+                 } else if (suggestion.action === 'selectLocation("Other")') {
+                     suggestionItem.onclick = () => selectLocation('Other');
+                 }
+
+                 suggestionsContainer.appendChild(suggestionItem);
+             });
+
+             showLocationSuggestions();
+         }
+
+         // Update location suggestions with Google Places results
+         function updateLocationSuggestionsWithGoogle(predictions) {
+             const suggestionsContainer = document.getElementById('location-suggestions');
+             if (!suggestionsContainer) return;
+
+             // Clear existing suggestions
+             suggestionsContainer.innerHTML = '';
+
+             // Add current location option
+             const currentLocationOption = document.createElement('div');
+             currentLocationOption.className = 'suggestion-item';
+             currentLocationOption.innerHTML = '<i class="feather-navigation mr-2"></i><span>Use My Current Location</span>';
+             currentLocationOption.onclick = useCurrentLocation;
+             suggestionsContainer.appendChild(currentLocationOption);
+
+             // Add search results
+             predictions.forEach(prediction => {
+                 const suggestionItem = document.createElement('div');
+                 suggestionItem.className = 'suggestion-item';
+                 suggestionItem.innerHTML = `<i class="feather-map-pin mr-2"></i><span>${prediction.description}</span>`;
+                 suggestionItem.onclick = () => selectLocationFromGoogleSearch(prediction);
+                 suggestionsContainer.appendChild(suggestionItem);
+             });
+         }
+
+         // Update location suggestions with search results (legacy function for compatibility)
+         function updateLocationSuggestions(results) {
+             const suggestionsContainer = document.getElementById('location-suggestions');
+             if (!suggestionsContainer) return;
+
+             // Clear existing suggestions
+             suggestionsContainer.innerHTML = '';
+
+             // Add current location option
+             const currentLocationOption = document.createElement('div');
+             currentLocationOption.className = 'suggestion-item';
+             currentLocationOption.innerHTML = '<i class="feather-navigation mr-2"></i><span>Use My Current Location</span>';
+             currentLocationOption.onclick = useCurrentLocation;
+             suggestionsContainer.appendChild(currentLocationOption);
+
+             // Add search results
+             results.forEach(result => {
+                 const suggestionItem = document.createElement('div');
+                 suggestionItem.className = 'suggestion-item';
+                 suggestionItem.innerHTML = `<i class="feather-map-pin mr-2"></i><span>${result.display_name}</span>`;
+                 suggestionItem.onclick = () => selectLocationFromSearch(result);
+                 suggestionsContainer.appendChild(suggestionItem);
+             });
+         }
+
+          // Check geolocation permission status
+          async function checkLocationPermission() {
+              if ('permissions' in navigator) {
+                  try {
+                      const permission = await navigator.permissions.query({ name: 'geolocation' });
+                      return permission.state;
+                  } catch (error) {
+                      console.log('Permission API not supported');
+                      return 'unknown';
+                  }
+              }
+              return 'unknown';
+          }
+
+          // Force clear location cache and refresh
+          function clearLocationCache() {
+              try {
+                  // Clear localStorage location data
+                  localStorage.removeItem('sharedLocation');
+                  localStorage.removeItem('userLocation');
+                  localStorage.removeItem('geolocation');
+
+                  // Clear any existing geolocation watch
+                  if (navigator.geolocation && navigator.geolocation.clearWatch) {
+                      navigator.geolocation.clearWatch(1);
+                  }
+
+                  console.log('Location cache cleared');
+                  return true;
+              } catch (error) {
+                  console.error('Error clearing location cache:', error);
+                  return false;
+              }
+          }
+
+          // Use current location
+          function useCurrentLocation() {
+              console.log('useCurrentLocation function called');
+
+              // Prevent multiple simultaneous requests
+              if (isRequestingLocation) {
+                  console.log('Location request already in progress');
+                  return;
+              }
+
+              // Check if geolocation is supported
+              if (!navigator.geolocation) {
+                  alert('Geolocation is not supported by this browser. Please enter your location manually.');
+                  return;
+              }
+
+              isRequestingLocation = true;
+
+              // Show loading message
+              const locationInput = document.getElementById('user_locationnew');
+              if (!locationInput) {
+                  console.error('Location input element not found');
+                  isRequestingLocation = false;
+                  return;
+              }
+
+              locationInput.value = 'Getting your location...';
+              hideLocationSuggestions();
+
+              // Clear any existing location cache
+              clearLocationCache();
+
+              // Geolocation options
+              const options = {
+                  enableHighAccuracy: true,
+                  timeout: 15000,
+                  maximumAge: 0
+              };
+
+              console.log('Requesting location with options:', options);
+
+              navigator.geolocation.getCurrentPosition(
+                  async function(position) {
+                      console.log('Location obtained:', position.coords);
+
+                      const lat = position.coords.latitude;
+                      const lng = position.coords.longitude;
+
+                      // Show processing message
+                      locationInput.value = 'Processing location...';
+
+                      try {
+                          // Use Google Geocoding to get address
+                          const geocoder = new google.maps.Geocoder();
+                          const latlng = new google.maps.LatLng(lat, lng);
+
+                          geocoder.geocode({ location: latlng }, (results, status) => {
+                              isRequestingLocation = false;
+
+                              if (status === 'OK' && results[0]) {
+                                  const address = results[0].formatted_address;
+                                  locationInput.value = address;
+
+                                  console.log('Google Geocoding result:', results[0]);
+
+                                  // Update shared location service
+                                  if (window.sharedLocationService) {
+                                      window.sharedLocationService.setLocation({
+                                          address_name: address,
+                                          user_address: address,
+                                          address_lat: lat,
+                                          address_lng: lng,
+                                          timestamp: Date.now()
+                                      });
+                                  }
+
+                                  // Reload page to update location
+                                  setTimeout(() => {
+                                      location.reload();
+                                  }, 500);
+                              } else {
+                                  console.error('Google Geocoding failed:', status);
+                                  locationInput.value = '';
+                                  alert('Unable to get address for your location. Please enter it manually.');
+                              }
+                          });
+                      } catch (geocodeError) {
+                          isRequestingLocation = false;
+                          console.error('Geocoding error:', geocodeError);
+                          locationInput.value = '';
+                          alert('Unable to get address for your location. Please enter it manually.');
+                      }
+                  },
+                  function(error) {
+                      isRequestingLocation = false;
+                      locationInput.value = '';
+                      console.error('Geolocation error:', error);
+
+                      let errorMessage = 'Unable to get your current location. ';
+                      switch(error.code) {
+                          case error.PERMISSION_DENIED:
+                              errorMessage += 'Location access was denied. Please allow location access in your browser settings and try again.';
+                              break;
+                          case error.POSITION_UNAVAILABLE:
+                              errorMessage += 'Location information is unavailable.';
+                              break;
+                          case error.TIMEOUT:
+                              errorMessage += 'Location request timed out. Please try again.';
+                              break;
+                          default:
+                              errorMessage += 'Please allow location access or enter it manually.';
+                              break;
+                      }
+                      alert(errorMessage);
+                  },
+                  options
+              );
+          }
+
+          // Select location from predefined options
+          function selectLocation(locationType) {
+              const locationInput = document.getElementById('user_locationnew');
+
+              // You can customize these based on user's saved locations
+              const locations = {
+                  'Home': '123 Main Street, City, State',
+                  'Work': '456 Business Ave, City, State',
+                  'Other': 'Enter your location'
+              };
+
+              if (locationType === 'Other') {
+                  locationInput.focus();
+                  hideLocationSuggestions();
+              } else {
+                  locationInput.value = locations[locationType];
+                  hideLocationSuggestions();
+
+                  // Update shared location service
+                  if (window.sharedLocationService) {
+                      window.sharedLocationService.setLocation({
+                          address_name: locations[locationType],
+                          user_address: locations[locationType],
+                          timestamp: Date.now()
+                      });
+                  }
+
+                  // Reload page to update location
+                  console.log('About to reload page in 500ms (predefined location)...');
+                  setTimeout(() => {
+                      console.log('Executing page reload (predefined location)...');
+                      try {
+                          location.reload();
+                      } catch (error) {
+                          console.error('Reload failed, trying alternative method:', error);
+                          window.location.href = window.location.href;
+                      }
+                  }, 500);
+              }
+          }
+
+          // Select location from Google Places search results
+          function selectLocationFromGoogleSearch(prediction) {
+              const locationInput = document.getElementById('user_locationnew');
+              locationInput.value = prediction.description;
+              hideLocationSuggestions();
+
+              // Use Google Geocoding to get coordinates
+              const geocoder = new google.maps.Geocoder();
+              geocoder.geocode({ placeId: prediction.place_id }, (results, status) => {
+                  if (status === 'OK' && results[0]) {
+                      const location = results[0].geometry.location;
+                      const lat = location.lat();
+                      const lng = location.lng();
+
+                      // Update shared location service
+                      if (window.sharedLocationService) {
+                          window.sharedLocationService.setLocation({
+                              address_name: prediction.description,
+                              user_address: prediction.description,
+                              address_lat: lat,
+                              address_lng: lng,
+                              place_id: prediction.place_id,
+                              timestamp: Date.now()
+                          });
+                      }
+
+                      // Reload page to update location
+                      console.log('About to reload page in 500ms...');
+                      setTimeout(() => {
+                          console.log('Executing page reload...');
+                          try {
+                              location.reload();
+                          } catch (error) {
+                              console.error('Reload failed, trying alternative method:', error);
+                              window.location.href = window.location.href;
+                          }
+                      }, 500);
+                  } else {
+                      console.error('Geocoding failed:', status);
+                      // Still update with basic info
+                      if (window.sharedLocationService) {
+                          window.sharedLocationService.setLocation({
+                              address_name: prediction.description,
+                              user_address: prediction.description,
+                              timestamp: Date.now()
+                          });
+                      }
+
+                      console.log('About to reload page in 500ms (fallback)...');
+                      setTimeout(() => {
+                          console.log('Executing page reload (fallback)...');
+                          try {
+                              location.reload();
+                          } catch (error) {
+                              console.error('Reload failed, trying alternative method:', error);
+                              window.location.href = window.location.href;
+                          }
+                      }, 500);
+                  }
+              });
+          }
+
+          // Select location from search results (legacy function for compatibility)
+          function selectLocationFromSearch(result) {
+              const locationInput = document.getElementById('user_locationnew');
+              locationInput.value = result.display_name;
+              hideLocationSuggestions();
+
+              // Update shared location service
+              if (window.sharedLocationService) {
+                  window.sharedLocationService.setLocation({
+                      address_name: result.display_name,
+                      user_address: result.display_name,
+                      address_lat: result.lat,
+                      address_lng: result.lon,
+                      timestamp: Date.now()
+                  });
+              }
+
+              // Reload page to update location
+              console.log('About to reload page in 500ms (legacy search)...');
+              setTimeout(() => {
+                  console.log('Executing page reload (legacy search)...');
+                  try {
+                      location.reload();
+                  } catch (error) {
+                      console.error('Reload failed, trying alternative method:', error);
+                      window.location.href = window.location.href;
+                  }
+              }, 500);
+          }
+
+         // Wait for Google Maps API to load
+         function waitForGoogleMaps() {
+             return new Promise((resolve) => {
+                 if (typeof google !== 'undefined' && google.maps && google.maps.places) {
+                     resolve();
+                 } else {
+                     const checkGoogleMaps = setInterval(() => {
+                         if (typeof google !== 'undefined' && google.maps && google.maps.places) {
+                             clearInterval(checkGoogleMaps);
+                             resolve();
+                         }
+                     }, 100);
+                 }
+             });
+         }
+
+         // Initialize shared location service for Restaurant section
+         document.addEventListener('DOMContentLoaded', async function() {
+             // Wait for Google Maps API to load
+             await waitForGoogleMaps();
+
+             // Initialize shared location service
+             if (typeof SharedLocationService !== 'undefined') {
+                 window.sharedLocationService = new SharedLocationService();
+
+                 // Load existing location into the input field
+                 const location = window.sharedLocationService.getLocation();
+                 if (location && location.address_name) {
+                     document.getElementById('user_locationnew').value = location.address_name;
+                 }
+
+                 // Listen for location updates from other sections
+                 window.sharedLocationService.addListener(function(locationData) {
+                     if (locationData && locationData.address_name) {
+                         document.getElementById('user_locationnew').value = locationData.address_name;
+                     }
+                 });
+             }
+
+             // Initialize location suggestions
+             initializeLocationSuggestions();
+         });
     </script>
     <section class="header-main shadow-sm bg-white">
         <div class="container">
@@ -140,19 +744,20 @@
                     <!-- <div class="dropdown ml-4"> -->
                     <!-- <a class="text-dark dropdown-toggle d-flex align-items-center p-0" href="#" id="navbarDropdown"
                        role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"> -->
-                    <div class="head-loc d-flex align-items-center" id="location-container">
+                    <div class="head-loc d-flex align-items-center position-relative" id="location-container">
                         <i class="feather-map-pin mr-2 bg-light rounded-pill p-2 icofont-size"></i>
-                        <input id="user_locationnew" type="text" size="80" class="pac-target-input" placeholder="Enter your location"
-                               title="" style="padding: 0px 16px;">
-                    </div>
-                    <!-- </a> -->
-                    <div class="dropdown-menu dropdown-menu-left" aria-labelledby="navbarDropdown" style="min-width: 250px;">
-                        <div class="p-2">
-                            <a class="dropdown-item" href="#" onclick="getCurrentLocation('reload'); return false;">
-                                <i class="feather-navigation mr-2"></i>
-                                Use My Current Location
-                            </a>
+                        <input id="user_locationnew" type="text" size="80" class="location-input" placeholder="Enter your location"
+                               title="" style="padding: 0px 16px;" autocomplete="off">
+
+                        <!-- Location Suggestions Dropdown -->
+                        <div id="location-suggestions" class="location-suggestions" style="display: none;">
+                            <!-- Suggestions will be populated dynamically -->
                         </div>
+
+                        <!-- Debug button (remove in production)
+                        <button onclick="useCurrentLocation()" style="background: #007F73; color: white; padding: 4px 8px; border: none; border-radius: 4px; font-size: 12px; margin-left: 5px;">
+                            Test Location
+                        </button> -->
                     </div>
                     <!-- </div> -->
                 </div>
@@ -181,13 +786,11 @@
                         <div class="dropdown mr-4 m-none d-inline-flex align-items-center" style="gap: 0.5rem;">
                             <a href="#" class="dropdown-toggle text-dark py-2 px-2 d-inline-flex align-items-center" id="dropdownMenuButton"
                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="font-size: 1rem; min-height: 36px;">
-                               
-    </span>
                             </a>
                             <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuButton">
                                 @auth
                                     <a class="dropdown-item" href="{{url('profile')}}">{{trans('lang.my_account')}}</a>
-                                    
+
                                     <a class="dropdown-item" href="{{ route('logout') }}" onclick="event.preventDefault();
 									document.getElementById('logout-form').submit();">{{trans('lang.logout')}}</a>
                                 @else

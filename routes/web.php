@@ -213,7 +213,11 @@ Route::get('transactions', [App\Http\Controllers\TransactionController::class, '
 
 Route::get('/offers', [App\Http\Controllers\OffersController::class, 'index'])->name('offers');
 
-Route::get('/profile', [App\Http\Controllers\ProfileController::class, 'index'])->name('profile');
+//Route::get('/profile', [App\Http\Controllers\ProfileController::class, 'index'])->name('profile');
+
+Route::get('/profile', function(){
+    return view('users.profile');
+})->name('profile');
 
 Route::get('favorite-stores', [FavoritesController::class, 'index'])->name('favorites');
 

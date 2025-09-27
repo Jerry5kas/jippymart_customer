@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reload Debug Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .test-section h3 {
+            color: #007F73;
+            margin-top: 0;
+        }
+        button {
+            background: #007F73;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 10px 5px;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #005f56;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        #status {
+            background: white;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+        #console-output {
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔄 Reload Debug Test</h1>
+    <p>This page tests different methods of page reload to identify what's working and what's not.</p>
+
+    <div class="test-section">
+        <h3>📋 Browser Information</h3>
+        <div id="browser-info"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>🔍 Reload Tests</h3>
+        <button onclick="testLocationReload()">Test location.reload()</button>
+        <button onclick="testWindowLocationReload()">Test window.location.reload()</button>
+        <button onclick="testWindowLocationHref()">Test window.location.href</button>
+        <button onclick="testLocationReplace()">Test location.replace()</button>
+        <button onclick="testHistoryReload()">Test history.go(0)</button>
+        <button onclick="clearConsole()">Clear Console</button>
+        <div id="status">Click a button to test...</div>
+    </div>
+
+    <div class="test-section">
+        <h3>📱 Console Output</h3>
+        <div id="console-output"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>📊 Test Results</h3>
+        <div id="results"></div>
+    </div>
+
+    <script>
+        let testCounter = 0;
+        let consoleOutput = [];
+
+        // Override console.log to capture output
+        const originalConsoleLog = console.log;
+        console.log = function(...args) {
+            originalConsoleLog.apply(console, args);
+            const message = args.join(' ');
+            consoleOutput.push(`[${new Date().toLocaleTimeString()}] ${message}`);
+            updateConsoleOutput();
+        };
+
+        // Override console.error to capture output
+        const originalConsoleError = console.error;
+        console.error = function(...args) {
+            originalConsoleError.apply(console, args);
+            const message = args.join(' ');
+            consoleOutput.push(`[${new Date().toLocaleTimeString()}] ERROR: ${message}`);
+            updateConsoleOutput();
+        };
+
+        function updateConsoleOutput() {
+            const outputDiv = document.getElementById('console-output');
+            outputDiv.innerHTML = consoleOutput.slice(-20).join('<br>');
+            outputDiv.scrollTop = outputDiv.scrollHeight;
+        }
+
+        function clearConsole() {
+            consoleOutput = [];
+            updateConsoleOutput();
+            document.getElementById('status').innerHTML = '<div class="info">Console cleared</div>';
+        }
+
+        // Display browser information
+        function displayBrowserInfo() {
+            const info = document.getElementById('browser-info');
+            info.innerHTML = `
+                <div class="info">
+                    <strong>Browser:</strong> ${navigator.userAgent}<br>
+                    <strong>Protocol:</strong> ${location.protocol}<br>
+                    <strong>Host:</strong> ${location.host}<br>
+                    <strong>Path:</strong> ${location.pathname}<br>
+                    <strong>User Agent:</strong> ${navigator.userAgent}<br>
+                    <strong>Test Counter:</strong> <span id="test-counter">0</span>
+                </div>
+            `;
+        }
+
+        // Test location.reload()
+        function testLocationReload() {
+            testCounter++;
+            document.getElementById('test-counter').textContent = testCounter;
+            
+            console.log(`Test ${testCounter}: Testing location.reload()`);
+            document.getElementById('status').innerHTML = '<div class="info">Testing location.reload()...</div>';
+            
+            setTimeout(() => {
+                console.log(`Test ${testCounter}: Executing location.reload()`);
+                try {
+                    location.reload();
+                } catch (error) {
+                    console.error(`Test ${testCounter}: location.reload() failed:`, error);
+                    document.getElementById('status').innerHTML = `<div class="error">❌ location.reload() failed: ${error.message}</div>`;
+                }
+            }, 1000);
+        }
+
+        // Test window.location.reload()
+        function testWindowLocationReload() {
+            testCounter++;
+            document.getElementById('test-counter').textContent = testCounter;
+            
+            console.log(`Test ${testCounter}: Testing window.location.reload()`);
+            document.getElementById('status').innerHTML = '<div class="info">Testing window.location.reload()...</div>';
+            
+            setTimeout(() => {
+                console.log(`Test ${testCounter}: Executing window.location.reload()`);
+                try {
+                    window.location.reload();
+                } catch (error) {
+                    console.error(`Test ${testCounter}: window.location.reload() failed:`, error);
+                    document.getElementById('status').innerHTML = `<div class="error">❌ window.location.reload() failed: ${error.message}</div>`;
+                }
+            }, 1000);
+        }
+
+        // Test window.location.href
+        function testWindowLocationHref() {
+            testCounter++;
+            document.getElementById('test-counter').textContent = testCounter;
+            
+            console.log(`Test ${testCounter}: Testing window.location.href`);
+            document.getElementById('status').innerHTML = '<div class="info">Testing window.location.href...</div>';
+            
+            setTimeout(() => {
+                console.log(`Test ${testCounter}: Executing window.location.href`);
+                try {
+                    window.location.href = window.location.href;
+                } catch (error) {
+                    console.error(`Test ${testCounter}: window.location.href failed:`, error);
+                    document.getElementById('status').innerHTML = `<div class="error">❌ window.location.href failed: ${error.message}</div>`;
+                }
+            }, 1000);
+        }
+
+        // Test location.replace()
+        function testLocationReplace() {
+            testCounter++;
+            document.getElementById('test-counter').textContent = testCounter;
+            
+            console.log(`Test ${testCounter}: Testing location.replace()`);
+            document.getElementById('status').innerHTML = '<div class="info">Testing location.replace()...</div>';
+            
+            setTimeout(() => {
+                console.log(`Test ${testCounter}: Executing location.replace()`);
+                try {
+                    location.replace(location.href);
+                } catch (error) {
+                    console.error(`Test ${testCounter}: location.replace() failed:`, error);
+                    document.getElementById('status').innerHTML = `<div class="error">❌ location.replace() failed: ${error.message}</div>`;
+                }
+            }, 1000);
+        }
+
+        // Test history.go(0)
+        function testHistoryReload() {
+            testCounter++;
+            document.getElementById('test-counter').textContent = testCounter;
+            
+            console.log(`Test ${testCounter}: Testing history.go(0)`);
+            document.getElementById('status').innerHTML = '<div class="info">Testing history.go(0)...</div>';
+            
+            setTimeout(() => {
+                console.log(`Test ${testCounter}: Executing history.go(0)`);
+                try {
+                    history.go(0);
+                } catch (error) {
+                    console.error(`Test ${testCounter}: history.go(0) failed:`, error);
+                    document.getElementById('status').innerHTML = `<div class="error">❌ history.go(0) failed: ${error.message}</div>`;
+                }
+            }, 1000);
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            displayBrowserInfo();
+            console.log('Reload debug test page loaded');
+            console.log('Test counter:', testCounter);
+        });
+    </script>
+</body>
+</html>
