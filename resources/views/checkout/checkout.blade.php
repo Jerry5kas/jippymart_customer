@@ -729,12 +729,20 @@
                 });
                 if (isShipping == false) {
                     if (takeaway_options == "false" || takeaway_options == false) {
-                        window.location.href = "{{ route('delivery-address.index') }}";
+                        // Only redirect if cart has items and delivery is required
+                        var cartItems = $('.product-item').length;
+                        if (cartItems > 0) {
+                            window.location.href = "{{ route('delivery-address.index') }}";
+                        }
                     }
                 }
             } else {
                 if (takeaway_options == "false" || takeaway_options == false) {
-                    window.location.href = "{{ route('delivery-address.index') }}";
+                    // Only redirect if cart has items and delivery is required
+                    var cartItems = $('.product-item').length;
+                    if (cartItems > 0) {
+                        window.location.href = "{{ route('delivery-address.index') }}";
+                    }
                 }
             }
             if (userDetails.wallet_amount != undefined && userDetails.wallet_amount != '' && !isNaN(
