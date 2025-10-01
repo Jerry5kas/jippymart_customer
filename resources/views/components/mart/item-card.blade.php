@@ -66,7 +66,7 @@
         </div>
 
         <!-- Product Cards Container -->
-    <div class="relative">
+    <div class="relative" x-data="{}">
         <!-- Left Arrow -->
         <button
             @click="$refs.scroller.scrollBy({ left: -260, behavior: 'smooth' })"
