@@ -68,7 +68,7 @@
             </div>
 
             <!-- Right Carousel -->
-            <div class="md:col-span-3 relative overflow-hidden">
+            <div class="md:col-span-3 relative overflow-hidden" x-data="{}">
                 <!-- Left Arrow -->
                 <button
                     @click="$refs.scroller.scrollBy({ left: -240, behavior: 'smooth' })"

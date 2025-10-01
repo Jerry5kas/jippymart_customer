@@ -7,10 +7,10 @@
     
     <!-- Slides Container -->
     <div class="relative h-64 sm:h-80 md:h-96 lg:h-[28rem] xl:h-[32rem]">
-        <div class="relative flex h-full transition-all duration-1000 ease-out"
-             :style="`transform: translateX(-${active * 100}%);`">
+        <div class="relative flex h-full transition-transform duration-1000 ease-in-out"
+             :style="`transform: translateX(-${currentIndex * 100}%);`">
 
-            @forelse ($banners ?? [] as $banner)
+            @forelse ($banners ?? [] as $index => $banner)
                 <div class="w-full flex-shrink-0 relative">
                     <!-- Clickable Banner Image -->
                     <a href="{{ route('mart.banner.redirect', ['bannerTitle' => $banner['title'] ?? '']) }}" 
@@ -19,6 +19,10 @@
                              alt="{{ $banner['title'] ?? 'Banner' }}"
                              class="w-full h-full object-cover object-center hover:scale-105 transition-transform duration-300"
                              loading="lazy">
+                        <!-- Debug: Show banner position -->
+                        <div class="absolute top-4 right-4 bg-black/70 text-white px-3 py-1 rounded-full text-sm font-bold">
+                            Banner {{ $index + 1 }}
+                        </div>
                     </a>
                 </div>
             @empty
@@ -38,29 +42,14 @@
         </div>
     </div>
 
-    <!-- Navigation Arrows -->
-    <!-- <button @click="prev()" 
-            class="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-30 bg-white/90 hover:bg-white text-gray-800 rounded-full p-2 sm:p-3 shadow-lg hover:shadow-xl transform hover:scale-110 transition-all duration-300 ease-out backdrop-blur-sm">
-        <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-        </svg>
-    </button> -->
-    
-    <!-- <button @click="next()" 
-            class="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-30 bg-white/90 hover:bg-white text-gray-800 rounded-full p-2 sm:p-3 shadow-lg hover:shadow-xl transform hover:scale-110 transition-all duration-300 ease-out backdrop-blur-sm">
-        <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-        </svg>
-    </button> -->
-
     <!-- Progress Dots -->
     <div class="absolute bottom-4 left-1/2 -translate-x-1/2 z-30">
         <div class="flex space-x-2 bg-black/20 backdrop-blur-sm rounded-full px-3 py-2">
-            <template x-for="(dot, index) in slides" :key="index">
+            <template x-for="(dot, index) in totalSlides" :key="index">
                 <button @click="goToSlide(index)"
                         :class="{
-                            'bg-white scale-110': active === index, 
-                            'bg-white/50 hover:bg-white/70': active !== index
+                            'bg-white scale-110': currentIndex === index, 
+                            'bg-white/50 hover:bg-white/70': currentIndex !== index
                         }"
                         class="w-2 h-2 sm:w-3 sm:h-3 rounded-full transition-all duration-300 ease-out hover:scale-110"></button>
             </template>
@@ -70,35 +59,38 @@
     <!-- Progress Bar -->
     <div class="absolute bottom-0 left-0 w-full h-1 bg-black/10">
         <div class="h-full bg-[#007F73] transition-all duration-1000 ease-out"
-             :style="`width: ${((active + 1) / slides.length) * 100}%`"></div>
+             :style="`width: ${((currentIndex + 1) / totalSlides) * 100}%`"></div>
     </div>
 </div>
 
 <script>
     function carousel(bannerCount) {
         return {
-            active: 0,
-            slides: Array.from({length: Math.max(1, bannerCount)}, (_, i) => i),
+            currentIndex: 0,
+            totalSlides: Math.max(1, bannerCount),
             autoplayInterval: null,
             isPaused: false,
             
-            next() {
-                this.active = (this.active + 1) % this.slides.length;
-            },
-            
-            prev() {
-                this.active = (this.active - 1 + this.slides.length) % this.slides.length;
+            nextSlide() {
+                // Always move forward: 0→1→2→0→1→2
+                this.currentIndex = (this.currentIndex + 1) % this.totalSlides;
+                console.log('Moving to slide:', this.currentIndex + 1, 'of', this.totalSlides);
             },
             
             goToSlide(index) {
-                this.active = index;
+                this.currentIndex = index;
+                console.log('Jump to slide:', this.currentIndex + 1);
             },
             
             startAutoplay() {
-                if (this.slides.length > 1 && !this.isPaused) {
+                // Always stop any existing interval first to prevent duplicates
+                this.stopAutoplay();
+                
+                if (this.totalSlides > 1 && !this.isPaused) {
+                    console.log('▶️ Autoplay started - Total slides:', this.totalSlides);
                     this.autoplayInterval = setInterval(() => {
-                        this.next();
-                    }, 6000); // Increased to 6 seconds for better UX
+                        this.nextSlide();
+                    }, 6000); // 6 seconds per slide
                 }
             },
             
@@ -106,31 +98,54 @@
                 if (this.autoplayInterval) {
                     clearInterval(this.autoplayInterval);
                     this.autoplayInterval = null;
+                    console.log('⏹️ Autoplay stopped');
                 }
             },
             
             pauseAutoplay() {
-                this.isPaused = true;
-                this.stopAutoplay();
+                if (!this.isPaused) {
+                    this.isPaused = true;
+                    this.stopAutoplay();
+                    console.log('⏸️ Autoplay paused');
+                }
             },
             
             resumeAutoplay() {
-                this.isPaused = false;
-                this.startAutoplay();
+                if (this.isPaused) {
+                    this.isPaused = false;
+                    this.startAutoplay();
+                    console.log('▶️ Autoplay resumed');
+                }
             },
             
             init() {
-                if (this.slides.length > 1) {
+                console.log('🎠 Carousel initialized');
+                console.log('📊 Total slides:', this.totalSlides);
+                console.log('🎯 Starting from slide 1');
+                
+                // Start from first slide
+                this.currentIndex = 0;
+                
+                if (this.totalSlides > 1) {
+                    // Start autoplay immediately
                     this.startAutoplay();
                 }
                 
-                // Pause autoplay when page is not visible
-                document.addEventListener('visibilitychange', () => {
+                // Pause when page is hidden (one-time listener)
+                const visibilityHandler = () => {
                     if (document.hidden) {
                         this.pauseAutoplay();
                     } else {
                         this.resumeAutoplay();
                     }
+                };
+                
+                document.addEventListener('visibilitychange', visibilityHandler);
+                
+                // Cleanup when component is destroyed
+                this.$watch('destroy', () => {
+                    this.stopAutoplay();
+                    document.removeEventListener('visibilitychange', visibilityHandler);
                 });
             }
         }
