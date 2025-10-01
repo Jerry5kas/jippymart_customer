@@ -68,6 +68,9 @@
 
         <!-- Product Title & Gram -->
         <div>
+            @if(!empty($brandTitle))
+                <p class="text-[10px] text-[#007F73] font-semibold uppercase tracking-wide mb-0.5">{{ $brandTitle }}</p>
+            @endif
             <h3 class="text-sm font-semibold text-gray-700 truncate">{{$title}}</h3>
             <p class="text-gray-400 text-[12px] line-clamp-2">{{$description}} g</p>
         </div>

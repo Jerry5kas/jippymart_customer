@@ -52,11 +52,19 @@
         background: white;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         transition: all 0.3s ease;
+        cursor: pointer;
+        position: relative;
     }
 
     .product-card-wrapper:hover {
         transform: translateY(-4px);
         box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        border: 2px solid rgba(0, 127, 115, 0.3);
+    }
+
+    .product-card-wrapper:active {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
     }
 
     /* Ensure product cards fit within their containers */
@@ -332,20 +340,20 @@
                     <div class="w-full max-w-full overflow-hidden">
                         <div class="product-grid">
                             @foreach($items as $item)
-                                <div class="product-card-wrapper">
-                                    <a href="{{ route('mart.items.by.subcategory', ['subcategoryTitle' => $item['subcategoryTitle']]) }}" class="block h-full w-full">
-                                        <x-mart.product-item-card-3
-                                            :src="$item['photo']"
-                                            :price="$item['price']"
-                                            :disPrice="$item['disPrice']"
-                                            :title="$item['name']"
-                                            :description="$item['description']"
-                                            :reviews="$item['reviewCount']"
-                                            :rating="$item['reviewSum']"
-                                            :grams="$item['grams']"
-                                            :subcategoryTitle="$item['subcategoryTitle']"
-                                        />
-                                    </a>
+                                <div class="product-card-wrapper cursor-pointer"
+                                     @click="$dispatch('product-detail-open', {{ json_encode($item) }})">
+                                    <x-mart.product-item-card-3
+                                        :src="$item['photo']"
+                                        :price="$item['price']"
+                                        :disPrice="$item['disPrice']"
+                                        :title="$item['name']"
+                                        :description="$item['description']"
+                                        :reviews="$item['reviewCount']"
+                                        :rating="$item['reviewSum']"
+                                        :grams="$item['grams']"
+                                        :subcategoryTitle="$item['subcategoryTitle']"
+                                        :brandTitle="$item['brandTitle'] ?? ''"
+                                    />
                                 </div>
                             @endforeach
                         </div>
@@ -381,4 +389,7 @@
     
     <!-- Cart Popup -->
     <x-mart.cart-popup />
+    
+    <!-- Product Detail Modal -->
+    <x-mart.product-detail-modal />
 </x-layouts.app>

@@ -52,11 +52,19 @@
         background: white;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         transition: all 0.3s ease;
+        cursor: pointer;
+        position: relative;
     }
 
     .product-card-wrapper:hover {
         transform: translateY(-4px);
         box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        border: 2px solid rgba(0, 127, 115, 0.3);
+    }
+
+    .product-card-wrapper:active {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
     }
 
     /* Ensure product cards fit within their containers */
@@ -323,6 +331,24 @@
                             </select>
                         </div>
 
+                        <!-- Brand Filter -->
+                        <div class="filter-group">
+                            <label class="filter-label">
+                                <svg class="inline w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path>
+                                </svg>
+                                Brand
+                            </label>
+                            <select name="brand" class="filter-input">
+                                <option value="">All Brands</option>
+                                @foreach($brands as $brand)
+                                    <option value="{{ $brand }}" {{ ($filters['brand'] ?? '') === $brand ? 'selected' : '' }}>
+                                        {{ $brand }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
                         <!-- Price Range Filter -->
                         <div class="filter-group">
                             <label class="filter-label">
@@ -378,7 +404,7 @@
                         </div>
 
                         <!-- Active Filters Indicator -->
-                        @if(!empty($filters['category']) || !empty($filters['subcategory']) || !empty($filters['price_min']) || !empty($filters['price_max']) || ($filters['sort'] ?? 'name') !== 'name')
+                        @if(!empty($filters['category']) || !empty($filters['subcategory']) || !empty($filters['brand']) || !empty($filters['price_min']) || !empty($filters['price_max']) || ($filters['sort'] ?? 'name') !== 'name')
                             <div class="mt-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
                                 <div class="flex items-center justify-between">
                                     <div class="flex items-center gap-2">
@@ -461,20 +487,20 @@
                     <div class="w-full max-w-full overflow-hidden">
                         <div class="product-grid">
                             @foreach($items as $item)
-                                <div class="product-card-wrapper">
-                                    <a href="{{ route('mart.items.by.subcategory', ['subcategoryTitle' => $item['subcategoryTitle']]) }}" class="block h-full w-full">
-                                        <x-mart.product-item-card-3
-                                            :src="$item['photo']"
-                                            :price="$item['price']"
-                                            :disPrice="$item['disPrice']"
-                                            :title="$item['name']"
-                                            :description="$item['description']"
-                                            :reviews="$item['reviewCount']"
-                                            :rating="$item['reviewSum']"
-                                            :grams="$item['grams']"
-                                            :subcategoryTitle="$item['subcategoryTitle']"
-                                        />
-                                    </a>
+                                <div class="product-card-wrapper cursor-pointer"
+                                     @click="$dispatch('product-detail-open', {{ json_encode($item) }})">
+                                    <x-mart.product-item-card-3
+                                        :src="$item['photo']"
+                                        :price="$item['price']"
+                                        :disPrice="$item['disPrice']"
+                                        :title="$item['name']"
+                                        :description="$item['description']"
+                                        :reviews="$item['reviewCount']"
+                                        :rating="$item['reviewSum']"
+                                        :grams="$item['grams']"
+                                        :subcategoryTitle="$item['subcategoryTitle']"
+                                        :brandTitle="$item['brandTitle'] ?? ''"
+                                    />
                                 </div>
                             @endforeach
                         </div>
@@ -601,6 +627,24 @@
                             </select>
                         </div>
 
+                        <!-- Brand Filter -->
+                        <div class="filter-group">
+                            <label class="filter-label">
+                                <svg class="inline w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path>
+                                </svg>
+                                Brand
+                            </label>
+                            <select name="brand" class="filter-input">
+                                <option value="">All Brands</option>
+                                @foreach($brands as $brand)
+                                    <option value="{{ $brand }}" {{ ($filters['brand'] ?? '') === $brand ? 'selected' : '' }}>
+                                        {{ $brand }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
                         <!-- Price Range Filter -->
                         <div class="filter-group">
                             <label class="filter-label">
@@ -662,4 +706,7 @@
 
     <!-- Cart Popup -->
     <x-mart.cart-popup />
+    
+    <!-- Product Detail Modal -->
+    <x-mart.product-detail-modal />
 </x-layouts.app>

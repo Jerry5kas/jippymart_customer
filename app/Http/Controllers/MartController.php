@@ -504,6 +504,7 @@ class MartController extends Controller
             // Get filter parameters
             $categoryFilter = $request->get('category', '');
             $subcategoryFilter = $request->get('subcategory', '');
+            $brandFilter = $request->get('brand', '');
             $priceMin = $request->get('price_min', '');
             $priceMax = $request->get('price_max', '');
             $sortBy = $request->get('sort', 'name'); // name, price_low, price_high, rating
@@ -517,9 +518,15 @@ class MartController extends Controller
             $documents = $query->documents();
 
             $items = [];
+            $allBrands = []; // Collect all brands
             foreach ($documents as $doc) {
                 if ($doc->exists()) {
                     $data = $doc->data();
+
+                    // Collect brand for filter dropdown
+                    if (!empty($data['brandTitle'])) {
+                        $allBrands[$data['brandTitle']] = $data['brandTitle'];
+                    }
 
                     // Apply filters
                     if (!empty($categoryFilter) && ($data['categoryTitle'] ?? '') !== $categoryFilter) {
@@ -528,8 +535,19 @@ class MartController extends Controller
                     if (!empty($subcategoryFilter) && ($data['subcategoryTitle'] ?? '') !== $subcategoryFilter) {
                         continue;
                     }
-                    if (!empty($search) && stripos($data['name'] ?? '', $search) === false) {
+                    if (!empty($brandFilter) && ($data['brandTitle'] ?? '') !== $brandFilter) {
                         continue;
+                    }
+                    // Enhanced search: Search in name, description, and brandTitle
+                    if (!empty($search)) {
+                        $searchLower = strtolower($search);
+                        $nameMatch = stripos($data['name'] ?? '', $search) !== false;
+                        $descMatch = stripos($data['description'] ?? '', $search) !== false;
+                        $brandMatch = stripos($data['brandTitle'] ?? '', $search) !== false;
+                        
+                        if (!$nameMatch && !$descMatch && !$brandMatch) {
+                            continue;
+                        }
                     }
 
                     $price = floatval($data['price'] ?? 0);
@@ -560,6 +578,8 @@ class MartController extends Controller
                         'quantity' => $data['quantity'] ?? 0,
                         'vendorID' => $data['vendorID'] ?? '',
                         'vendorTitle' => $data['vendorTitle'] ?? '',
+                        'brandID' => $data['brandID'] ?? '',
+                        'brandTitle' => $data['brandTitle'] ?? '',
                         'reviewSum' => $data['reviewSum'] ?? 0,
                         'reviewCount' => $data['reviewCount'] ?? 0,
                     ];
@@ -623,15 +643,20 @@ class MartController extends Controller
                 }
             }
 
+            // Sort brands alphabetically
+            ksort($allBrands);
+            
             \Log::info("All items loaded: " . count($items) . " items with filters applied");
 
             return view('mart.all-items', [
                 'items' => $items,
                 'categories' => $categories,
                 'subcategories' => $subcategories,
+                'brands' => array_values($allBrands),
                 'filters' => [
                     'category' => $categoryFilter,
                     'subcategory' => $subcategoryFilter,
+                    'brand' => $brandFilter,
                     'price_min' => $priceMin,
                     'price_max' => $priceMax,
                     'sort' => $sortBy,
@@ -646,9 +671,11 @@ class MartController extends Controller
                 'items' => [],
                 'categories' => [],
                 'subcategories' => [],
+                'brands' => [],
                 'filters' => [
                     'category' => '',
                     'subcategory' => '',
+                    'brand' => '',
                     'price_min' => '',
                     'price_max' => '',
                     'sort' => 'name',
@@ -660,6 +687,7 @@ class MartController extends Controller
             \Log::error('General error in MartController allItems method: ' . $e->getMessage());
             return view('mart.all-items', [
                 'items' => [],
+                'brands' => [],
                 'categories' => [],
                 'subcategories' => [],
                 'filters' => [
@@ -756,6 +784,8 @@ class MartController extends Controller
                         'quantity' => $data['quantity'] ?? 0,
                         'vendorID' => $data['vendorID'] ?? '',
                         'vendorTitle' => $data['vendorTitle'] ?? '',
+                        'brandID' => $data['brandID'] ?? '',
+                        'brandTitle' => $data['brandTitle'] ?? '',
                         'reviewSum' => $data['reviewSum'] ?? '',
                         'reviewCount' => $data['reviewCount'] ?? '',
                     ];
