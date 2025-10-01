@@ -155,6 +155,36 @@ class ProductController extends Controller
             $linkType = 'mart';
         }
 
+        // ✅ CHECK IF THIS IS A WEB ROUTE PATH, NOT A DEEPLINK ID
+        // If the ID looks like a web route path (e.g., "all-items", empty, or has query params),
+        // forward to the proper controller instead of treating it as a deeplink
+        if ($linkType === 'mart') {
+            // Check if this is the "all-items" web route
+            if ($id === 'all-items') {
+                \Log::info('Web Route Detected: all-items', [
+                    'id' => $id,
+                    'query_string' => $request->getQueryString()
+                ]);
+                
+                // Forward to MartController's allItems method
+                $martController = app(\App\Http\Controllers\MartController::class);
+                return $martController->allItems($request);
+            }
+            
+            // Check if this is other known web route paths
+            $webRoutePaths = ['items-by-category', 'cart'];
+            if (in_array($id, $webRoutePaths)) {
+                \Log::info('Web Route Detected in Deeplink Handler', [
+                    'id' => $id,
+                    'is_web_route' => true
+                ]);
+                
+                // For these routes, redirect to mart index as fallback
+                // The specific route handlers will be in the Route::prefix('mart') group
+                return redirect()->route('mart.index');
+            }
+        }
+
         // Check for debug parameter to force show deep link handler (works in all environments)
         $forceShow = $request->has('debug') || $request->has('mobile') || $request->has('app');
 
