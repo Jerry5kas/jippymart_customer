@@ -34,35 +34,36 @@
             <button @click="cartOpen = false" class="text-gray-600 hover:text-black">✕</button>
         </div>
 
-        <!-- Dynamic Delivery Notice -->
-        <div x-show="deliveryChargeDisplay.type === 'free_delivery'" class="p-3 bg-green-50 flex items-center text-sm text-green-700 rounded-b-lg">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
-                <path fill-rule="evenodd"
-                      d="M8.603 3.799A4.49 4.49 0 0 1 12 2.25c1.357 0 2.573.6 3.397 1.549a4.49 4.49 0 0 1 3.498 1.307 4.491 4.491 0 0 1 1.307 3.497A4.49 4.49 0 0 1 21.75 12a4.49 4.49 0 0 1-1.549 3.397 4.491 4.491 0 0 1-1.307 3.497 4.491 4.491 0 0 1-3.497 1.307A4.49 4.49 0 0 1 12 21.75a4.49 4.49 0 0 1-3.397-1.549 4.49 4.49 0 0 1-3.498-1.306 4.491 4.491 0 0 1-1.307-3.498A4.49 4.49 0 0 1 2.25 12c0-1.357.6-2.573 1.549-3.397a4.49 4.49 0 0 1 1.307-3.497 4.49 4.49 0 0 1 3.497-1.307Zm7.007 6.387a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z"
-                      clip-rule="evenodd"/>
+         <!-- Dynamic Delivery Notice -->
+        <div x-show="cartItems.length > 0 && deliveryChargeDisplay.type === 'free_delivery'" class="p-3 bg-green-50 flex items-center text-sm text-green-700 rounded-b-lg">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 flex-shrink-0">
+                <path d="M3.375 4.5C2.339 4.5 1.5 5.34 1.5 6.375V13.5h12V6.375c0-1.036-.84-1.875-1.875-1.875h-8.25ZM13.5 15h-12v2.625c0 1.035.84 1.875 1.875 1.875h.375a3 3 0 1 1 6 0h3a.75.75 0 0 0 .75-.75V15Z" />
+                <path d="M8.25 19.5a1.5 1.5 0 1 0-3 0 1.5 1.5 0 0 0 3 0ZM15.75 6.75a.75.75 0 0 0-.75.75v11.25c0 .087.015.17.042.248a3 3 0 0 1 5.958.464c.853-.175 1.522-.935 1.464-1.883a18.659 18.659 0 0 0-3.732-10.104 1.837 1.837 0 0 0-1.47-.725H15.75Z" />
+                <path d="M19.5 19.5a1.5 1.5 0 1 0-3 0 1.5 1.5 0 0 0 3 0Z" />
             </svg> &nbsp;&nbsp; <span x-text="deliveryChargeDisplay.main_text"></span> auto applied on this order!
         </div>
         
         <!-- Delivery Charge Notice for non-free delivery -->
-        <div x-show="deliveryChargeDisplay.type !== 'free_delivery' && deliveryCharge > 0" class="p-3 bg-blue-50 flex items-center text-sm text-blue-700 rounded-b-lg">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
-                <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25ZM12.75 6a.75.75 0 0 0-1.5 0v6c0 .414.336.75.75.75h4.5a.75.75 0 0 0 0-1.5h-3.75V6Z" clip-rule="evenodd"/>
+        <div x-show="cartItems.length > 0 && deliveryChargeDisplay.type !== 'free_delivery' && deliveryCharge > 0" class="p-3 bg-blue-50 flex items-center text-sm text-blue-700 rounded-b-lg">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 flex-shrink-0">
+                <path d="M3.375 4.5C2.339 4.5 1.5 5.34 1.5 6.375V13.5h12V6.375c0-1.036-.84-1.875-1.875-1.875h-8.25ZM13.5 15h-12v2.625c0 1.035.84 1.875 1.875 1.875h.375a3 3 0 1 1 6 0h3a.75.75 0 0 0 .75-.75V15Z" />
+                <path d="M8.25 19.5a1.5 1.5 0 1 0-3 0 1.5 1.5 0 0 0 3 0ZM15.75 6.75a.75.75 0 0 0-.75.75v11.25c0 .087.015.17.042.248a3 3 0 0 1 5.958.464c.853-.175 1.522-.935 1.464-1.883a18.659 18.659 0 0 0-3.732-10.104 1.837 1.837 0 0 0-1.47-.725H15.75Z" />
+                <path d="M19.5 19.5a1.5 1.5 0 1 0-3 0 1.5 1.5 0 0 0 3 0Z" />
             </svg> &nbsp;&nbsp; Delivery charge: <span x-text="deliveryChargeDisplay.main_text"></span>
         </div>
 
-        <!-- Scrollable Content -->
+         <!-- Scrollable Content -->
         <div class="flex-1 overflow-y-auto bg-gray-50">
             <!-- Delivery ETA -->
-            <div
+            <div x-show="cartItems.length > 0"
                 class="w-full bg-white p-4 border-b flex items-center justify-center space-x-2 text-gray-700 rounded-lg p-3 m-3 shadow-MD">
-                <span class=" text-blue-400">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
-                      <path fill-rule="evenodd"
-                            d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25ZM12.75 6a.75.75 0 0 0-1.5 0v6c0 .414.336.75.75.75h4.5a.75.75 0 0 0 0-1.5h-3.75V6Z"
-                            clip-rule="evenodd"/>
+                <span class="text-green-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+                        <path fill-rule="evenodd" d="M7.5 5.25a3 3 0 0 1 3-3h3a3 3 0 0 1 3 3v.205c.933.085 1.857.197 2.774.334 1.454.218 2.476 1.483 2.476 2.917v3.033c0 1.211-.734 2.352-1.936 2.752A24.726 24.726 0 0 1 12 15.75c-2.73 0-5.357-.442-7.814-1.259-1.202-.4-1.936-1.541-1.936-2.752V8.706c0-1.434 1.022-2.7 2.476-2.917A48.814 48.814 0 0 1 7.5 5.455V5.25Zm7.5 0v.09a49.488 49.488 0 0 0-6 0v-.09a1.5 1.5 0 0 1 1.5-1.5h3a1.5 1.5 0 0 1 1.5 1.5Zm-3 8.25a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z" clip-rule="evenodd" />
+                        <path d="M3 18.4v-2.796a4.3 4.3 0 0 0 .713.31A26.226 26.226 0 0 0 12 17.25c2.892 0 5.68-.468 8.287-1.335.252-.084.49-.189.713-.311V18.4c0 1.452-1.047 2.728-2.523 2.923-2.12.282-4.282.427-6.477.427a49.19 49.19 0 0 1-6.477-.427C4.047 21.128 3 19.852 3 18.4Z" />
                     </svg>
                 </span>
-                <p class="font-semibold text-md text-gray-400">Delivery in 6 mins</p>
+                <p class="font-semibold text-md text-gray-700">Delivery in 6 mins</p>
             </div>
 
             <!-- Cart Items -->
@@ -113,13 +114,13 @@
                 
                 <!-- Empty Cart Message -->
                 <div x-show="cartItems.length === 0" class="text-center py-8">
-                    <div class="text-gray-400 mb-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m8 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01"/>
+                    <div class="text-gray-300 mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-20 h-20 mx-auto" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M2.25 2.25a.75.75 0 0 0 0 1.5h1.386c.17 0 .318.114.362.278l2.558 9.592a3.752 3.752 0 0 0-2.806 3.63c0 .414.336.75.75.75h15.75a.75.75 0 0 0 0-1.5H5.378A2.25 2.25 0 0 1 7.5 15h11.218a.75.75 0 0 0 .674-.421 60.358 60.358 0 0 0 2.96-7.228.75.75 0 0 0-.525-.965A60.864 60.864 0 0 0 5.68 4.509l-.232-.867A1.875 1.875 0 0 0 3.636 2.25H2.25ZM3.75 20.25a1.5 1.5 0 1 1 3 0 1.5 1.5 0 0 1-3 0ZM16.5 20.25a1.5 1.5 0 1 1 3 0 1.5 1.5 0 0 1-3 0Z" />
                         </svg>
                     </div>
-                    <p class="text-gray-500 text-sm">Your cart is empty</p>
-                    <p class="text-gray-400 text-xs">Add some items to get started</p>
+                    <p class="text-gray-500 text-sm font-medium">Your cart is empty</p>
+                    <p class="text-gray-400 text-xs mt-1">Add some groceries to get started! 🛒</p>
                 </div>
 
                 <!-- Applied Coupon Display -->
@@ -427,8 +428,8 @@
             <!-- Minimum Order Validation -->
             <div x-show="!isMinimumOrderMet" class="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                 <div class="flex items-center">
-                    <svg class="w-5 h-5 text-yellow-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5 text-yellow-600 mr-2 flex-shrink-0">
+                        <path fill-rule="evenodd" d="M9.401 3.003c1.155-2 4.043-2 5.197 0l7.355 12.748c1.154 2-.29 4.5-2.599 4.5H4.645c-2.309 0-3.752-2.5-2.598-4.5L9.4 3.003ZM12 8.25a.75.75 0 0 1 .75.75v3.75a.75.75 0 0 1-1.5 0V9a.75.75 0 0 1 .75-.75Zm0 8.25a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z" clip-rule="evenodd" />
                     </svg>
                     <p class="text-sm text-yellow-800" x-text="minimumOrderMessage"></p>
                 </div>
@@ -553,12 +554,14 @@
 
         // Tax Calculation Service
         const taxService = {
-            calculateTax(itemTotal, deliveryCharge) {
+            calculateTax(itemTotal, deliveryCharge, originalDeliveryCharge = null) {
                 // SGST = 5% of item total (before any discounts)
                 const sgst = (itemTotal * 5) / 100;
                 
                 // GST = 18% of delivery charge
-                const gst = (deliveryCharge * 18) / 100;
+                // Use original delivery charge for GST calculation if provided (for free delivery cases)
+                const chargeForGST = originalDeliveryCharge !== null ? originalDeliveryCharge : deliveryCharge;
+                const gst = (chargeForGST * 18) / 100;
                 
                 // Total tax = SGST + GST
                 const totalTax = sgst + gst;
@@ -568,7 +571,8 @@
                     gst: gst,
                     total_tax: totalTax,
                     item_total_before_discount: itemTotal,
-                    delivery_charge: deliveryCharge
+                    delivery_charge: deliveryCharge,
+                    original_delivery_charge: originalDeliveryCharge
                 };
             }
         };
@@ -700,6 +704,11 @@
             },
             
             get deliveryCharge() {
+                // Return 0 if cart is empty
+                if (Object.keys(this.items).length === 0 || this.finalTotal === 0) {
+                    return 0;
+                }
+                
                 if (!this.deliveryChargeCalculation) {
                     this.deliveryChargeCalculation = deliveryChargeService.calculateDeliveryCharge(
                         this.finalTotal, 
@@ -711,7 +720,13 @@
             },
             
             get taxCalculation() {
-                return taxService.calculateTax(this.grandTotal, this.deliveryCharge);
+                // Return zero tax if cart is empty
+                if (Object.keys(this.items).length === 0 || this.finalTotal === 0) {
+                    return { sgst: 0, gst: 0, total_tax: 0 };
+                }
+                // Get original delivery charge for GST calculation
+                const originalDeliveryCharge = this.deliveryChargeCalculation?.original_fee || this.deliveryCharge;
+                return taxService.calculateTax(this.grandTotal, this.deliveryCharge, originalDeliveryCharge);
             },
             
             get totalTax() {
@@ -727,18 +742,33 @@
             },
             
             get totalWithDelivery() {
+                // Return 0 if cart is empty
+                if (Object.keys(this.items).length === 0 || this.finalTotal === 0) {
+                    return 0;
+                }
                 return this.finalTotal + this.deliveryCharge;
             },
             
             get totalWithDeliveryAndTax() {
+                // Return 0 if cart is empty
+                if (Object.keys(this.items).length === 0 || this.finalTotal === 0) {
+                    return 0;
+                }
                 return this.finalTotal + this.deliveryCharge + this.totalTax;
             },
             
             get isMinimumOrderMet() {
+                // Cart must have items and meet minimum order value
+                if (Object.keys(this.items).length === 0) {
+                    return false;
+                }
                 return this.finalTotal >= this.deliverySettings.min_order_value;
             },
             
             get minimumOrderMessage() {
+                if (Object.keys(this.items).length === 0) {
+                    return 'Add items to your cart';
+                }
                 if (!this.isMinimumOrderMet) {
                     const remaining = this.deliverySettings.min_order_value - this.finalTotal;
                     return `Add ₹${remaining.toFixed(0)} more to place order`;
@@ -747,6 +777,10 @@
             },
             
             get totalWithDeliveryTaxAndTip() {
+                // Return 0 if cart is empty
+                if (Object.keys(this.items).length === 0 || this.finalTotal === 0) {
+                    return 0;
+                }
                 return this.finalTotal + this.deliveryCharge + this.totalTax + this.tipAmount;
             },
             
@@ -785,6 +819,8 @@
             },
             
             recalculateDeliveryCharge() {
+                // Force fresh calculation by resetting first
+                this.deliveryChargeCalculation = null;
                 this.deliveryChargeCalculation = deliveryChargeService.calculateDeliveryCharge(
                     this.finalTotal, 
                     this.deliveryDistance, 
@@ -844,6 +880,11 @@
             },
             
             get deliveryCharge() {
+                // Return 0 if cart is empty
+                if (this.cartItems.length === 0 || this.finalTotal === 0) {
+                    return 0;
+                }
+                
                 if (!this.deliveryChargeCalculation) {
                     this.deliveryChargeCalculation = deliveryChargeService.calculateDeliveryCharge(
                         this.finalTotal, 
@@ -855,7 +896,13 @@
             },
             
             get taxCalculation() {
-                return taxService.calculateTax(this.grandTotal, this.deliveryCharge);
+                // Return zero tax if cart is empty
+                if (this.cartItems.length === 0 || this.finalTotal === 0) {
+                    return { sgst: 0, gst: 0, total_tax: 0 };
+                }
+                // Get original delivery charge for GST calculation
+                const originalDeliveryCharge = this.deliveryChargeCalculation?.original_fee || this.deliveryCharge;
+                return taxService.calculateTax(this.grandTotal, this.deliveryCharge, originalDeliveryCharge);
             },
             
             get totalTax() {
@@ -871,18 +918,33 @@
             },
             
             get totalWithDelivery() {
+                // Return 0 if cart is empty
+                if (this.cartItems.length === 0 || this.finalTotal === 0) {
+                    return 0;
+                }
                 return this.finalTotal + this.deliveryCharge;
             },
             
             get totalWithDeliveryAndTax() {
+                // Return 0 if cart is empty
+                if (this.cartItems.length === 0 || this.finalTotal === 0) {
+                    return 0;
+                }
                 return this.finalTotal + this.deliveryCharge + this.totalTax;
             },
             
             get isMinimumOrderMet() {
+                // Cart must have items and meet minimum order value
+                if (this.cartItems.length === 0) {
+                    return false;
+                }
                 return this.finalTotal >= this.deliverySettings.min_order_value;
             },
             
             get minimumOrderMessage() {
+                if (this.cartItems.length === 0) {
+                    return 'Add items to your cart';
+                }
                 if (!this.isMinimumOrderMet) {
                     const remaining = this.deliverySettings.min_order_value - this.finalTotal;
                     return `Add ₹${remaining.toFixed(0)} more to place order`;
@@ -891,6 +953,10 @@
             },
             
             get totalWithDeliveryTaxAndTip() {
+                // Return 0 if cart is empty
+                if (this.cartItems.length === 0 || this.finalTotal === 0) {
+                    return 0;
+                }
                 return this.finalTotal + this.deliveryCharge + this.totalTax + this.tipAmount;
             },
             
@@ -941,6 +1007,18 @@
                 // Listen for cart open events
                 window.addEventListener('open-cart', () => {
                     this.cartOpen = true;
+                    // Reset delivery charge calculation when cart opens
+                    this.deliveryChargeCalculation = null;
+                    this.loadCartItems();
+                });
+                
+                // Watch for cartOpen changes to reset calculation
+                this.$watch('cartOpen', (value) => {
+                    if (value === true) {
+                        // Reset and recalculate when cart opens
+                        this.deliveryChargeCalculation = null;
+                        this.loadCartItems();
+                    }
                 });
             },
             
@@ -957,6 +1035,9 @@
                 } else {
                     this.cartItems = [];
                 }
+                
+                // Reset delivery charge calculation to force recalculation
+                this.deliveryChargeCalculation = null;
             },
             
             loadAppliedCoupon() {
@@ -1035,6 +1116,8 @@
             },
             
             recalculateDeliveryCharge() {
+                // Force fresh calculation by resetting first
+                this.deliveryChargeCalculation = null;
                 this.deliveryChargeCalculation = deliveryChargeService.calculateDeliveryCharge(
                     this.finalTotal, 
                     this.deliveryDistance, 
