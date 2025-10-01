@@ -25,8 +25,12 @@ class WebOtpController extends Controller
     {
         $this->firebaseService = $firebaseService;
 
-        // Only apply location check for web routes, not API routes
-        if (!request()->is('api/*') && !isset($_COOKIE['address_name'])) {
+        // Skip location check for OTP authentication routes
+        $otpRoutes = ['otp-login', 'otp-send', 'otp-verify', 'otp-register', 'otp-resend'];
+        $currentPath = request()->path();
+        
+        // Only apply location check for web routes, not API routes or OTP routes
+        if (!request()->is('api/*') && !in_array($currentPath, $otpRoutes) && !isset($_COOKIE['address_name'])) {
             \Redirect::to('set-location')->send();
         }
     }
@@ -70,6 +74,12 @@ class WebOtpController extends Controller
         $otp = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
         $expiresAt = Carbon::now()->addMinutes(10);
 
+        \Log::info('Generating OTP', [
+            'phone' => substr($phone, -4),
+            'otp' => $otp, // Log OTP for development (remove in production)
+            'expires_at' => $expiresAt
+        ]);
+
         // Save OTP to database
         Otp::updateOrCreate(
             ['phone' => $phone],
@@ -85,11 +95,20 @@ class WebOtpController extends Controller
         $smsSent = $this->sendSms($phone, $otp);
 
         if ($smsSent) {
-        // Store phone in session for verification with longer expiry
-        session(['otp_phone' => $phone]);
-        session(['otp_sent_at' => now()]);
-            return redirect()->route('otp.verify')->with('success', 'OTP sent successfully to ' . $phone);
+            // CRITICAL: Store phone in session with explicit save
+            session()->put('otp_phone', $phone);
+            session()->put('otp_sent_at', now());
+            session()->save(); // Force session save
+            
+            \Log::info('OTP session created', [
+                'phone' => substr($phone, -4),
+                'session_id' => session()->getId(),
+                'has_otp_phone' => session()->has('otp_phone')
+            ]);
+            
+            return redirect()->route('otp.verify')->with('success', 'OTP sent to ' . substr($phone, 0, 2) . '******' . substr($phone, -2));
         } else {
+            \Log::error('SMS sending failed', ['phone' => substr($phone, -4)]);
             return back()->with('error', 'Failed to send OTP. Please try again.');
         }
     }
@@ -99,22 +118,37 @@ class WebOtpController extends Controller
      */
     public function showOtpVerify()
     {
-        if (!session('otp_phone')) {
-            return redirect()->route('otp.phone')->with('error', 'Session expired. Please request OTP again.');
+        // Check if user is already logged in
+        if (Auth::check()) {
+            return redirect()->route('home');
+        }
+
+        // CRITICAL: Check if OTP was sent (session must exist)
+        if (!session()->has('otp_phone')) {
+            \Log::warning('OTP Verify accessed without session', [
+                'session_id' => session()->getId(),
+                'has_otp_phone' => session()->has('otp_phone'),
+                'url' => request()->fullUrl()
+            ]);
+            
+            return redirect()->route('otp.phone')->with('error', 'Please enter your phone number first.');
         }
 
         // Check if OTP session is not too old (30 minutes)
         $otpSentAt = session('otp_sent_at');
         if ($otpSentAt && now()->diffInMinutes($otpSentAt) > 30) {
             session()->forget(['otp_phone', 'otp_sent_at']);
-            return redirect()->route('otp.phone')->with('error', 'OTP session expired. Please request a new OTP.');
+            return redirect()->route('otp.phone')->with('error', 'OTP expired. Please request a new one.');
         }
 
-        if (Auth::check()) {
-            return redirect()->route('home');
-        }
+        $phone = session('otp_phone');
+        
+        \Log::info('OTP Verify page loaded', [
+            'phone' => substr($phone, -4),
+            'session_id' => session()->getId()
+        ]);
 
-        return view('auth.verify-otp');
+        return view('auth.verify-otp', ['phone' => $phone]);
     }
 
     /**
@@ -122,11 +156,22 @@ class WebOtpController extends Controller
      */
     public function verifyOtp(Request $request)
     {
+        \Log::info('OTP Verification attempt', [
+            'has_otp_in_request' => $request->has('otp'),
+            'otp_length' => strlen($request->otp ?? ''),
+            'session_id' => session()->getId(),
+            'has_session_phone' => session()->has('otp_phone'),
+            'session_phone' => session('otp_phone') ? substr(session('otp_phone'), -4) : 'N/A',
+            'request_method' => $request->method(),
+            'csrf_token' => $request->header('X-CSRF-TOKEN') ? 'present' : 'missing'
+        ]);
+
         $validator = Validator::make($request->all(), [
             'otp' => 'required|string|size:6'
         ]);
 
         if ($validator->fails()) {
+            \Log::warning('OTP validation failed', ['errors' => $validator->errors()]);
             return back()->withErrors($validator)->withInput();
         }
 
@@ -134,8 +179,17 @@ class WebOtpController extends Controller
         $otp = $request->otp;
 
         if (!$phone) {
+            \Log::error('No phone in session during OTP verify', [
+                'session_id' => session()->getId(),
+                'all_session_data' => session()->all()
+            ]);
             return redirect()->route('otp.phone')->with('error', 'Session expired. Please try again.');
         }
+
+        \Log::info('Attempting OTP verification', [
+            'phone' => substr($phone, -4),
+            'otp' => $otp
+        ]);
 
         // Find the OTP record
         $otpRecord = Otp::where('phone', $phone)
@@ -161,53 +215,110 @@ class WebOtpController extends Controller
         // Mark OTP as verified
         $otpRecord->markAsVerified();
 
+        // ALWAYS check Firebase first to get latest user data
         try {
-            // Check if user exists in Firebase users collection
+            \Log::info('Checking Firebase for user', ['phone' => $phone]);
+            
             $firebaseUser = $this->firebaseService->getUserByPhone($phone);
 
             if ($firebaseUser) {
-                // User exists in Firebase - check if exists in Laravel database
+                \Log::info('Firebase user found', [
+                    'id' => $firebaseUser['id'] ?? 'N/A',
+                    'firstName' => $firebaseUser['firstName'] ?? 'N/A',
+                    'lastName' => $firebaseUser['lastName'] ?? 'N/A',
+                    'email' => $firebaseUser['email'] ?? 'N/A',
+                    'phoneNumber' => $firebaseUser['phoneNumber'] ?? 'N/A'
+                ]);
+                
+                // Trim trailing spaces from Firebase data (Android format has trailing spaces)
+                $firstName = trim($firebaseUser['firstName'] ?? '');
+                $lastName = trim($firebaseUser['lastName'] ?? '');
+                $fullName = trim($firstName . ' ' . $lastName);
+                $email = $firebaseUser['email'] ?? $phone . '@jippymart.in';
+                $firebaseId = $firebaseUser['id'] ?? null;
+
+                // Check if user exists in Laravel database
                 $user = User::where('phone', $phone)->first();
 
                 if (!$user) {
-                    // Create Laravel user from Firebase data
-                    // Trim trailing spaces from Firebase data (Android format has trailing spaces)
-                    $firstName = trim($firebaseUser['firstName'] ?? '');
-                    $lastName = trim($firebaseUser['lastName'] ?? '');
-
+                    \Log::info('Creating NEW Laravel user from Firebase data');
+                    
+                    // Create new Laravel user from Firebase data
                     $user = User::create([
-                        'name' => $firstName . ' ' . $lastName,
-                        'first_name' => $firstName,
-                        'last_name' => $lastName,
+                        'name' => $fullName ?: 'User_' . substr($phone, -4),
                         'phone' => $phone,
-                        'email' => $firebaseUser['email'] ?? '',
+                        'email' => $email,
                         'password' => bcrypt(Str::random(16)),
                         'email_verified_at' => Carbon::now(),
-                        'firebase_uid' => $firebaseUser['id'] ?? null,
+                        'firebase_uid' => $firebaseId,
+                    ]);
+                    
+                    \Log::info('Laravel user created', [
+                        'user_id' => $user->id,
+                        'name' => $user->name,
+                        'firebase_uid' => $user->firebase_uid
+                    ]);
+                } else {
+                    \Log::info('Laravel user exists, UPDATING from Firebase data');
+                    
+                    // UPDATE existing user with latest Firebase data
+                    // Only update fields that exist in the users table
+                    $user->update([
+                        'name' => $fullName ?: $user->name,
+                        'email' => $email ?: $user->email,
+                        'firebase_uid' => $firebaseId ?: $user->firebase_uid,
+                    ]);
+                    
+                    \Log::info('Laravel user updated from Firebase', [
+                        'user_id' => $user->id,
+                        'name' => $user->name,
+                        'firebase_uid' => $user->firebase_uid
                     ]);
                 }
 
                 // Log the user in
                 Auth::login($user, true);
+                
+                \Log::info('User logged in successfully', [
+                    'user_id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email
+                ]);
 
                 // Clear OTP session data
                 session()->forget(['otp_phone', 'otp_sent_at']);
 
-                return redirect()->route('home')->with('success', 'Welcome back!');
+                return redirect()->route('home')->with('success', 'Welcome back, ' . $user->name . '!');
             } else {
-                // User doesn't exist in Firebase - redirect to registration form
-                return redirect()->route('otp.register')->with('success', 'OTP verified! Please complete your registration.');
+                \Log::info('No Firebase user found - checking MySQL fallback');
+                
+                // Fallback: Check if user exists in MySQL only
+                $user = User::where('phone', $phone)->first();
+                
+                if ($user) {
+                    \Log::info('MySQL user found (no Firebase)', ['user_id' => $user->id]);
+                    Auth::login($user, true);
+                    session()->forget(['otp_phone', 'otp_sent_at']);
+                    return redirect()->route('home')->with('success', 'Welcome back, ' . $user->name . '!');
+                } else {
+                    \Log::info('New user - redirecting to registration');
+                    // User doesn't exist anywhere - redirect to registration form
+                    return redirect()->route('otp.register')->with('success', 'OTP verified! Please complete your registration.');
+                }
             }
         } catch (\Exception $e) {
-            \Log::error('Firebase user check failed: ' . $e->getMessage());
+            \Log::error('Firebase query failed: ' . $e->getMessage(), [
+                'phone' => $phone,
+                'error' => $e->getMessage()
+            ]);
 
-            // Fallback to Laravel database check
+            // Fallback: Check MySQL
             $user = User::where('phone', $phone)->first();
-
+            
             if ($user) {
                 Auth::login($user, true);
                 session()->forget(['otp_phone', 'otp_sent_at']);
-                return redirect()->route('home')->with('success', 'Welcome back!');
+                return redirect()->route('home')->with('success', 'Welcome back, ' . $user->name . '!');
             } else {
                 return redirect()->route('otp.register')->with('success', 'OTP verified! Please complete your registration.');
             }

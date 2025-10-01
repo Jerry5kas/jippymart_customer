@@ -854,6 +854,41 @@
                             </div>
                         </a>
                         @auth
+                            <!-- Logged in user profile -->
+                            <div class="dropdown mr-4 m-none">
+                                <a href="#" class="widget-header text-dark dropdown-toggle d-flex align-items-center" id="userDropdown"
+                                   data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <div class="d-flex align-items-center">
+                                        @if(Auth::user()->profile_picture)
+                                            <img src="{{ Auth::user()->profile_picture }}" alt="{{ Auth::user()->name }}" 
+                                                 class="rounded-circle mr-2" style="width: 32px; height: 32px; object-fit: cover;">
+                                        @else
+                                            <div class="rounded-circle mr-2 bg-primary text-white d-flex align-items-center justify-content-center" 
+                                                 style="width: 32px; height: 32px; font-weight: bold; font-size: 14px;">
+                                                {{ strtoupper(substr(Auth::user()->name ?? Auth::user()->first_name ?? 'U', 0, 1)) }}
+                                            </div>
+                                        @endif
+                                        <span class="font-weight-medium">{{ Auth::user()->name ?? Auth::user()->first_name ?? 'User' }}</span>
+                                        <i class="feather-chevron-down ml-2" style="font-size: 14px;"></i>
+                                    </div>
+                                </a>
+                                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="userDropdown">
+                                    <div class="px-3 py-2 border-bottom">
+                                        <p class="mb-0 font-weight-bold">{{ Auth::user()->name ?? Auth::user()->first_name }}</p>
+                                        <p class="mb-0 text-muted small">{{ Auth::user()->phone }}</p>
+                                    </div>
+                                    <a class="dropdown-item" href="{{url('profile')}}">
+                                        <i class="feather-user mr-2"></i>{{trans('lang.my_account')}}
+                                    </a>
+                                    <a class="dropdown-item" href="{{url('offers')}}">
+                                        <i class="feather-gift mr-2"></i>{{trans('lang.offers')}}
+                                    </a>
+                                    <div class="dropdown-divider"></div>
+                                    <a class="dropdown-item text-danger" href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                                        <i class="feather-log-out mr-2"></i>{{trans('lang.logout')}}
+                                    </a>
+                                </div>
+                            </div>
                         @else
                             <a href="{{url('login')}}" class="widget-header mr-4 text-dark m-none">
                                 <div class="icon d-flex align-items-center">
@@ -867,10 +902,7 @@
                             </a>
                             <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuButton">
                                 @auth
-                                    <a class="dropdown-item" href="{{url('profile')}}">{{trans('lang.my_account')}}</a>
-
-                                    <a class="dropdown-item" href="{{ route('logout') }}" onclick="event.preventDefault();
-									document.getElementById('logout-form').submit();">{{trans('lang.logout')}}</a>
+                                    <!-- This dropdown is now moved above -->
                                 @else
                                     <a class="dropdown-item"
                                        href="{{url('restaurants')}}">{{trans('lang.all_restaurants')}}</a>
