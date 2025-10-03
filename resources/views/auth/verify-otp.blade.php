@@ -18,7 +18,11 @@
                 <!-- Phone Number Display -->
                 <div class="text-center mb-4">
                     <p class="text-dark font-weight-bold">
-                        +91 •••••••{{ substr(session('otp_phone'), -3) }}
+                        @if(isset($phone) && $phone)
+                            +91 •••••••{{ substr($phone, -3) }}
+                        @else
+                            Phone number not found
+                        @endif
                     </p>
                 </div>
 

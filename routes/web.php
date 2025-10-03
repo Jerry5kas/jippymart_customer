@@ -213,11 +213,13 @@ Route::get('transactions', [App\Http\Controllers\TransactionController::class, '
 
 Route::get('/offers', [App\Http\Controllers\OffersController::class, 'index'])->name('offers');
 
-//Route::get('/profile', [App\Http\Controllers\ProfileController::class, 'index'])->name('profile');
-
-Route::get('/profile', function(){
-    return view('users.profile');
-})->name('profile');
+// Profile routes with Firebase sync
+Route::middleware('auth')->group(function() {
+    Route::get('/profile', [App\Http\Controllers\ProfileController::class, 'index'])->name('profile');
+    Route::post('/profile/update', [App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
+    Route::post('/profile/change-password', [App\Http\Controllers\ProfileController::class, 'changePassword'])->name('profile.change.password');
+    Route::get('/profile/get-data', [App\Http\Controllers\ProfileController::class, 'getUserData'])->name('profile.get.data');
+});
 
 Route::get('favorite-stores', [FavoritesController::class, 'index'])->name('favorites');
 
