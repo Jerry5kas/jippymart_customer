@@ -1225,12 +1225,12 @@ class MartController extends Controller
                 ]);
             }
 
-            // Check minimum order value
+            // Check minimum order value (use original cart total, not discounted)
             $minOrderValue = $couponData['item_value'] ?? 0;
             if ($cartTotal < $minOrderValue) {
                 return response()->json([
                     'status' => false,
-                    'message' => "Minimum order value of ₹{$minOrderValue} required for this coupon"
+                    'message' => "Minimum order value of ₹{$minOrderValue} required for this coupon. Your current order is ₹{$cartTotal}"
                 ]);
             }
 
@@ -1268,7 +1268,8 @@ class MartController extends Controller
                     'discount' => $discount,
                     'discountType' => $discountType,
                     'discountAmount' => $discountAmount,
-                    'description' => $couponData['description'] ?? ''
+                    'description' => $couponData['description'] ?? '',
+                    'item_value' => $couponData['item_value'] ?? 0  // Include minimum order value
                 ]
             ]);
 

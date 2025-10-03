@@ -1,4 +1,4 @@
-<div x-data="martCouponComponent()" class="space-y-4">
+<div x-data="martCouponComponent()" class="space-y-4" data-version="2.0">
 
     <!-- Coupon Trigger Card -->
     <div @click="openModal()"
@@ -109,17 +109,27 @@ function martCouponComponent() {
         async loadCoupons() {
             this.loading = true;
             try {
+
+
+                console.log('🔄 Loading coupons from API...');
                 const response = await fetch('/api/mart/coupons');
                 const data = await response.json();
                 
+                console.log('📦 Coupon API response:', data);
+                
                 if (data.status) {
                     this.coupons = data.coupons || [];
+                    console.log('✅ Loaded coupons:', this.coupons.length);
+                    if (this.coupons.length === 0) {
+                        console.log('⚠️ No coupons found in database');
+                    }
                 } else {
-                    this.showMessage('Failed to load coupons', 'error');
+                    console.log('❌ API returned error:', data.message);
+                    this.showMessage('Failed to load coupons: ' + (data.message || 'Unknown error'), 'error');
                 }
             } catch (error) {
-                console.error('Error loading coupons:', error);
-                this.showMessage('Failed to load coupons', 'error');
+                console.error('❌ Error loading coupons:', error);
+                this.showMessage('Failed to load coupons: ' + error.message, 'error');
             } finally {
                 this.loading = false;
             }
@@ -145,12 +155,61 @@ function martCouponComponent() {
             
             try {
                 const cartTotal = this.getCartTotal();
+                console.log('🎫 Applying coupon:', couponCode);
+                console.log('💰 Cart total:', cartTotal);
+                
+                // Validate cart has items
+                const cartData = localStorage.getItem('mart_cart');
+                if (!cartData || Object.keys(JSON.parse(cartData)).length === 0) {
+                    this.showMessage('Cannot apply coupon: Cart is empty', 'error');
+                    return;
+                }
+                
+                // Get CSRF token with multiple fallbacks
+                let csrfToken = '';
+                try {
+                    const metaTag = document.querySelector('meta[name="csrf-token"]');
+                    if (metaTag) {
+                        csrfToken = metaTag.getAttribute('content');
+                    }
+                } catch (e) {
+                    console.log('Meta tag not found, trying other methods...');
+                }
+                
+                // Fallback methods
+                if (!csrfToken) {
+                    try {
+                        const inputTag = document.querySelector('input[name="_token"]');
+                        if (inputTag) {
+                            csrfToken = inputTag.value;
+                        }
+                    } catch (e) {
+                        console.log('Input token not found...');
+                    }
+                }
+                
+                if (!csrfToken && window.Laravel) {
+                    csrfToken = window.Laravel.csrfToken;
+                }
+                
+                console.log('🔐 CSRF Token found:', csrfToken ? 'Yes' : 'No');
+                console.log('🔐 CSRF Token value:', csrfToken ? csrfToken.substring(0, 10) + '...' : 'None');
+                
+                // Prepare headers
+                const headers = {
+                    'Content-Type': 'application/json'
+                };
+                
+                // Add CSRF token if available
+                if (csrfToken) {
+                    headers['X-CSRF-TOKEN'] = csrfToken;
+                } else {
+                    console.log('⚠️ No CSRF token found - trying without it');
+                }
+                
                 const response = await fetch('/api/mart/coupons/apply', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                    },
+                    headers: headers,
                     body: JSON.stringify({
                         coupon_code: couponCode,
                         cart_total: cartTotal
@@ -158,18 +217,21 @@ function martCouponComponent() {
                 });
 
                 const data = await response.json();
+                console.log('📨 Apply coupon response:', data);
                 
                 if (data.status) {
                     this.appliedCoupon = data.coupon;
                     this.showMessage(data.message, 'success');
                     this.updateCartWithCoupon(data.coupon);
+                    console.log('✅ Coupon applied successfully:', data.coupon);
                     setTimeout(() => this.closeModal(), 1500);
                 } else {
+                    console.log('❌ Coupon application failed:', data.message);
                     this.showMessage(data.message, 'error');
                 }
             } catch (error) {
-                console.error('Error applying coupon:', error);
-                this.showMessage('Failed to apply coupon', 'error');
+                console.error('❌ Error applying coupon:', error);
+                this.showMessage('Failed to apply coupon: ' + error.message, 'error');
             } finally {
                 this.loading = false;
             }
@@ -184,23 +246,56 @@ function martCouponComponent() {
         },
 
         getCartTotal() {
-            // Get cart total from Alpine store or calculate from cart items
+            // Try to get ORIGINAL cart total (before any coupon discount) for validation
+            let cartTotal = 0;
+            
+            // Try Alpine store first
             const cartStore = Alpine.store('cart');
-            return cartStore ? cartStore.grandTotal : 0;
+            if (cartStore) {
+                cartTotal = cartStore.grandTotal || 0; // Use grandTotal (original) not finalTotal (after coupon)
+            }
+            
+            // Fallback: Calculate from localStorage
+            if (cartTotal === 0) {
+                const cartData = localStorage.getItem('mart_cart');
+                if (cartData) {
+                    const cart = JSON.parse(cartData);
+                    cartTotal = Object.values(cart).reduce((sum, item) => {
+                        return sum + ((item.disPrice || item.price) * item.quantity);
+                    }, 0);
+                }
+            }
+            
+            console.log('💰 Original cart total for coupon validation:', cartTotal);
+            return cartTotal;
         },
 
         updateCartWithCoupon(coupon) {
+            // Only apply coupon if cart has items
+            const cartData = localStorage.getItem('mart_cart');
+            if (!cartData || Object.keys(JSON.parse(cartData)).length === 0) {
+                console.log('⚠️ Cannot apply coupon: Cart is empty');
+                this.showMessage('Cannot apply coupon: Cart is empty', 'error');
+                return;
+            }
+            
             // Update the cart with applied coupon
             const cartStore = Alpine.store('cart');
             if (cartStore) {
                 cartStore.appliedCoupon = coupon;
                 cartStore.save();
+            } else {
+                // Fallback: Save to localStorage directly
+                localStorage.setItem('appliedCoupon', JSON.stringify(coupon));
             }
             
             // Trigger cart update event
             window.dispatchEvent(new CustomEvent('coupon-applied', { 
                 detail: { coupon: coupon } 
             }));
+            
+            // Also trigger a cart refresh
+            window.dispatchEvent(new CustomEvent('cart-updated'));
         },
 
         getCouponTitle(coupon) {

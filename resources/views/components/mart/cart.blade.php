@@ -66,6 +66,18 @@
                 <p class="font-semibold text-md text-gray-700">Delivery in 6 mins</p>
             </div>
 
+            <!-- Coupon Removed Notification -->
+            <div x-show="couponRemovedMessage" 
+                 x-text="couponRemovedMessage"
+                 class="bg-yellow-50 border border-yellow-200 text-yellow-800 px-3 py-2 mx-4 mt-2 rounded-lg text-sm"
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0 transform scale-95"
+                 x-transition:enter-end="opacity-100 transform scale-100"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="opacity-100 transform scale-100"
+                 x-transition:leave-end="opacity-0 transform scale-95">
+            </div>
+
             <!-- Cart Items -->
             <div class="max-w-2xl mx-auto space-y-4 p-4">
                 <!-- Dynamic Cart Items -->
@@ -469,11 +481,17 @@
         const martCouponService = {
             async applyCoupon(couponCode, cartTotal) {
                 try {
-                    const response = await fetch('/api/mart/apply-coupon', {
+                    // Get CSRF token with fallback
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || 
+                                     document.querySelector('input[name="_token"]')?.value || 
+                                     window.Laravel?.csrfToken || 
+                                     '';
+                    
+                    const response = await fetch('/api/mart/coupons/apply', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                            'X-CSRF-TOKEN': csrfToken
                         },
                         body: JSON.stringify({
                             coupon_code: couponCode,
@@ -705,13 +723,13 @@
             
             get deliveryCharge() {
                 // Return 0 if cart is empty
-                if (Object.keys(this.items).length === 0 || this.finalTotal === 0) {
+                if (Object.keys(this.items).length === 0 || this.grandTotal === 0) {
                     return 0;
                 }
                 
                 if (!this.deliveryChargeCalculation) {
                     this.deliveryChargeCalculation = deliveryChargeService.calculateDeliveryCharge(
-                        this.finalTotal, 
+                        this.grandTotal, // Use grandTotal (before coupon) for delivery charge calculation
                         this.deliveryDistance, 
                         this.deliverySettings
                     );
@@ -809,7 +827,7 @@
             },
             
             async applyCouponByCode(couponCode) {
-                const result = await martCouponService.applyCoupon(couponCode, this.finalTotal);
+                const result = await martCouponService.applyCoupon(couponCode, this.grandTotal);
                 if (result.status) {
                     this.applyCoupon(result.coupon);
                     return { success: true, message: result.message };
@@ -862,6 +880,7 @@
             deliveryChargeCalculation: null,
             tipAmount: parseFloat(localStorage.getItem('mart_tip_amount')) || 0,
             selectedTip: localStorage.getItem('mart_selected_tip') || null,
+            couponRemovedMessage: '',
             
             get grandTotal() {
                 return this.cartItems.reduce((sum, item) => sum + ((item.disPrice || item.price) * item.quantity), 0);
@@ -881,13 +900,13 @@
             
             get deliveryCharge() {
                 // Return 0 if cart is empty
-                if (this.cartItems.length === 0 || this.finalTotal === 0) {
+                if (this.cartItems.length === 0 || this.grandTotal === 0) {
                     return 0;
                 }
                 
                 if (!this.deliveryChargeCalculation) {
                     this.deliveryChargeCalculation = deliveryChargeService.calculateDeliveryCharge(
-                        this.finalTotal, 
+                        this.grandTotal, // Use grandTotal (before coupon) for delivery charge calculation
                         this.deliveryDistance, 
                         this.deliverySettings
                     );
@@ -993,6 +1012,9 @@
                 this.loadCartItems();
                 this.loadAppliedCoupon();
                 
+                // Validate applied coupon on page load/refresh
+                this.validateAppliedCoupon();
+                
                 // Listen for cart updates
                 window.addEventListener('cart-updated', () => {
                     this.loadCartItems();
@@ -1010,6 +1032,8 @@
                     // Reset delivery charge calculation when cart opens
                     this.deliveryChargeCalculation = null;
                     this.loadCartItems();
+                    // Validate coupon when cart opens
+                    this.validateAppliedCoupon();
                 });
                 
                 // Watch for cartOpen changes to reset calculation
@@ -1038,12 +1062,23 @@
                 
                 // Reset delivery charge calculation to force recalculation
                 this.deliveryChargeCalculation = null;
+                
+                // Validate coupon after loading cart items
+                this.validateAppliedCoupon();
             },
             
             loadAppliedCoupon() {
-                const couponData = localStorage.getItem('appliedCoupon');
-                if (couponData) {
-                    this.appliedCoupon = JSON.parse(couponData);
+                // Only load coupon if cart has items (prevent auto-application on empty cart)
+                const cartData = localStorage.getItem('mart_cart');
+                if (cartData && Object.keys(JSON.parse(cartData)).length > 0) {
+                    const couponData = localStorage.getItem('appliedCoupon');
+                    if (couponData) {
+                        this.appliedCoupon = JSON.parse(couponData);
+                    }
+                } else {
+                    // Clear any existing coupon if cart is empty
+                    this.appliedCoupon = null;
+                    localStorage.removeItem('appliedCoupon');
                 }
             },
             
@@ -1055,6 +1090,10 @@
                     cart[itemId].quantity++;
                     localStorage.setItem('mart_cart', JSON.stringify(cart));
                     this.loadCartItems();
+                    
+                    // Validate coupon after quantity change
+                    this.validateAppliedCoupon();
+                    
                     this.recalculateDeliveryCharge();
                     window.dispatchEvent(new CustomEvent('cart-updated'));
                     
@@ -1088,6 +1127,10 @@
                         }
                     }
                     localStorage.setItem('mart_cart', JSON.stringify(cart));
+                    
+                    // Validate coupon after quantity change
+                    this.validateAppliedCoupon();
+                    
                     this.recalculateDeliveryCharge();
                     window.dispatchEvent(new CustomEvent('cart-updated'));
                 }
@@ -1105,8 +1148,63 @@
                 this.recalculateDeliveryCharge();
             },
             
+            clearCart() {
+                // Clear cart items
+                this.cartItems = [];
+                localStorage.removeItem('mart_cart');
+                
+                // Clear applied coupon when cart is cleared
+                this.appliedCoupon = null;
+                localStorage.removeItem('appliedCoupon');
+                
+                // Reset delivery charge
+                this.deliveryChargeCalculation = null;
+                
+                // Dispatch cart updated event
+                window.dispatchEvent(new CustomEvent('cart-updated'));
+            },
+            
+            async validateAppliedCoupon() {
+                // Only validate if there's an applied coupon
+                if (!this.appliedCoupon) {
+                    return;
+                }
+                
+                // Get current cart total (before coupon discount)
+                const currentTotal = this.grandTotal;
+                const minOrderValue = this.appliedCoupon.item_value || 0;
+                const couponCode = this.appliedCoupon.code;
+                
+                console.log('🔍 Validating coupon:', couponCode);
+                console.log('💰 Current cart total:', currentTotal);
+                console.log('📋 Required minimum:', minOrderValue);
+                console.log('📦 Full coupon data:', this.appliedCoupon);
+                
+                // If cart total is below minimum order value, remove coupon
+                if (currentTotal < minOrderValue && minOrderValue > 0) {
+                    console.log('❌ Cart total below minimum, removing coupon');
+                    
+                    // Show notification to user
+                    this.couponRemovedMessage = `Coupon ${couponCode} removed: Order value below ₹${minOrderValue}`;
+                    
+                    // Auto-hide notification after 5 seconds
+                    setTimeout(() => {
+                        this.couponRemovedMessage = '';
+                    }, 5000);
+                    
+                    // Remove coupon
+                    this.appliedCoupon = null;
+                    localStorage.removeItem('appliedCoupon');
+                    
+                    this.recalculateDeliveryCharge();
+                } else if (minOrderValue === 0) {
+                    console.log('⚠️ Coupon has no minimum order value set');
+                }
+            },
+            
+
             async applyCouponByCode(couponCode) {
-                const result = await martCouponService.applyCoupon(couponCode, this.finalTotal);
+                const result = await martCouponService.applyCoupon(couponCode, this.grandTotal);
                 if (result.status) {
                     this.applyCoupon(result.coupon);
                     return { success: true, message: result.message };
