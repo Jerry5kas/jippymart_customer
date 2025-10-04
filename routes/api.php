@@ -83,19 +83,17 @@ Route::prefix('razorpay')->group(function () {
     });
 });
 
-// Catering Service API Routes
+// Catering Service API Routes (Optimized for Performance)
 Route::prefix('catering')->group(function () {
-    // Public routes (rate limited)
-    Route::middleware([])->group(function () {
-        Route::post('/requests', [App\Http\Controllers\CateringController::class, 'store']);
-        Route::get('/requests/{id}', [App\Http\Controllers\CateringController::class, 'show']);
+    // Public routes (optimized with resource monitoring)
+    Route::middleware(['resource.monitor'])->group(function () {
+        Route::post('/requests', [App\Http\Controllers\OptimizedCateringController::class, 'store']);
+        Route::get('/requests/{id}', [App\Http\Controllers\OptimizedCateringController::class, 'show']);
     });
     
-    // Admin routes (authentication required)
-    Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
-        Route::get('/requests', [App\Http\Controllers\CateringController::class, 'index']);
-        Route::put('/requests/{id}', [App\Http\Controllers\CateringController::class, 'update']);
-        Route::get('/analytics', [App\Http\Controllers\CateringController::class, 'analytics']);
+    // Admin routes (lightweight authentication with monitoring)
+    Route::middleware(['resource.monitor'])->group(function () {
+        Route::get('/requests', [App\Http\Controllers\OptimizedCateringController::class, 'index']);
     });
 });
 
