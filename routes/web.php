@@ -72,7 +72,7 @@ Route::get('/offers', [App\Http\Controllers\Customer\PageController::class, 'off
 // Web OTP Authentication Routes
 Route::get('otp-login', [App\Http\Controllers\WebOtpController::class, 'showPhoneInput'])->name('otp.phone');
 Route::post('otp-send', [App\Http\Controllers\WebOtpController::class, 'sendOtp'])->name('otp.send');
-Route::get('otp-verify', [App\Http\Controllers\WebOtpController::class, 'showOtpVerify'])->name('otp.verify');
+Route::get('otp-verify', [App\Http\Controllers\WebOtpController::class, 'showOtpVerify'])->name('otp.verify.show');
 Route::post('otp-verify', [App\Http\Controllers\WebOtpController::class, 'verifyOtp'])->name('otp.verify');
 Route::get('otp-register', [App\Http\Controllers\WebOtpController::class, 'showRegistration'])->name('otp.register');
 Route::post('otp-register', [App\Http\Controllers\WebOtpController::class, 'completeRegistration'])->name('otp.register.complete');
@@ -97,7 +97,7 @@ Route::get('privacy', [App\Http\Controllers\CmsController::class, 'privacypolicy
 
 Route::get('privacyandpolicy', [App\Http\Controllers\PageController::class, 'staticprivacypolicy'])->name('staticprivacypolicy');
 
-Route::get('privacypolicy', [App\Http\Controllers\PageController::class, 'staticprivacypolicy'])->name('staticprivacypolicy');
+Route::get('privacypolicy', [App\Http\Controllers\PageController::class, 'staticprivacypolicy'])->name('staticprivacypolicy.alt');
 
 Route::get('terms', [App\Http\Controllers\CmsController::class, 'termsofuse'])->name('terms');
 
@@ -266,8 +266,6 @@ Route::get('page/{slug}', [App\Http\Controllers\CmsController::class, 'index'])-
 Route::post('order-schedule-time-add', [App\Http\Controllers\ProductController::class, 'orderScheduleTimeAdd'])->name('order-schedule-time-add');
 
 Route::post('send-email', [App\Http\Controllers\SendEmailController::class, 'sendMail'])->name('sendMail');
-
-Route::get('lang/change', [App\Http\Controllers\LangController::class, 'change'])->name('changeLang');
 
 Route::get('forgot-password', [App\Http\Controllers\LoginController::class, 'forgotPassword'])->name('forgot-password');
 
