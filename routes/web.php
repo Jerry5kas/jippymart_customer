@@ -958,6 +958,7 @@ Route::prefix('mart')->group(function () {
     Route::get('/items-by-subcategory/{subcategoryTitle}', [MartController::class, 'itemsBySubcategory'])->name('mart.items.by.subcategory');
     Route::get('/banner/{bannerTitle}', [MartController::class, 'bannerRedirect'])->name('mart.banner.redirect');
 
+
     // Cart routes
     Route::post('/cart/add', [App\Http\Controllers\MartCartController::class, 'addToCart'])->name('mart.cart.add');
     Route::post('/cart/update', [App\Http\Controllers\MartCartController::class, 'updateQuantity'])->name('mart.cart.update');
