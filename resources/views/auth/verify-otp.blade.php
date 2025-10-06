@@ -41,7 +41,7 @@
                 @endif
 
                 <!-- OTP Input Form -->
-                <form class="mt-3 mb-4" method="POST" action="{{ route('otp.verify') }}" id="otpForm">
+                <form class="mt-3 mb-4" method="POST" action="{{ route('otp.verify.submit') }}" id="otpForm">
                     @csrf
 
                     <div class="form-group">

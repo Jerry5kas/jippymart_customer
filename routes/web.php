@@ -72,8 +72,8 @@ Route::get('/offers', [App\Http\Controllers\Customer\PageController::class, 'off
 // Web OTP Authentication Routes
 Route::get('otp-login', [App\Http\Controllers\WebOtpController::class, 'showPhoneInput'])->name('otp.phone');
 Route::post('otp-send', [App\Http\Controllers\WebOtpController::class, 'sendOtp'])->name('otp.send');
-Route::get('otp-verify', [App\Http\Controllers\WebOtpController::class, 'showOtpVerify'])->name('otp.verify');
-Route::post('otp-verify', [App\Http\Controllers\WebOtpController::class, 'verifyOtp'])->name('otp.verify');
+Route::get('otp-verify', [App\Http\Controllers\WebOtpController::class, 'showOtpVerify'])->name('otp.verify.show');
+Route::post('otp-verify', [App\Http\Controllers\WebOtpController::class, 'verifyOtp'])->name('otp.verify.submit');
 Route::get('otp-register', [App\Http\Controllers\WebOtpController::class, 'showRegistration'])->name('otp.register');
 Route::post('otp-register', [App\Http\Controllers\WebOtpController::class, 'completeRegistration'])->name('otp.register.complete');
 Route::get('otp-resend', [App\Http\Controllers\WebOtpController::class, 'resendOtp'])->name('otp.resend');
@@ -95,9 +95,9 @@ Route::get('lang/change', [App\Http\Controllers\LangController::class, 'change']
 
 Route::get('privacy', [App\Http\Controllers\CmsController::class, 'privacypolicy'])->name('privacy');
 
-Route::get('privacyandpolicy', [App\Http\Controllers\PageController::class, 'staticprivacypolicy'])->name('staticprivacypolicy');
+Route::get('privacyandpolicy', [App\Http\Controllers\PageController::class, 'staticprivacypolicy'])->name('static.privacy.policy');
 
-Route::get('privacypolicy', [App\Http\Controllers\PageController::class, 'staticprivacypolicy'])->name('staticprivacypolicy');
+Route::get('privacypolicy', [App\Http\Controllers\PageController::class, 'staticprivacypolicy'])->name('static.privacypolicy');
 
 Route::get('terms', [App\Http\Controllers\CmsController::class, 'termsofuse'])->name('terms');
 

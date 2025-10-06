@@ -106,7 +106,7 @@ class WebOtpController extends Controller
                 'has_otp_phone' => session()->has('otp_phone')
             ]);
             
-            return redirect()->route('otp.verify')->with('success', 'OTP sent to ' . substr($phone, 0, 2) . '******' . substr($phone, -2));
+            return redirect()->route('otp.verify.show')->with('success', 'OTP sent to ' . substr($phone, 0, 2) . '******' . substr($phone, -2));
         } else {
             \Log::error('SMS sending failed', ['phone' => substr($phone, -4)]);
             return back()->with('error', 'Failed to send OTP. Please try again.');
