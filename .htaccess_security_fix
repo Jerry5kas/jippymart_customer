@@ -1,0 +1,8 @@
+# Place this file in: storage/app/firebase/.htaccess
+# This will prevent HTTP access to your Firebase credentials
+
+Order Deny,Allow
+Deny from all
+
+# Alternative if you're using Apache 2.4+
+# Require all denied

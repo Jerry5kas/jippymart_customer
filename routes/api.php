@@ -83,6 +83,19 @@ Route::prefix('razorpay')->group(function () {
     });
 });
 
+// Health Check Route
+Route::get('/health', function () {
+    $safetyService = new \App\Services\ProductionSafetyService();
+    $readiness = $safetyService->checkProductionReadiness();
+    
+    return response()->json([
+        'status' => $readiness['ready'] ? 'healthy' : 'unhealthy',
+        'timestamp' => now()->toISOString(),
+        'issues' => $readiness['issues'],
+        'environment' => app()->environment()
+    ], $readiness['ready'] ? 200 : 503);
+});
+
 // Catering Service API Routes
 Route::prefix('catering')->group(function () {
     // Public routes (rate limited)

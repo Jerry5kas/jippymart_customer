@@ -137,7 +137,7 @@
         
         <div class="content">
             <div class="reference-number">
-                Reference: CAT-{{ date('Y') }}-{{ str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT) }}
+                Reference: {{ $data['reference_number'] }}
             </div>
             
             <div class="status-badge">

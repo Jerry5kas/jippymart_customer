@@ -35,6 +35,18 @@ class EmailService
     }
     
     /**
+     * Check if mail is properly configured
+     */
+    private function isMailConfigured()
+    {
+        $host = env('MAIL_HOST');
+        $username = env('MAIL_USERNAME');
+        $password = env('MAIL_PASSWORD');
+        
+        return !empty($host) && !empty($username) && !empty($password);
+    }
+    
+    /**
      * Get Firebase credentials from multiple sources
      */
     private function getFirebaseCredentials()
@@ -89,7 +101,23 @@ class EmailService
         try {
             $adminEmail = config('firebase.email.admin_email', 'jerry@jippymart.in');
             
+            // Check if mail is configured properly
+            if (!$this->isMailConfigured()) {
+                Log::warning('Mail not configured properly, skipping admin notification', [
+                    'request_id' => $requestId
+                ]);
+                $this->updateEmailStatus($requestId, 'admin_email_sent', false);
+                return false;
+            }
+            
+            // Set timeout for email sending (shared hosting optimization)
+            $originalTimeout = ini_get('default_socket_timeout');
+            ini_set('default_socket_timeout', 15); // 15 seconds max (increased for reliability)
+            
             Mail::to($adminEmail)->send(new CateringRequestNotification($data));
+            
+            // Restore original timeout
+            ini_set('default_socket_timeout', $originalTimeout);
             
             // Log email in Firestore
             $this->logEmail($requestId, 'admin_notification', $adminEmail, 'sent');
@@ -105,9 +133,13 @@ class EmailService
             return true;
             
         } catch (\Exception $e) {
+            // Restore timeout on error
+            ini_set('default_socket_timeout', $originalTimeout ?? 60);
+            
             Log::error('Admin notification email failed: ' . $e->getMessage());
             
             // Log failed email
+            $adminEmail = config('firebase.email.admin_email', 'jerry@jippymart.in');
             $this->logEmail($requestId, 'admin_notification', $adminEmail, 'failed', $e->getMessage());
             
             // Update database status
@@ -118,25 +150,31 @@ class EmailService
     }
     
     /**
-     * Send admin notification email asynchronously
+     * Send admin notification email (optimized for shared hosting)
      */
     public function sendAdminNotificationAsync($requestId, $data)
     {
-        // Queue the email for background processing
-        dispatch(function() use ($requestId, $data) {
-            $this->sendAdminNotification($requestId, $data);
-        })->afterResponse();
+        // For shared hosting, send immediately to avoid resource issues
+        try {
+            return $this->sendAdminNotification($requestId, $data);
+        } catch (\Exception $e) {
+            Log::warning('Admin email failed (shared hosting): ' . $e->getMessage());
+            return false;
+        }
     }
     
     /**
-     * Send customer confirmation email asynchronously
+     * Send customer confirmation email (optimized for shared hosting)
      */
     public function sendCustomerConfirmationAsync($requestId, $data)
     {
-        // Queue the email for background processing
-        dispatch(function() use ($requestId, $data) {
-            $this->sendCustomerConfirmation($requestId, $data);
-        })->afterResponse();
+        // For shared hosting, send immediately to avoid resource issues
+        try {
+            return $this->sendCustomerConfirmation($requestId, $data);
+        } catch (\Exception $e) {
+            Log::warning('Customer email failed (shared hosting): ' . $e->getMessage());
+            return false;
+        }
     }
     
     /**
@@ -154,7 +192,24 @@ class EmailService
                 return true;
             }
             
+            // Check if mail is configured properly
+            if (!$this->isMailConfigured()) {
+                Log::warning('Mail not configured properly, skipping customer confirmation', [
+                    'request_id' => $requestId,
+                    'customer_email' => $data['email']
+                ]);
+                $this->updateEmailStatus($requestId, 'customer_email_sent', false);
+                return false;
+            }
+            
+            // Set timeout for email sending (shared hosting optimization)
+            $originalTimeout = ini_get('default_socket_timeout');
+            ini_set('default_socket_timeout', 15); // 15 seconds max (increased for reliability)
+            
             Mail::to($data['email'])->send(new CateringRequestConfirmation($data));
+            
+            // Restore original timeout
+            ini_set('default_socket_timeout', $originalTimeout);
             
             // Log email in Firestore
             $this->logEmail($requestId, 'customer_confirmation', $data['email'], 'sent');
@@ -170,10 +225,13 @@ class EmailService
             return true;
             
         } catch (\Exception $e) {
+            // Restore timeout on error
+            ini_set('default_socket_timeout', $originalTimeout ?? 60);
+            
             Log::error('Customer confirmation email failed: ' . $e->getMessage());
             
             // Log failed email
-            $this->logEmail($requestId, 'customer_confirmation', $data['email'], 'failed', $e->getMessage());
+            $this->logEmail($requestId, 'customer_confirmation', $data['email'] ?? 'unknown', 'failed', $e->getMessage());
             
             // Update database status
             $this->updateEmailStatus($requestId, 'customer_email_sent', false);
@@ -337,8 +395,8 @@ class EmailService
             $collection = $database->collection('catering_requests');
             $docRef = $collection->document($requestId);
             $docRef->update([
-                $field => $status,
-                'updated_at' => now()->toISOString()
+                ['path' => $field, 'value' => $status],
+                ['path' => 'updated_at', 'value' => now()->toISOString()]
             ]);
             
             Log::info("Email status updated: $field = $status", [

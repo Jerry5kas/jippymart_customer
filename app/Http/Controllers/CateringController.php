@@ -35,6 +35,8 @@ class CateringController extends Controller
      */
     public function store(Request $request)
     {
+        $startTime = microtime(true);
+        
         try {
             // Validate request with custom messages
             $validator = Validator::make(
@@ -77,25 +79,79 @@ class CateringController extends Controller
                 ], 429);
             }
             
-            // Store in Firestore first (essential for data persistence)
-            $requestId = $this->cateringService->storeRequest($data);
+            // Store in Firestore with fallback
+            try {
+                $requestId = $this->cateringService->storeRequest($data);
+                $firestoreSuccess = true;
+            } catch (\Exception $e) {
+                Log::error('Firestore storage failed: ' . $e->getMessage());
+                // Fallback: generate a temporary ID and continue
+                $requestId = 'temp_' . time() . '_' . rand(1000, 9999);
+                $firestoreSuccess = false;
+            }
             
             // Get stored data with reference number
-            $storedRequest = $this->cateringService->getRequest($requestId);
+            $referenceNumber = 'CAT-' . date('Y') . '-' . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT);
+            if ($firestoreSuccess) {
+                try {
+                    $storedRequest = $this->cateringService->getRequest($requestId);
+                    $referenceNumber = $storedRequest['reference_number'] ?? $referenceNumber;
+                } catch (\Exception $e) {
+                    Log::warning('Could not retrieve stored request: ' . $e->getMessage());
+                }
+            }
+            
             $dataWithReference = array_merge($data, [
-                'reference_number' => $storedRequest['reference_number'] ?? 'CAT-' . date('Y') . '-' . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT)
+                'reference_number' => $referenceNumber
             ]);
             
-            // Send emails (keep functionality but optimize)
-            $adminEmailSent = $this->emailService->sendAdminNotification($requestId, $dataWithReference);
-            $customerEmailSent = $this->emailService->sendCustomerConfirmation($requestId, $dataWithReference);
+            // Send emails with timeout protection for shared hosting
+            $adminEmailSent = false;
+            $customerEmailSent = false;
             
-            // Log audit (essential for tracking)
-            $this->auditService->logRequest('catering_request_created', $data, [
+            // Check if we have time for emails (shared hosting optimization)
+            $emailStartTime = microtime(true);
+            $maxEmailTime = 20; // Allow max 20 seconds for emails (increased for reliability)
+            
+            try {
+                $adminEmailSent = $this->emailService->sendAdminNotificationAsync($requestId, $dataWithReference);
+                $emailTime = microtime(true) - $emailStartTime;
+                
+                if ($emailTime > $maxEmailTime) {
+                    Log::warning('Admin email took too long, skipping customer email', [
+                        'request_id' => $requestId,
+                        'email_time' => $emailTime
+                    ]);
+                    $customerEmailSent = false;
+                } else {
+                    try {
+                        $customerEmailSent = $this->emailService->sendCustomerConfirmationAsync($requestId, $dataWithReference);
+                    } catch (\Exception $e) {
+                        Log::warning('Failed to send customer email: ' . $e->getMessage());
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::warning('Failed to send admin email: ' . $e->getMessage());
+            }
+            
+            // Log audit with error handling
+            try {
+                $this->auditService->logRequest('catering_request_created', $data, [
+                    'request_id' => $requestId,
+                    'admin_email_sent' => $adminEmailSent,
+                    'customer_email_sent' => $customerEmailSent,
+                    'firestore_success' => $firestoreSuccess,
+                    'status' => 'success'
+                ]);
+            } catch (\Exception $e) {
+                Log::warning('Failed to log audit: ' . $e->getMessage());
+            }
+            
+            $responseTime = round((microtime(true) - $startTime) * 1000, 2);
+            Log::info('Catering request processed', [
                 'request_id' => $requestId,
-                'admin_email_sent' => $adminEmailSent,
-                'customer_email_sent' => $customerEmailSent,
-                'status' => 'success'
+                'response_time_ms' => $responseTime,
+                'firestore_success' => $firestoreSuccess
             ]);
             
             return response()->json([
@@ -103,7 +159,7 @@ class CateringController extends Controller
                 'message' => 'Catering request submitted successfully',
                 'data' => [
                     'id' => $requestId,
-                    'reference_number' => $dataWithReference['reference_number'],
+                    'reference_number' => $referenceNumber,
                     'status' => 'pending',
                     'created_at' => now()->toISOString(),
                     'email_notifications' => [
@@ -114,11 +170,21 @@ class CateringController extends Controller
             ], 201);
             
         } catch (\Exception $e) {
-            Log::error('Catering request creation failed: ' . $e->getMessage());
-            
-            $this->auditService->logRequest('catering_request_failed', $request->all(), [
-                'error' => $e->getMessage()
+            $responseTime = round((microtime(true) - $startTime) * 1000, 2);
+            Log::error('Catering request creation failed: ' . $e->getMessage(), [
+                'response_time_ms' => $responseTime,
+                'exception' => get_class($e),
+                'trace' => $e->getTraceAsString()
             ]);
+            
+            try {
+                $this->auditService->logRequest('catering_request_failed', $request->all(), [
+                    'error' => $e->getMessage(),
+                    'response_time_ms' => $responseTime
+                ]);
+            } catch (\Exception $auditException) {
+                Log::error('Failed to log audit for failed request: ' . $auditException->getMessage());
+            }
             
             return response()->json([
                 'success' => false,

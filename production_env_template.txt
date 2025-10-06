@@ -1,0 +1,19 @@
+# Add these to your production .env file
+
+# Email Configuration (replace with your actual SMTP settings)
+MAIL_MAILER=smtp
+MAIL_HOST=your-smtp-server.com
+MAIL_PORT=587
+MAIL_USERNAME=your-email@jippymart.in
+MAIL_PASSWORD=your-email-password
+MAIL_ENCRYPTION=tls
+MAIL_FROM_ADDRESS=noreply@jippymart.in
+MAIL_FROM_NAME="JippyMart Catering"
+
+# Queue Configuration (for performance - prevents 56s response times)
+QUEUE_CONNECTION=database
+
+# Application Configuration
+APP_ENV=production
+APP_DEBUG=false
+APP_URL=https://jippymart.in

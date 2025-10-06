@@ -15,13 +15,16 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        // Generate lightweight sitemap weekly (shared hosting friendly)
-        $schedule->command('sitemap:generate-lightweight')
-                 ->weekly()
-                 ->sundays()
-                 ->at('03:00')
-                 ->withoutOverlapping()
-                 ->runInBackground();
+        // DISABLED for shared hosting to prevent resource limit issues
+        // All scheduled tasks commented out to avoid 503/508 errors
+        
+        // Generate lightweight sitemap weekly (DISABLED for shared hosting)
+        // $schedule->command('sitemap:generate-lightweight')
+        //          ->weekly()
+        //          ->sundays()
+        //          ->at('03:00')
+        //          ->withoutOverlapping()
+        //          ->runInBackground();
 
         // Original heavy sitemap generation - DISABLED for shared hosting
         // $schedule->command('sitemap:generate')
@@ -29,7 +32,8 @@ class Kernel extends ConsoleKernel
         //          ->withoutOverlapping()
         //          ->runInBackground();
 
-        // TODO: Re-enable heavy sitemap when moving to dedicated server or VPS
+        // TODO: Re-enable scheduled tasks when moving to dedicated server or VPS
+        // For now, run sitemap generation manually if needed
     }
 
     /**

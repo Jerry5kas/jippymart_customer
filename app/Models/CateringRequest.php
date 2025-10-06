@@ -232,8 +232,8 @@ class CateringRequest extends Model
             $collection = $database->collection('catering_requests');
             $docRef = $collection->document($id);
             $docRef->update([
-                'status' => $status,
-                'updated_at' => now()->toISOString()
+                ['path' => 'status', 'value' => $status],
+                ['path' => 'updated_at', 'value' => now()->toISOString()]
             ]);
             
             return true;

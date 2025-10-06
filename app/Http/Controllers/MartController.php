@@ -9,9 +9,9 @@ class MartController extends Controller
 {
     public function index()
     {
-        // Set strict limits for shared hosting
-        ini_set('memory_limit', '128M');
-        set_time_limit(30); // 30 seconds max
+        // Set strict limits for shared hosting (optimized)
+        ini_set('memory_limit', '64M');
+        set_time_limit(15); // 15 seconds max
 
         try {
             // Check if Firebase credentials exist
@@ -35,12 +35,12 @@ class MartController extends Controller
 
         // Check execution time before heavy operations
         $startTime = microtime(true);
-        $maxExecutionTime = 25; // 25 seconds max
+        $maxExecutionTime = 10; // 10 seconds max for shared hosting
 
         // Fetch all categories first
         $categoriesSnapshot = $firestore->collection('mart_categories')
             ->where('publish', '=', true)
-            ->limit(50) // Limit for shared hosting
+            ->limit(20) // Reduced limit for shared hosting
             ->documents();
 
         $categoryData = [];
@@ -62,7 +62,7 @@ class MartController extends Controller
         // Fetch all subcategories in one query
         $subcategoriesSnapshot = $firestore->collection('mart_subcategories')
             ->where('publish', '=', true)
-            ->limit(100) // Limit for shared hosting
+            ->limit(30) // Reduced limit for shared hosting
             ->documents();
 
         $subcategoriesByParent = [];
@@ -107,7 +107,7 @@ class MartController extends Controller
         // Single optimized query to fetch all published items (reused for all product types)
         $itemsRef = $firestore->collection('mart_items');
         $query = $itemsRef->where('publish', '=', true)
-                         ->limit(200); // Limit for shared hosting
+                         ->limit(50); // Reduced limit for shared hosting
 
         $documents = $query->documents();
 
