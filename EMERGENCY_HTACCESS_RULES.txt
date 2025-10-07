@@ -1,0 +1,48 @@
+
+# EMERGENCY OPTIMIZATION RULES
+# Add these to your .htaccess file
+
+# Disable server signature
+ServerSignature Off
+
+# Set memory and execution limits
+php_value memory_limit 64M
+php_value max_execution_time 15
+php_value max_input_time 15
+
+# Disable unnecessary modules
+php_flag display_errors Off
+php_flag log_errors On
+
+# Optimize file handling
+php_value file_uploads On
+php_value upload_max_filesize 2M
+php_value post_max_size 2M
+
+# Disable background processing
+php_value max_input_vars 1000
+php_value max_input_nesting_level 64
+
+# Enable compression
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/plain
+    AddOutputFilterByType DEFLATE text/html
+    AddOutputFilterByType DEFLATE text/xml
+    AddOutputFilterByType DEFLATE text/css
+    AddOutputFilterByType DEFLATE application/xml
+    AddOutputFilterByType DEFLATE application/xhtml+xml
+    AddOutputFilterByType DEFLATE application/rss+xml
+    AddOutputFilterByType DEFLATE application/javascript
+    AddOutputFilterByType DEFLATE application/x-javascript
+</IfModule>
+
+# Cache static files
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType text/css "access plus 1 month"
+    ExpiresByType application/javascript "access plus 1 month"
+    ExpiresByType image/png "access plus 1 month"
+    ExpiresByType image/jpg "access plus 1 month"
+    ExpiresByType image/jpeg "access plus 1 month"
+    ExpiresByType image/gif "access plus 1 month"
+</IfModule>

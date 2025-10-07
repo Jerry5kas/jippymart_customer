@@ -3,10 +3,19 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Services\FirebaseOptimizationService;
 use Kreait\Firebase\Factory;
 use Kreait\Firebase\Exception\FirebaseException;
+
 class MartController extends Controller
 {
+    private $firebaseService;
+    
+    public function __construct()
+    {
+        $this->firebaseService = new FirebaseOptimizationService();
+    }
+    
     public function index()
     {
         // Set strict limits for shared hosting (optimized)
@@ -14,44 +23,16 @@ class MartController extends Controller
         set_time_limit(15); // 15 seconds max
 
         try {
-            // Check if Firebase credentials exist
-            $credentialsPath = base_path('storage/app/firebase/credentials.json');
-            if (!file_exists($credentialsPath)) {
-                \Log::error('Firebase credentials file not found at: ' . $credentialsPath);
-                return $this->getFallbackData();
-            }
-
-            // Initialize Firebase with timeout and retry settings
-            $factory = (new Factory)->withServiceAccount($credentialsPath);
-            $firestore = $factory->createFirestore()->database();
-
-            // Start performance monitoring
-            $startTime = microtime(true);
-            \Log::info('MartController: Starting data fetch');
+            \Log::info('MartController: Starting optimized data fetch');
 
         // =========================
         // 1️⃣ OPTIMIZED CATEGORIES & SUBCATEGORIES
         // =========================
 
-        // Check execution time before heavy operations
-        $startTime = microtime(true);
-        $maxExecutionTime = 10; // 10 seconds max for shared hosting
-
-        // Fetch all categories first
-        $categoriesSnapshot = $firestore->collection('mart_categories')
-            ->where('publish', '=', true)
-            ->limit(20) // Reduced limit for shared hosting
-            ->documents();
-
-        $categoryData = [];
-        $categoryIds = [];
-
-        foreach ($categoriesSnapshot as $category) {
-            if (!$category->exists()) continue;
-            $cat = $category->data();
-            $categoryIds[] = $cat['id'];
-            $categoryData[] = $cat;
-        }
+        // Use optimized Firebase service with strict limits
+        $categoryData = $this->firebaseService->queryWithLimits('mart_categories', [], 15);
+        
+        $categoryIds = array_column($categoryData, 'id');
 
         // Check timeout before subcategories
         if ((microtime(true) - $startTime) > $maxExecutionTime) {

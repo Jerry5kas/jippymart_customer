@@ -8,6 +8,7 @@ use App\Http\Controllers\FavoritesController;
 use App\Http\Controllers\HomeController;
 
 use App\Http\Controllers\MartController;
+use App\Http\Controllers\OptimizedMartController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\PlayIntegrityController;
 use App\Http\Controllers\PrivacyController;
@@ -950,7 +951,7 @@ Route::get('/debug-session-delivery', function () {
 
 
 Route::prefix('mart')->group(function () {
-    Route::get('/', [MartController::class, 'index'])->name('mart.index');
+    Route::get('/', [OptimizedMartController::class, 'index'])->name('mart.index');
     Route::get('/all-items', [MartController::class, 'allItems'])->name('mart.all.items');
     Route::get('/items-by-category', function () {
         return view('mart.item-by-category');
