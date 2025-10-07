@@ -123,3 +123,4 @@ class SharedHostingOptimizer
 if (SHARED_HOSTING_MODE) {
     SharedHostingOptimizer::optimize();
 }
+

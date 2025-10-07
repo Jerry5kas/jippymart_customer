@@ -96,19 +96,18 @@ Route::get('/health', function () {
     ], $readiness['ready'] ? 200 : 503);
 });
 
-// Catering Service API Routes
+// Minimal Catering Service API Routes
 Route::prefix('catering')->group(function () {
-    // Public routes (rate limited)
-    Route::middleware([])->group(function () {
-        Route::post('/requests', [App\Http\Controllers\CateringController::class, 'store']);
-        Route::get('/requests/{id}', [App\Http\Controllers\CateringController::class, 'show']);
+    // Public routes with rate limiting
+    Route::middleware(['throttle:10,1'])->group(function () {
+        Route::post('/requests', [App\Http\Controllers\MinimalCateringController::class, 'store']);
+        Route::get('/requests/{id}', [App\Http\Controllers\MinimalCateringController::class, 'show']);
     });
     
     // Admin routes (authentication required)
     Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
-        Route::get('/requests', [App\Http\Controllers\CateringController::class, 'index']);
-        Route::put('/requests/{id}', [App\Http\Controllers\CateringController::class, 'update']);
-        Route::get('/analytics', [App\Http\Controllers\CateringController::class, 'analytics']);
+        Route::get('/requests', [App\Http\Controllers\MinimalCateringController::class, 'index']);
+        Route::put('/requests/{id}', [App\Http\Controllers\MinimalCateringController::class, 'update']);
     });
 });
 

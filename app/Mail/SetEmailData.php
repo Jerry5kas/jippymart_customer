@@ -1,43 +1,60 @@
 <?php
 
-
 namespace App\Mail;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Content;
+use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
 class SetEmailData extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public $dynamicSubject;
-    public $dynamicMessage;
+    public $subject;
+    public $message;
 
     /**
      * Create a new message instance.
-     *
-     * @param string $subject
-     * @param string $message
-     * @return void
      */
     public function __construct($subject, $message)
     {
-        $this->dynamicSubject = $subject;
-        $this->dynamicMessage = $message;
+        $this->subject = $subject;
+        $this->message = $message;
     }
 
     /**
-     * Build the message.
-     *
-     * @return $this
+     * Get the message envelope.
      */
-    public function build()
+    public function envelope(): Envelope
     {
-        return $this->subject($this->dynamicSubject)->view('email.send_email')->with('data', $this->dynamicMessage);
+        return new Envelope(
+            subject: $this->subject,
+        );
+    }
+
+    /**
+     * Get the message content definition.
+     */
+    public function content(): Content
+    {
+        return new Content(
+            view: 'emails.admin-email',
+            with: [
+                'subject' => $this->subject,
+                'message' => $this->message
+            ]
+        );
+    }
+
+    /**
+     * Get the attachments for the message.
+     *
+     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
+     */
+    public function attachments(): array
+    {
+        return [];
     }
 }
-
-
-?>

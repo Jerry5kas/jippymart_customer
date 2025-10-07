@@ -111,3 +111,4 @@ If issues persist, contact Hostinger support with:
 ---
 
 **Next Action**: Update MAIL_PORT to 587 and MAIL_ENCRYPTION to tls in .env file
+

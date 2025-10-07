@@ -172,3 +172,4 @@ If you're already getting 503/508 errors:
 ---
 
 **Next Steps**: Implement these fixes immediately to prevent resource limit errors on shared hosting.
+
