@@ -134,7 +134,7 @@ class CateringRequest extends Model
                 'nonveg_count' => isset($data['nonveg_count']) ? (int)$data['nonveg_count'] : null,
                 'special_requirements' => $data['special_requirements'] ?? null,
                 'status' => 'pending',
-                'reference_number' => $this->generateReferenceNumber(),
+                'reference_number' => $data['reference_number'],
                 'created_at' => now()->toISOString(),
                 'updated_at' => now()->toISOString(),
                 'ip_address' => request()->ip(),
@@ -496,5 +496,37 @@ class CateringRequest extends Model
             'created_at',
             'updated_at'
         ];
+    }
+    
+    /**
+     * Get the last reference number from Firestore
+     */
+    public function getLastReferenceNumber()
+    {
+        try {
+            if (!$this->firestore) {
+                return null;
+            }
+            
+            $database = $this->firestore->database();
+            $collection = $database->collection('catering_requests');
+            
+            // Query for the last reference number
+            $query = $collection->orderBy('reference_number', 'DESC')->limit(1);
+            $documents = $query->documents();
+            
+            foreach ($documents as $document) {
+                $data = $document->data();
+                if (isset($data['reference_number'])) {
+                    return $data['reference_number'];
+                }
+            }
+            
+            return null;
+            
+        } catch (\Exception $e) {
+            Log::error('Failed to get last reference number: ' . $e->getMessage());
+            return null;
+        }
     }
 }

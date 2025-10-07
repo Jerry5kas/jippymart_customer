@@ -20,6 +20,7 @@ class MinimalCateringController extends Controller
             $validator = Validator::make($request->all(), [
                 'name' => 'required|string|min:2|max:255',
                 'mobile' => 'required|regex:/^[6-9]\d{9}$/',
+                'alternative_mobile' => 'nullable|regex:/^[6-9]\d{9}$/',
                 'email' => 'nullable|email|max:255',
                 'place' => 'required|string|min:10|max:1000',
                 'date' => 'required|date|after:today',
@@ -69,7 +70,9 @@ class MinimalCateringController extends Controller
             
             // Generate IDs
             $requestId = 'REQ' . time() . rand(100, 999);
-            $referenceNumber = 'CAT-' . date('Y') . '-' . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT);
+            
+            // Generate sequential reference number
+            $referenceNumber = $this->generateSequentialReference();
             
             // Store in database
             $requestData = array_merge($data, [
@@ -95,6 +98,12 @@ class MinimalCateringController extends Controller
             // Send admin email (simple)
             $adminEmailSent = $this->sendAdminEmail($requestData);
             
+            // Send customer confirmation email (if email provided)
+            $customerEmailSent = false;
+            if (!empty($data['email'])) {
+                $customerEmailSent = $this->sendCustomerEmail($requestData);
+            }
+            
             return response()->json([
                 'success' => true,
                 'message' => 'Catering request submitted successfully',
@@ -103,7 +112,8 @@ class MinimalCateringController extends Controller
                     'reference_number' => $referenceNumber,
                     'status' => 'pending',
                     'created_at' => now()->toISOString(),
-                    'email_sent' => $adminEmailSent
+                    'email_sent' => $adminEmailSent,
+                    'customer_email_sent' => $customerEmailSent
                 ]
             ], 201);
             
@@ -222,17 +232,78 @@ class MinimalCateringController extends Controller
     private function sendAdminEmail($data)
     {
         try {
-            $adminEmail = config('mail.admin_email', 'jerry@jippymart.in');
+            // Multiple admin email addresses
+            $adminEmails = [
+                'info@jippymart.in',
+                'sudheer@jippymart.in',
+                'sivapm@jippymart.in'
+            ];
             
             if (env('MAIL_HOST') && env('MAIL_USERNAME') && env('MAIL_PASSWORD')) {
-                Mail::raw($this->getEmailContent($data), function ($message) use ($adminEmail, $data) {
-                    $message->to($adminEmail)
+                Mail::raw($this->getEmailContent($data), function ($message) use ($adminEmails, $data) {
+                    $message->to($adminEmails)
                            ->subject("New Catering Request - {$data['name']} - {$data['date']}");
                 });
                 return true;
             }
         } catch (\Exception $e) {
             Log::warning('Admin email failed: ' . $e->getMessage());
+        }
+        return false;
+    }
+    
+    /**
+     * Generate sequential reference number
+     */
+    private function generateSequentialReference()
+    {
+        try {
+            // Get current year
+            $currentYear = date('Y');
+            
+            // Get the last reference number from database
+            $lastReference = (new CateringRequest())->getLastReferenceNumber();
+            
+            if ($lastReference) {
+                // Extract the number from the last reference
+                $lastNumber = (int) substr($lastReference, -4);
+                $nextNumber = $lastNumber + 1;
+            } else {
+                // First reference of the year
+                $nextNumber = 1;
+            }
+            
+            // Generate new reference number
+            $referenceNumber = 'CAT-' . $currentYear . '-' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+            
+            return $referenceNumber;
+            
+        } catch (\Exception $e) {
+            // Fallback to timestamp-based reference if database fails
+            Log::warning('Sequential reference generation failed: ' . $e->getMessage());
+            return 'CAT-' . date('Y') . '-' . str_pad(rand(1000, 9999), 4, '0', STR_PAD_LEFT);
+        }
+    }
+    
+    /**
+     * Send simple customer confirmation email
+     */
+    private function sendCustomerEmail($data)
+    {
+        try {
+            if (empty($data['email'])) {
+                return false;
+            }
+            
+            if (env('MAIL_HOST') && env('MAIL_USERNAME') && env('MAIL_PASSWORD')) {
+                Mail::raw($this->getCustomerEmailContent($data), function ($message) use ($data) {
+                    $message->to($data['email'])
+                           ->subject("Catering Request Confirmation - {$data['reference_number']}");
+                });
+                return true;
+            }
+        } catch (\Exception $e) {
+            Log::warning('Customer email failed: ' . $e->getMessage());
         }
         return false;
     }
@@ -248,6 +319,7 @@ Reference: {$data['reference_number']}
 
 Name: {$data['name']}
 Mobile: {$data['mobile']}
+" . (!empty($data['alternative_mobile']) ? "Alternative Mobile: {$data['alternative_mobile']}\n" : '') . "
 Email: " . ($data['email'] ?? 'N/A') . "
 Venue: {$data['place']}
 Date: {$data['date']}
@@ -261,6 +333,45 @@ Submitted: " . now()->format('M j, Y g:i A') . "
 
 Please contact the customer within 24 hours.
 JippyMart Catering Service
+        ";
+    }
+    
+    /**
+     * Customer confirmation email content
+     */
+    private function getCustomerEmailContent($data)
+    {
+        return "
+Dear {$data['name']},
+
+Thank you for choosing JippyMart Catering Service!
+
+Your catering request has been successfully submitted.
+
+Reference Number: {$data['reference_number']}
+Event Date: {$data['date']}
+Venue: {$data['place']}
+Guests: {$data['guests']} people
+Event Type: {$data['function_type']}
+Meal Preference: " . ucfirst(str_replace('_', ' ', $data['meal_preference'])) . "
+
+We will review your request and contact you within 24 hours to discuss the details and provide you with a customized quote.
+
+If you have any questions, please don't hesitate to contact us.
+
+Send us mails.
+info@jippymart.in
+
+Contact us
++91 9390579864
+
+Find us here
+24-35-330, 7th Line Ram Nagar, Ongole 523001, Andhra Pradesh
+
+Thank you for your business!
+
+Best regards,
+JippyMart Catering Service Team
         ";
     }
 }
