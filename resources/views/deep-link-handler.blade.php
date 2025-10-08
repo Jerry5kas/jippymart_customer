@@ -155,8 +155,18 @@
         
         const productId = getProductId();
         const linkType = '{{ $linkType ?? "product" }}';
-        const appScheme = `jippymart://${linkType}/${productId}`;
+        
+        // ✅ FIX: Check if extracted ID is the same as linkType (means no real ID in URL)
+        // For routes like /catering (without ID), don't append the duplicate
+        const hasValidId = productId && productId !== linkType;
+        const appScheme = hasValidId 
+            ? `jippymart://${linkType}/${productId}`    // With ID: jippymart://catering/REQ123
+            : `jippymart://${linkType}`;                // Without ID: jippymart://catering
+        
         const playStoreUrl = '{{ config("app.play_store_url", "https://play.google.com/store/apps/details?id=com.jippymart.customer") }}';
+        
+        console.log('🔗 Generated App Scheme:', appScheme);
+        console.log('📋 Has Valid ID:', hasValidId);
         
         let appOpened = false;
         let attempts = 0;

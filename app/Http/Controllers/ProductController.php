@@ -25,7 +25,8 @@ class ProductController extends Controller
         // Skip location check for deep link routes
         $currentRoute = request()->route();
         $isDeepLinkRoute = $currentRoute && in_array($currentRoute->getName(), [
-            'productDetail', 'product.deep', 'restaurant.deep', 'mart.deep', 'products.deep', 'categories.deep'
+            'productDetail', 'product.deep', 'restaurant.deep', 'mart.deep', 'products.deep', 'categories.deep',
+            'catering.deep', 'catering.list'  // ✅ ADDED: Catering deep link routes
         ]);
 
         if (!$isDeepLinkRoute && !isset($_COOKIE['address_name'])) {
