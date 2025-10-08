@@ -153,6 +153,8 @@ class ProductController extends Controller
             $linkType = 'restaurant';
         } elseif (str_contains($routeName, 'mart')) {
             $linkType = 'mart';
+        } elseif (str_contains($routeName, 'catering')) {
+            $linkType = 'catering';
         }
 
         // ✅ CHECK IF THIS IS A WEB ROUTE PATH, NOT A DEEPLINK ID
@@ -238,6 +240,13 @@ class ProductController extends Controller
                 return redirect('/restaurant');
             case 'mart':
                 return redirect('/mart');
+            case 'catering':
+                // If there's an ID, redirect to catering detail API endpoint
+                // Otherwise redirect to catering list
+                if ($id && $id !== 'catering') {
+                    return redirect('/api/catering/' . $id);
+                }
+                return redirect('/'); // Or create a catering landing page
             default:
                 return redirect('/products');
         }

@@ -46,6 +46,8 @@ Route::get('product/{id}', [App\Http\Controllers\ProductController::class, 'deep
 Route::get('product/{id}/detail', [App\Http\Controllers\ProductController::class, 'productDetail'])->name('product.detail');
 Route::get('restaurant/{id}', [App\Http\Controllers\ProductController::class, 'deepLinkHandler'])->name('restaurant.deep');
 Route::get('mart/{id}', [App\Http\Controllers\ProductController::class, 'deepLinkHandler'])->name('mart.deep');
+Route::get('catering/{id}', [App\Http\Controllers\ProductController::class, 'deepLinkHandler'])->name('catering.deep');
+Route::get('catering', [App\Http\Controllers\ProductController::class, 'deepLinkHandler'])->name('catering.list');
 
 // Additional deep link routes for better coverage
 Route::get('products/{id}', [App\Http\Controllers\ProductController::class, 'deepLinkHandler'])->name('products.deep');
