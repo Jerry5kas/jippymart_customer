@@ -21,9 +21,18 @@ class MartController extends Controller
         // Set strict limits for shared hosting (optimized)
         ini_set('memory_limit', '64M');
         set_time_limit(15); // 15 seconds max
+        
+        $startTime = microtime(true);
+        $maxExecutionTime = 12; // Leave 3 seconds buffer
 
         try {
             \Log::info('MartController: Starting optimized data fetch');
+
+            // Initialize Firebase
+            $factory = (new Factory)->withServiceAccount(
+                base_path('storage/app/firebase/credentials.json')
+            );
+            $firestore = $factory->createFirestore()->database();
 
         // =========================
         // 1️⃣ OPTIMIZED CATEGORIES & SUBCATEGORIES
