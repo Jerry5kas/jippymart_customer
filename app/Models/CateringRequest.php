@@ -244,6 +244,52 @@ class CateringRequest extends Model
     }
     
     /**
+     * Update multiple fields in Firestore
+     */
+    public function updateInFirestore($id, $data)
+    {
+        try {
+            $database = $this->firestore->database();
+            $collection = $database->collection('catering_requests');
+            $docRef = $collection->document($id);
+            
+            // Check if document exists
+            $doc = $docRef->snapshot();
+            if (!$doc->exists()) {
+                return false;
+            }
+            
+            // Prepare update array
+            $updates = [];
+            
+            // Allow updating these fields
+            $allowedFields = [
+                'name', 'mobile', 'email', 'alternative_mobile', 'place', 
+                'date', 'guests', 'function_type', 'meal_preference',
+                'veg_count', 'nonveg_count', 'special_requirements',
+                'status', 'admin_notes', 'admin_email_sent', 'customer_email_sent'
+            ];
+            
+            foreach ($allowedFields as $field) {
+                if (array_key_exists($field, $data)) {
+                    $updates[] = ['path' => $field, 'value' => $data[$field]];
+                }
+            }
+            
+            // Always update the updated_at timestamp
+            $updates[] = ['path' => 'updated_at', 'value' => now()->toISOString()];
+            
+            // Perform the update
+            $docRef->update($updates);
+            
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Firestore update failed: ' . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
      * Generate reference number
      */
     private function generateReferenceNumber()

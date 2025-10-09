@@ -180,25 +180,43 @@ class MinimalCateringController extends Controller
     }
     
     /**
-     * Update request status (Admin)
+     * Update request (Admin)
      */
     public function update(Request $request, $id)
     {
         try {
+            // Validation rules for updatable fields
             $validator = Validator::make($request->all(), [
-                'status' => 'required|in:pending,confirmed,cancelled'
+                'name' => 'sometimes|string|min:2|max:255',
+                'mobile' => 'sometimes|regex:/^[6-9]\d{9}$/',
+                'email' => 'sometimes|nullable|email|max:255',
+                'alternative_mobile' => 'sometimes|nullable|regex:/^[6-9]\d{9}$/',
+                'place' => 'sometimes|string|min:10|max:1000',
+                'date' => 'sometimes|date|after:today',
+                'guests' => 'sometimes|integer|min:1|max:10000',
+                'function_type' => 'sometimes|string|min:3|max:100',
+                'meal_preference' => 'sometimes|in:veg,non_veg,both',
+                'veg_count' => 'sometimes|nullable|integer|min:0|max:10000',
+                'nonveg_count' => 'sometimes|nullable|integer|min:0|max:10000',
+                'special_requirements' => 'sometimes|nullable|string|max:2000',
+                'status' => 'sometimes|string|in:pending,confirmed,cancelled,completed',
+                'admin_notes' => 'sometimes|nullable|string|max:2000',
+                'admin_email_sent' => 'sometimes|boolean',
+                'customer_email_sent' => 'sometimes|boolean'
             ]);
             
             if ($validator->fails()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Invalid status',
+                    'message' => 'Validation failed',
                     'errors' => $validator->errors()
                 ], 422);
             }
             
-            $status = $request->input('status');
-            $updated = (new CateringRequest())->updateStatusInFirestore($id, $status);
+            $updateData = $validator->validated();
+            
+            // Update in Firestore
+            $updated = (new CateringRequest())->updateInFirestore($id, $updateData);
             
             if (!$updated) {
                 return response()->json([
@@ -207,14 +225,13 @@ class MinimalCateringController extends Controller
                 ], 404);
             }
             
+            // Get updated data to return
+            $updatedRequest = (new CateringRequest())->getFromFirestore($id);
+            
             return response()->json([
                 'success' => true,
-                'message' => 'Request status updated successfully',
-                'data' => [
-                    'id' => $id,
-                    'status' => $status,
-                    'updated_at' => now()->toISOString()
-                ]
+                'message' => 'Request updated successfully',
+                'data' => $updatedRequest
             ]);
             
         } catch (\Exception $e) {
