@@ -98,6 +98,14 @@
                         <div class="mb-4">
                             <span class="inline-block px-3 py-1 bg-[#007F73]/10 text-[#007F73] text-xs font-semibold rounded-full mb-2" 
                                   x-text="product ? product.subcategoryTitle : ''"></span>
+                            <template x-if="product && product.brandTitle">
+                                <p class="text-[10px] text-orange-600 font-semibold uppercase tracking-wide mb-1 flex items-center gap-1">
+                                    <svg class="w-3 h-3 text-orange-600" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.583 8.445h.01M10.86 19.71l-6.573-6.63a.993.993 0 0 1 0-1.4l7.329-7.394A.98.98 0 0 1 12.31 4l5.734.007A1.968 1.968 0 0 1 20 5.983v5.5a.992.992 0 0 1-.316.727l-7.44 7.5a.974.974 0 0 1-1.384.001Z"/>
+                                    </svg>
+                                    <span x-text="product.brandTitle"></span>
+                                </p>
+                            </template>
                             <h2 class="text-3xl font-bold text-gray-900 mb-2" x-text="product ? product.name : ''"></h2>
                             <p class="text-gray-600 text-sm" x-text="product ? product.description : ''"></p>
                         </div>
@@ -246,7 +254,8 @@
                     description: this.product.description,
                     grams: this.product.grams,
                     rating: this.product.reviewSum,
-                    reviews: this.product.reviewCount
+                    reviews: this.product.reviewCount,
+                    brandTitle: this.product.brandTitle
                 };
 
                 const cartData = localStorage.getItem('mart_cart') || '{}';

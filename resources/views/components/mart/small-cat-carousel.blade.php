@@ -37,6 +37,8 @@
                             :description="$product['description'] ?? 'Lorem ipsum dolor sit amet'"
                             :grams="$product['grams'] ?? 200"
                             :subcategoryTitle="$product['subcategoryTitle']"
+                            :brandTitle="$product['brandTitle'] ?? ''"
+                            :brandID="$product['brandID'] ?? ''"
                         />
                     </a>
                 @else
@@ -51,6 +53,8 @@
                             :description="$product['description'] ?? 'Lorem ipsum dolor sit amet'"
                             :grams="$product['grams'] ?? 200"
                             :subcategoryTitle="$product['subcategoryTitle']"
+                            :brandTitle="$product['brandTitle'] ?? ''"
+                            :brandID="$product['brandID'] ?? ''"
                         />
                     </div>
                 @endif

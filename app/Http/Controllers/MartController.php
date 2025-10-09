@@ -138,6 +138,8 @@ class MartController extends Controller
                     'reviews' => $data['reviewCount'] ?? $reviews,
                         'section' => $data['section'] ?? 'General',
                     'subcategoryTitle' => !empty($data['subcategoryTitle']) ? $data['subcategoryTitle'] : 'General',
+                        'brandTitle' => $data['brandTitle'] ?? '',
+                        'brandID' => $data['brandID'] ?? '',
                     ];
             }
         }
@@ -168,6 +170,8 @@ class MartController extends Controller
                         'section' => $data['section'] ?? 'General',
                     'subcategoryTitle' => !empty($data['subcategoryTitle']) ? $data['subcategoryTitle'] : 'General',
                         'categoryTitle' => $data['categoryTitle'] ?? 'Category',
+                        'brandTitle' => $data['brandTitle'] ?? '',
+                        'brandID' => $data['brandID'] ?? '',
                     ];
             }
         }
@@ -196,6 +200,8 @@ class MartController extends Controller
                             'section' => $data['section'] ?? 'General',
                     'subcategoryTitle' => !empty($data['subcategoryTitle']) ? $data['subcategoryTitle'] : 'General',
                             'categoryTitle' => $data['categoryTitle'] ?? 'Category',
+                            'brandTitle' => $data['brandTitle'] ?? '',
+                            'brandID' => $data['brandID'] ?? '',
                         ];
                 }
             }
@@ -257,6 +263,8 @@ class MartController extends Controller
                             'section' => $data['section'] ?? 'General',
                             'subcategoryTitle' => $data['subcategoryTitle'] ?? 'category',
                             'categoryTitle' => $data['categoryTitle'] ?? 'Category',
+                            'brandTitle' => $data['brandTitle'] ?? '',
+                            'brandID' => $data['brandID'] ?? '',
                         ];
                     }
                 }
@@ -331,6 +339,8 @@ class MartController extends Controller
                             'section' => $data['section'] ?? 'General',
                             'subcategoryTitle' => $data['subcategoryTitle'] ?? 'category',
                             'categoryTitle' => $data['categoryTitle'] ?? 'Category',
+                            'brandTitle' => $data['brandTitle'] ?? '',
+                            'brandID' => $data['brandID'] ?? '',
                         ];
                     }
 
@@ -352,6 +362,8 @@ class MartController extends Controller
                             'section' => $data['section'] ?? 'General',
                             'subcategoryTitle' => $data['subcategoryTitle'] ?? 'category',
                             'categoryTitle' => $data['categoryTitle'] ?? 'Category',
+                            'brandTitle' => $data['brandTitle'] ?? '',
+                            'brandID' => $data['brandID'] ?? '',
                         ];
                     }
 
@@ -373,6 +385,7 @@ class MartController extends Controller
                             'section' => $data['section'] ?? 'General',
                             'subcategoryTitle' => $data['subcategoryTitle'] ?? 'category',
                             'categoryTitle' => $data['categoryTitle'] ?? 'Category',
+                            'brandTitle' => $data['brandTitle'] ?? '',
                         ];
                     }
                 }
@@ -426,6 +439,8 @@ class MartController extends Controller
                         'vendorTitle' => $data['vendorTitle'] ?? '',
                         'reviewSum' => $data['reviewSum'] ?? '',
                         'reviewCount' => $data['reviewCount'] ?? '',
+                        'brandTitle' => $data['brandTitle'] ?? '',
+                        'brandID' => $data['brandID'] ?? '',
                     ];
                 }
             }
@@ -495,6 +510,7 @@ class MartController extends Controller
             $categoryFilter = $request->get('category', '');
             $subcategoryFilter = $request->get('subcategory', '');
             $brandFilter = $request->get('brand', '');
+            $brandIdFilter = $request->get('brandId', '');
             $priceMin = $request->get('price_min', '');
             $priceMax = $request->get('price_max', '');
             $sortBy = $request->get('sort', 'name'); // name, price_low, price_high, rating
@@ -523,6 +539,9 @@ class MartController extends Controller
                         continue;
                     }
                     if (!empty($subcategoryFilter) && ($data['subcategoryTitle'] ?? '') !== $subcategoryFilter) {
+                        continue;
+                    }
+                    if (!empty($brandIdFilter) && ($data['brandID'] ?? '') !== $brandIdFilter) {
                         continue;
                     }
                     if (!empty($brandFilter) && ($data['brandTitle'] ?? '') !== $brandFilter) {
@@ -647,6 +666,7 @@ class MartController extends Controller
                     'category' => $categoryFilter,
                     'subcategory' => $subcategoryFilter,
                     'brand' => $brandFilter,
+                    'brandId' => $brandIdFilter,
                     'price_min' => $priceMin,
                     'price_max' => $priceMax,
                     'sort' => $sortBy,

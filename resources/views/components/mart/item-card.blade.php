@@ -106,6 +106,8 @@
                                         :rating="$item['rating']"
                                         :grams="$item['grams']"
                                         :subcategoryTitle="$item['subcategoryTitle']"
+                                        :brandTitle="$item['brandTitle'] ?? ''"
+                                        :brandID="$item['brandID'] ?? ''"
                                     />
                                 </div>
                             </a>
@@ -122,6 +124,8 @@
                                         :rating="$item['rating']"
                                         :grams="$item['grams']"
                                         :subcategoryTitle="$item['subcategoryTitle'] ?? 'General'"
+                                        :brandTitle="$item['brandTitle'] ?? ''"
+                                        :brandID="$item['brandID'] ?? ''"
                                     />
                                 </div>
                             </div>

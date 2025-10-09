@@ -8,6 +8,8 @@
     'description' => 'Lorem ipsum dolor sit amet, consectetur adipisicing elit.',
     'grams' => 200,
     'subcategoryTitle' => 'fruits',
+    'brandTitle' => '',
+    'brandID' => ''
     ])
 
 <div class="flex-shrink-0 w-32 h-auto rounded-xl shadow-md flex flex-col items-center justify-between snap-center bg-white hover:shadow-lg transition duration-200"
@@ -32,6 +34,19 @@
     <!-- Product Info -->
     <div class="p-2 w-full flex flex-col gap-1">
         <!-- Product Name -->
+        @if(!empty($brandTitle))
+    <a class="text-[10px] text-orange-600 font-semibold uppercase tracking-wide mb-0.5 flex items-center gap-1 cursor-pointer"
+       @click.stop
+       href="{{ route('mart.all.items') }}?{{ !empty($brandID) ? ('brandId=' . urlencode($brandID)) : ('brand=' . urlencode($brandTitle)) }}">
+        <svg class="w-3 h-3 text-orange-600" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
+             fill="none" viewBox="0 0 24 24">
+            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M15.583 8.445h.01M10.86 19.71l-6.573-6.63a.993.993 0 0 1 0-1.4l7.329-7.394A.98.98 0 0 1 12.31 4l5.734.007A1.968 1.968 0 0 1 20 5.983v5.5a.992.992 0 0 1-.316.727l-7.44 7.5a.974.974 0 0 1-1.384.001Z"/>
+        </svg>
+            {{ $brandTitle }}
+        </a>
+@endif
+
         <h3 class="text-[11px] font-semibold text-gray-800 line-clamp-1 leading-tight" title="{{ $title }}">
             {{ Str::limit($title, 22) }}
         </h3>

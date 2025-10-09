@@ -97,6 +97,8 @@
                                         :rating="$product['rating']" 
                                         :reviews="$product['reviews']"
                                         :subcategoryTitle="$product['subcategoryTitle']"
+                                        :brandTitle="$product['brandTitle'] ?? ''"
+                                        :brandID="$product['brandID'] ?? ''"
                                     />
                                 </a>
                             @else
@@ -111,6 +113,8 @@
                                         :rating="$product['rating']" 
                                         :reviews="$product['reviews']"
                                         :subcategoryTitle="$product['subcategoryTitle'] ?? 'General'"
+                                        :brandTitle="$product['brandTitle'] ?? ''"
+                                        :brandID="$product['brandID'] ?? ''"
                                     />
                                 </div>
                             @endif
