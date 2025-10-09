@@ -263,6 +263,36 @@
 </style>
 
 <x-layouts.app>
+    <!-- Mart JS dependencies -->
+    <script src="{{ asset('js/mart-cart.js') }}"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- Firebase SDK (compat) -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+
+    <script>
+        // Initialize Firebase if not already initialized and expose `database`
+        (function initFirebaseForAllItems() {
+            try {
+                const firebaseConfig = {
+                    apiKey: "{{ config('firebase.api_key') }}",
+                    authDomain: "{{ config('firebase.auth_domain') }}",
+                    projectId: "{{ config('firebase.project_id') }}",
+                    storageBucket: "{{ config('firebase.storage_bucket') }}",
+                    messagingSenderId: "{{ config('firebase.messaging_sender_id') }}",
+                    appId: "{{ config('firebase.app_id') }}"
+                };
+                if (!(window.firebase && window.firebase.apps && window.firebase.apps.length)) {
+                    firebase.initializeApp(firebaseConfig);
+                }
+                window.firestore = firebase.firestore();
+                window.database = window.firestore;
+            } catch (e) {
+                console.error('Failed to initialize Firebase on all-items page', e);
+            }
+        })();
+    </script>
     <div class="pt-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 font-semibold text-xs text-gray-500 inline-flex items-center text-gray-700 gap-x-3">
         <a href="{{ route('mart.index') }}" class="hover:text-violet-600">Home</a>
         <span>
@@ -450,7 +480,7 @@
                     @endif
                     <!-- Mobile Filter Button -->
                     <button class="lg:hidden px-4 py-2 bg-white/20 backdrop-blur-sm border border-white/30 rounded-lg hover:bg-white/30 transition-colors"
-                            @click="filtersOpen = true">
+                            @click="window.dispatchEvent(new CustomEvent('open-filters'))">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                              stroke="currentColor" class="size-6">
                             <path stroke-linecap="round" stroke-linejoin="round"
@@ -495,8 +525,8 @@
                                         :disPrice="$item['disPrice']"
                                         :title="$item['name']"
                                         :description="$item['description']"
-                                        :reviews="$item['reviewCount']"
-                                        :rating="$item['reviewSum']"
+                                        :reviews="$item['reviewCount'] ?? 0"
+                                        :rating="$item['reviewSum'] ?? 0"
                                         :grams="$item['grams']"
                                         :subcategoryTitle="$item['subcategoryTitle']"
                                         :brandTitle="$item['brandTitle'] ?? ''"
@@ -553,7 +583,7 @@
     </div>
 
     <!-- Enhanced Mobile Filter Modal -->
-    <div x-show="filtersOpen"
+    <div x-data="{ filtersOpen: false }" x-on:open-filters.window="filtersOpen = true" x-show="filtersOpen"
          x-transition:enter="transition ease-out duration-300"
          x-transition:enter-start="opacity-0"
          x-transition:enter-end="opacity-100"

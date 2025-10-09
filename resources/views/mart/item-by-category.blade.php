@@ -210,6 +210,39 @@
 </style>
 
 <x-layouts.app>
+    <!-- Mart JS dependencies -->
+    <script src="{{ asset('js/mart-cart.js') }}"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- Firebase SDK (compat) -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+    
+    <script>
+        // Initialize Firebase if not already initialized
+        (function initFirebaseForMartCategory() {
+            try {
+                const firebaseConfig = {
+                    apiKey: "{{ config('firebase.api_key') }}",
+                    authDomain: "{{ config('firebase.auth_domain') }}",
+                    projectId: "{{ config('firebase.project_id') }}",
+                    storageBucket: "{{ config('firebase.storage_bucket') }}",
+                    messagingSenderId: "{{ config('firebase.messaging_sender_id') }}",
+                    appId: "{{ config('firebase.app_id') }}"
+                };
+
+                if (!(window.firebase && window.firebase.apps && window.firebase.apps.length)) {
+                    firebase.initializeApp(firebaseConfig);
+                }
+
+                // Expose Firestore as `database` for existing code paths
+                window.firestore = firebase.firestore();
+                window.database = window.firestore;
+            } catch (e) {
+                console.error('Failed to initialize Firebase on item-by-category page', e);
+            }
+        })();
+    </script>
 
     <div class="pt-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div class="breadcrumb inline-flex items-center gap-x-3 text-sm font-medium">
@@ -348,8 +381,8 @@
                                         :disPrice="$item['disPrice']"
                                         :title="$item['name']"
                                         :description="$item['description']"
-                                        :reviews="$item['reviewCount']"
-                                        :rating="$item['reviewSum']"
+                                        :reviews="$item['reviewCount'] ?? 0"
+                                        :rating="$item['reviewSum'] ?? 0"
                                         :grams="$item['grams']"
                                         :subcategoryTitle="$item['subcategoryTitle']"
                                         :brandTitle="$item['brandTitle'] ?? ''"

@@ -2,21 +2,19 @@
     'categories' => 'categories'
 ])
 
-<!-- Quick debug to see what's happening -->
-<div class="bg-blue-100 text-lg border border-blue-300">
-    <strong>DEBUG:</strong>
-    Count: {{ count($categories ?? []) }} |
-    Empty: {{ empty($categories) ? 'YES' : 'NO' }} |
+
+<!-- Quick debug to see what's happening
+<div class=" text-lg">
     @if(!empty($categories))
         First: {{ $categories[0]['title'] ?? 'NO TITLE' }} |
         Keys: {{ implode(',', array_keys($categories[0] ?? [])) }}
     @endif
-</div>
+</div> -->
 
-<div class="w-full" id="top-cat-items">
+<div class="w-full pt-16 md:pt-20" id="top-cat-items">
 
     <!-- Categories Navigation -->
-    <div class="w-full border-b bg-[#F9FDF6]" style="background-color: #F9FDF6 !important;">
+    <div class="w-full fixed md:top-[76px] top-[60px] z-40 border-b bg-[#F9FDF6]" style="background-color: #F9FDF6 !important;">
         <div class="sm:w-[90%] mx-auto w-full px-4">
             <div class="flex items-center space-x-6 overflow-x-auto scrollbar-hide py-3" style="min-height: 60px;">
                 @if(!empty($categories) && count($categories) > 0)
@@ -61,7 +59,7 @@
     </div>
 
     <!-- Sub Category Items Scroll -->
-    <div class="w-full pt-8 pb-8">
+    <div class="w-full pt-16 pb-8">
         @if(!empty($categories) && count($categories) > 0)
             @foreach($categories as $index => $category)
             <div class="category-content flex space-x-6 overflow-x-auto px-4 py-5 scrollbar-hide sm:w-[90%] mx-auto w-full text-xs"
