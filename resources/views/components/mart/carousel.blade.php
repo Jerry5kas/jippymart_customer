@@ -143,7 +143,7 @@
                 document.addEventListener('visibilitychange', visibilityHandler);
                 
                 // Cleanup when component is destroyed
-                this.$watch('destroy', () => {
+                this.$el.addEventListener('alpine:destroying', () => {
                     this.stopAutoplay();
                     document.removeEventListener('visibilitychange', visibilityHandler);
                 });

@@ -3,9 +3,9 @@
 ])
 
 <!-- Quick debug to see what's happening -->
-<div class="bg-blue-100 p-2 text-lg border border-blue-300">
-    <strong>DEBUG:</strong> 
-    Count: {{ count($categories ?? []) }} | 
+<div class="bg-blue-100 text-lg border border-blue-300">
+    <strong>DEBUG:</strong>
+    Count: {{ count($categories ?? []) }} |
     Empty: {{ empty($categories) ? 'YES' : 'NO' }} |
     @if(!empty($categories))
         First: {{ $categories[0]['title'] ?? 'NO TITLE' }} |
@@ -13,7 +13,7 @@
     @endif
 </div>
 
-<div class="w-full pb-5 pt-8" id="top-cat-items">
+<div class="w-full" id="top-cat-items">
 
     <!-- Categories Navigation -->
     <div class="w-full border-b bg-[#F9FDF6]" style="background-color: #F9FDF6 !important;">
@@ -142,30 +142,30 @@
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
-        
+
         /* Force categories to be visible */
         .category-tab {
             display: flex !important;
             visibility: visible !important;
             opacity: 1 !important;
         }
-        
+
         #top-cat-items {
             display: block !important;
             visibility: visible !important;
         }
-        
+
         .category-tab.active {
             color: #007F73 !important;
             border-color: #007F73 !important;
             font-weight: 600;
         }
-        
+
         .category-tab:hover {
             color: #007F73;
             border-color: #007F73;
         }
-        
+
         .category-content {
             transition: opacity 0.3s ease-in-out;
         }
@@ -177,17 +177,17 @@
             document.querySelectorAll('.category-content').forEach(content => {
                 content.style.display = 'none';
             });
-            
+
             // Remove active class from all tabs
             document.querySelectorAll('.category-tab').forEach(tab => {
                 tab.classList.remove('active');
                 tab.style.color = '#6B7280';
                 tab.style.borderColor = 'transparent';
             });
-            
+
             // Show selected category content
             let selectedContent = document.querySelector(`.category-content[data-category="${categoryTitle}"]`);
-            
+
             // If not found by data-category, try to find by index
             if (!selectedContent) {
                 const tabs = document.querySelectorAll('.category-tab');
@@ -197,11 +197,11 @@
                     }
                 });
             }
-            
+
             if (selectedContent) {
                 selectedContent.style.display = 'flex';
             }
-            
+
             // Add active class to selected tab
             const selectedTab = document.querySelector(`.category-tab[data-category="${categoryTitle}"]`);
             if (selectedTab) {
@@ -210,7 +210,7 @@
                 selectedTab.style.borderColor = '#007F73';
             }
         }
-        
+
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', function() {
             // Ensure first category is active

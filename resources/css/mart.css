@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom styles for mart page */
+.floating-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: #F38000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    z-index: 1000;
+}
+
+.floating-btn:hover {
+    transform: scale(1.1);
+}
+
+.floating-btn svg {
+    width: 28px;
+    height: 28px;
+    color: white;
+}
+
+/* scrollbar-hide */
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+
+.scrollbar-hide {
+    -ms-overflow-style: none; /* IE/Edge */
+    scrollbar-width: none; /* Firefox */
+}
+
+/* Improved responsive layout */
+@media (max-width: 640px) {
+    .item-card-container {
+        width: 160px;
+        flex: 0 0 160px;
+    }
+}
+
+/* Better card alignment */
+.item-card-wrapper {
+    border: 1px solid #f3f4f6;
+    transition: all 0.3s ease;
+}
+
+.item-card-wrapper:hover {
+    border-color: #d1d5db;
+    transform: translateY(-2px);
+}

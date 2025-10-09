@@ -1,10 +1,34 @@
 <x-layouts.app>
+    <!-- Tailwind CSS for Mart Page -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <!-- Mart Cart Components -->
+    <script src="{{ asset('js/mart-cart.js') }}"></script>
+    
     <!-- Alpine.js CDN -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
     <!-- Firebase for location detection -->
     <script src="{{ asset('js/geofirestore.js') }}"></script>
     <script src="https://cdn.firebase.com/libs/geofire/5.0.1/geofire.min.js"></script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 
 
@@ -170,9 +194,22 @@
     </svg>
 </a>
 
-<!-- Location Logic for Mart Page -->
+<!-- Firebase Configuration and Location Logic for Mart Page -->
 <script>
-    // Initialize Firebase (same as home page)
+    // Firebase configuration
+    const firebaseConfig = {
+        apiKey: "{{ config('firebase.api_key') }}",
+        authDomain: "{{ config('firebase.auth_domain') }}",
+        projectId: "{{ config('firebase.project_id') }}",
+        storageBucket: "{{ config('firebase.storage_bucket') }}",
+        messagingSenderId: "{{ config('firebase.messaging_sender_id') }}",
+        appId: "{{ config('firebase.app_id') }}"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    
+    // Initialize Firebase services
     var firestore = firebase.firestore();
     var database = firestore; // Alias for compatibility
     var geoFirestore = new GeoFirestore(firestore);
